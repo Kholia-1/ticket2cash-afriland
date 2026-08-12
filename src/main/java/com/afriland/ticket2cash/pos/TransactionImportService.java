@@ -73,6 +73,10 @@ public class TransactionImportService {
                 }
             }
         }
+        audit("IMPORT_CARD_TRANSACTIONS_CSV", null,
+                "Lignes: " + summary.totalRows + " | Insérées: " + summary.inserted
+                        + " | Doublons: " + summary.duplicates + " | Invalides: " + summary.invalidRows
+                        + " | Cashback approuvés: " + summary.cashbackApproved + " | Cashback rejetés: " + summary.cashbackRejected);
         audit("TRANSACTION_CSV_IMPORT_COMPLETED", null,
                 "CSV import completed: total=" + summary.totalRows
                         + ", inserted=" + summary.inserted

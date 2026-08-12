@@ -160,7 +160,7 @@ public class AuthController {
                 user.getId(),
                 user.getUsername(),
                 "SUCCESS",
-                "User logged in");
+                "Connexion réussie pour le rôle " + user.getRole().name());
 
         return ResponseEntity.ok(toUserMap(user, true));
     }

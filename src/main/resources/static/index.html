@@ -1392,7 +1392,7 @@ const TABLES={
  payments:{ep:"/api/cashback/payments",title:"payments",sub:"payments_sub",cols:[["paymentReference","c_payref","mono"],["userId","c_beneficiary","mono"],["amount","c_amount","money"],["currency","c_currency"],["status","c_status","badge"],["processedAt","c_processed","date"]]},
  users:{ep:"/api/auth/users",title:"users",sub:"users_sub",cols:[["username","c_username","strong"],["fullName","c_fullname"],["email","c_email","mono"],["role","c_role","badge"],["accountLocked","c_locked","lock"],["lastLoginAt","c_lastlogin","date"]]},
  fraud:{ep:"/api/fraud/alerts",title:"fraud",sub:"fraud_sub",cols:[["alertReference","c_alertref","mono"],["reason","c_reason","strong"],["riskScore","c_score","risk"],["userId","c_user","mono"],["status","c_status","badge"],["createdAt","c_created","date"]]},
- auditLogs:{ep:"/api/audit-logs",title:"auditLogs",sub:"auditLogs_sub",cols:[["action","c_action","strong"],["username","c_username","mono"],["details","c_details"],["createdAt","c_timestamp","date"]]},
+ auditLogs:{ep:"/api/audit-logs",title:"auditLogs",sub:"auditLogs_sub",cols:[["action","c_action","strong"],["auditIdentifier","c_username","mono"],["auditDetails","c_details","auditDetails"],["createdAt","c_timestamp","date"]]},
  transactions:{ep:"/api/transactions",title:"transactions",sub:"transactions_sub",cols:[["transactionRef","c_reference","mono"],["maskedCard","c_card","mono"],["amount","c_amount_currency","moneyCurrency"],["merchantName","c_store","strong"],["mccCode","c_mcc","mono"],["channel","c_channel"],["terminalId","c_terminal","mono"],["status","c_status","transactionStatus"],["matched","c_match","matchingStatus"],["transactionDate","c_transaction_date","transactionDate"],["receivedAt","c_received_date","transactionDate"],["cashbackAmount","c_cashback_amount","cashbackMoney"],["cashbackStatus","c_cashback_status","badge"],["campaignName","c_campaign_name","campaign"],["cashbackDecision","c_cashback_decision","badge"],["rejectionReason","c_rejection_reason","text"]]}
 };
 async function renderTable(key){
@@ -1499,6 +1499,7 @@ function cell(row,col){
     case "cashbackMoney":return v==null?"—":`${money(v)}${row.currency?` <span style="color:var(--muted);font-size:11px">${esc(row.currency)}</span>`:""}`;
     case "campaign":return esc(v||row.campaignId||"—");
     case "text":return esc(v||"—");
+    case "auditDetails":return `<span style="display:block;max-width:520px;white-space:pre-wrap;line-height:1.4;font-size:12px">${esc(row.message||row.details||row.description||"—")}</span>`;
     case "date":return `<span style="color:var(--text-2)">${dt(v)}</span>`;
     case "badge":return badge(v);
     case "transactionStatus":return badge(v|| (row.matched?"Rapprochée":"Non rapprochée"));
@@ -1515,6 +1516,7 @@ function cell(row,col){
 }
 function paintRows(key,rows){
   const cfg=TABLES[key],tb=document.getElementById("tbody"),cp=document.getElementById("cp");if(!tb)return;
+  if(key==="auditLogs") rows=rows.map(r=>Object.assign({},r,{auditIdentifier:r.identifier||r.entityId||r.reference||r.actor||null,auditDetails:r.details||r.description||r.message||null}));
   cp.textContent=rows.length+" "+t("items");
   if(!rows.length){tb.innerHTML=`<tr><td colspan="${cfg.cols.length}">${emptyFull()}</td></tr>`;return;}
   tb.innerHTML=rows.map(r=>`<tr>${cfg.cols.map(col=>`<td>${cell(r,col)}</td>`).join("")}</tr>`).join("");

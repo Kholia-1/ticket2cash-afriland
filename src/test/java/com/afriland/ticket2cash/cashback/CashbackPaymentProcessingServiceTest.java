@@ -1,6 +1,8 @@
 package com.afriland.ticket2cash.cashback;
 
 import com.afriland.ticket2cash.audit.AuditLogService;
+import com.afriland.ticket2cash.campaign.CampaignRepository;
+import com.afriland.ticket2cash.merchant.MerchantRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -17,6 +19,8 @@ import static org.mockito.Mockito.*;
 class CashbackPaymentProcessingServiceTest {
     @Mock CashbackPaymentRepository repository;
     @Mock AuditLogService auditLogService;
+    @Mock CampaignRepository campaignRepository;
+    @Mock MerchantRepository merchantRepository;
 
     @Test
     void pendingPaymentBecomesPaidAndSummaryIsCorrect() {
@@ -25,7 +29,7 @@ class CashbackPaymentProcessingServiceTest {
         when(repository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         CashbackPaymentProcessingService.ProcessingSummary result =
-                new CashbackPaymentProcessingService(repository, auditLogService).processPending();
+                new CashbackPaymentProcessingService(repository, auditLogService, campaignRepository, merchantRepository).processPending();
 
         assertEquals(CashbackPaymentStatus.SUCCESS, pending.getStatus());
         assertEquals(1, result.getProcessed());
@@ -37,7 +41,7 @@ class CashbackPaymentProcessingServiceTest {
     void alreadyPaidPaymentIsNotQueriedForProcessing() {
         when(repository.findByStatusOrderByIdAsc(CashbackPaymentStatus.PENDING)).thenReturn(List.of());
         CashbackPaymentProcessingService.ProcessingSummary result =
-                new CashbackPaymentProcessingService(repository, auditLogService).processPending();
+                new CashbackPaymentProcessingService(repository, auditLogService, campaignRepository, merchantRepository).processPending();
         assertEquals(0, result.getProcessed());
         verify(repository, never()).save(any());
     }

@@ -43,6 +43,9 @@ public class AuditLog {
     public String getStatus() { return status; }
     public String getMessage() { return message; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    /** Stable display aliases used by the audit UI without changing the persisted schema. */
+    public String getIdentifier() { return actor != null ? actor : (entityId == null ? null : String.valueOf(entityId)); }
+    public String getDetails() { return message; }
 
     public void setId(Long id) { this.id = id; }
     public void setAction(String action) { this.action = action; }

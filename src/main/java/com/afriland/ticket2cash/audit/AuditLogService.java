@@ -32,6 +32,11 @@ public class AuditLogService {
         return auditLogRepository.save(log);
     }
 
+    public AuditLog logDetailed(String action, String identifier, String details,
+                                String actor, String status) {
+        return log(action, "CASHBACK", "Audit", null, identifier, status, details);
+    }
+
     private String sanitize(String value, int maxLength) {
         if (value == null) return null;
         String sanitized = value.replaceAll("(?i)(password|pin|otp|api[-_ ]?key|card(number|hash)?)[=: ]+[^,; ]+", "$1=[REDACTED]");

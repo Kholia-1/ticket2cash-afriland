@@ -14,6 +14,8 @@ public interface PosTransactionRepository extends JpaRepository<PosTransaction, 
 
     List<PosTransaction> findAllByOrderByReceivedAtDesc();
 
+    List<PosTransaction> findTop100ByOrderByReceivedAtDesc();
+
     Optional<PosTransaction> findByTransactionRef(String transactionRef);
 
     boolean existsByTransactionRef(String transactionRef);

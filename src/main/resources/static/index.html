@@ -447,8 +447,8 @@ const I18N={
   c_name:"Nom",c_city:"Ville",c_phone:"Téléphone",c_niu:"NIU",c_status:"Statut",c_created:"Créé le",
   c_sku:"SKU",c_product:"Produit",c_category:"Catégorie",c_price:"Prix",c_cbtype:"Type CB",c_active:"Actif",
   c_campaign:"Campagne",c_type:"Type",c_value:"Valeur",c_budget:"Budget",c_end:"Fin",
-  c_ticketno:"N° ticket",c_store:"Magasin",c_amount:"Montant",c_date:"Date",c_risk:"Risque",
-  c_reference:"Référence",c_card:"Carte",c_ticket:"Ticket",c_cashback:"Cashback",c_submitted:"Soumis le",
+  c_ticketno:"N° ticket",c_store:"Magasin",c_amount:"Montant",c_date:"Date",c_risk:"Risque",c_mcc:"MCC",c_channel:"Canal",c_terminal:"Terminal",c_match:"Rapprochement",c_transaction_date:"Date transaction",c_received_date:"Date réception",
+  c_reference:"Référence",c_card:"Carte",c_ticket:"Ticket",c_cashback:"Cashback",c_amount_currency:"Montant",c_status_fallback:"Statut",c_created_fallback:"Créée le",c_submitted:"Soumis le",
   c_payref:"Référence",c_beneficiary:"Bénéficiaire",c_currency:"Devise",c_processed:"Traité le",
   c_username:"Identifiant",c_fullname:"Nom complet",c_email:"Email",c_role:"Rôle",c_locked:"État",c_lastlogin:"Dernière connexion",
   c_alertref:"Référence",c_reason:"Motif",c_score:"Score",c_user:"Utilisateur",c_action:"Action",c_details:"Détails",c_timestamp:"Horodatage",
@@ -550,8 +550,8 @@ const I18N={
   c_name:"Name",c_city:"City",c_phone:"Phone",c_niu:"NIU",c_status:"Status",c_created:"Created",
   c_sku:"SKU",c_product:"Product",c_category:"Category",c_price:"Price",c_cbtype:"CB type",c_active:"Active",
   c_campaign:"Campaign",c_type:"Type",c_value:"Value",c_budget:"Budget",c_end:"End",
-  c_ticketno:"Ticket #",c_store:"Store",c_amount:"Amount",c_date:"Date",c_risk:"Risk",
-  c_reference:"Reference",c_card:"Card",c_ticket:"Ticket",c_cashback:"Cashback",c_submitted:"Submitted",
+  c_ticketno:"Ticket #",c_store:"Store",c_amount:"Amount",c_date:"Date",c_risk:"Risk",c_mcc:"MCC",c_channel:"Channel",c_terminal:"Terminal",c_match:"Matching",c_transaction_date:"Transaction date",c_received_date:"Received date",
+  c_reference:"Reference",c_card:"Card",c_ticket:"Ticket",c_cashback:"Cashback",c_amount_currency:"Amount",c_status_fallback:"Status",c_created_fallback:"Created",c_submitted:"Submitted",
   c_payref:"Reference",c_beneficiary:"Beneficiary",c_currency:"Currency",c_processed:"Processed",
   c_username:"Username",c_fullname:"Full name",c_email:"Email",c_role:"Role",c_locked:"State",c_lastlogin:"Last login",
   c_alertref:"Reference",c_reason:"Reason",c_score:"Score",c_user:"User",c_action:"Action",c_details:"Details",c_timestamp:"Timestamp",
@@ -1393,7 +1393,7 @@ const TABLES={
  users:{ep:"/api/auth/users",title:"users",sub:"users_sub",cols:[["username","c_username","strong"],["fullName","c_fullname"],["email","c_email","mono"],["role","c_role","badge"],["accountLocked","c_locked","lock"],["lastLoginAt","c_lastlogin","date"]]},
  fraud:{ep:"/api/fraud/alerts",title:"fraud",sub:"fraud_sub",cols:[["alertReference","c_alertref","mono"],["reason","c_reason","strong"],["riskScore","c_score","risk"],["userId","c_user","mono"],["status","c_status","badge"],["createdAt","c_created","date"]]},
  auditLogs:{ep:"/api/audit-logs",title:"auditLogs",sub:"auditLogs_sub",cols:[["action","c_action","strong"],["username","c_username","mono"],["details","c_details"],["createdAt","c_timestamp","date"]]},
- transactions:{ep:"/api/webhook/transactions",title:"transactions",sub:"transactions_sub",cols:[["clientReference","c_reference","mono"],["cardNumber","c_card","mono"],["amount","c_amount","money"],["merchantName","c_store","strong"],["status","c_status","badge"],["createdAt","c_created","date"]]}
+ transactions:{ep:"/api/transactions",title:"transactions",sub:"transactions_sub",cols:[["transactionRef","c_reference","mono"],["maskedCard","c_card","mono"],["amount","c_amount_currency","moneyCurrency"],["merchantName","c_store","strong"],["mccCode","c_mcc","mono"],["channel","c_channel"],["terminalId","c_terminal","mono"],["status","c_status","transactionStatus"],["matched","c_match","matchingStatus"],["transactionDate","c_transaction_date","transactionDate"],["receivedAt","c_received_date","transactionDate"]]}
 };
 async function renderTable(key){
   const cfg=TABLES[key],c=document.getElementById("content");
@@ -1403,7 +1403,8 @@ async function renderTable(key){
   const canAdd=["merchants","products","campaigns","users"].includes(key)&&ME.role!=="PARTNER";
   const addClick = key==="merchants" ? "merchantModal()" : `toast(t('form_soon')+' ${cfg.ep}','ok')`;
   const actions=(canAdd?`<button class="btn btn-primary" onclick="${addClick}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${t("add")}</button>`:"")+refreshBtn();
-  c.innerHTML=`<div class="page">${head(t(cfg.title),t(cfg.sub),actions)}
+   c.innerHTML=`<div class="page">${head(t(cfg.title),t(cfg.sub),actions)}
+     ${key==="transactions"?transactionImportPanel():""}
     <div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="cp">—</span></div>
     <div class="table-scroll"><table><thead><tr>${cfg.cols.map(col=>`<th>${t(col[1])}</th>`).join("")}</tr></thead>
     <tbody id="tbody">${rowSkeleton(cfg.cols.length,6)}</tbody></table></div></div></div>`;
@@ -1413,14 +1414,73 @@ async function renderTable(key){
     CACHE[key]=rows; paintRows(key,rows);
   }catch(e){document.getElementById("tbody").innerHTML=`<tr><td colspan="${cfg.cols.length}">${emptyMini(t("err_load"))}</td></tr>`;document.getElementById("cp").textContent="0";}
 }
+function transactionImportPanel(){
+  return `<div class="panel" style="margin-bottom:16px">
+    <div class="panel-head"><div><h3>Importer des transactions cartes</h3><p style="margin:4px 0 0;color:var(--muted);font-size:12px">Importez les transactions prépayées Afriland au format CSV.</p></div></div>
+    <div class="panel-body">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <input type="file" id="transactionCsvFile" accept=".csv,text/csv" style="flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text);font-size:14px">
+        <button class="btn btn-primary" id="transactionCsvBtn" onclick="importTransactionsCsv()">Importer transactions CSV</button>
+      </div>
+      <div style="margin-top:10px;color:var(--muted);font-size:12px;line-height:1.5">
+        Format attendu : <code>transactionRef,transactionDate,cardHash,maskedCard,cardBin,merchantId,merchantName,amount,currency,mccCode,channel,terminalId,status</code><br>
+        Exemple : <code>TX-001,2026-08-12T10:25:00,hash,****1234,456120,7,Shop,25000,FCFA,5411,F2F,T1,SUCCESS</code>
+      </div>
+      <div id="transactionImportSummary" style="display:none;margin-top:14px"></div>
+    </div>
+  </div>`;
+}
+
+async function importTransactionsCsv(){
+  const input=document.getElementById("transactionCsvFile");
+  const summary=document.getElementById("transactionImportSummary");
+  const button=document.getElementById("transactionCsvBtn");
+  if(!input||!input.files||!input.files[0]){toast("Sélectionnez un fichier CSV.","err");return;}
+  const fd=new FormData(); fd.append("file",input.files[0]);
+  button.disabled=true; button.textContent="Import en cours…";
+  try{
+    const res=await fetch("/api/transactions/import-csv",{method:"POST",body:fd,credentials:"same-origin"});
+    const raw=await res.text(); let data={};
+    try{data=raw?JSON.parse(raw):{};}catch(_){data={errors:[raw||"Réponse invalide du serveur"]};}
+    if(!res.ok)throw new Error((data.errors&&data.errors.join?data.errors.join(", "):data.error)||"Échec de l’import CSV");
+    const errors=Array.isArray(data.errors)?data.errors:[];
+    summary.style.display="block";
+    summary.innerHTML=`<div class="kpi-grid" style="margin:0">
+      ${importStat("Lignes totales",data.totalRows)}${importStat("Insérées",data.inserted)}${importStat("Doublons",data.duplicates)}${importStat("Invalides",data.invalidRows)}
+      ${importStat("Cashback traités",data.cashbackProcessed)}${importStat("Cashback approuvés",data.cashbackApproved)}${importStat("Cashback rejetés",data.cashbackRejected)}
+    </div>${errors.length?`<div style="margin-top:12px;padding:10px 12px;border-radius:8px;background:#FEF2F2;color:#991B1B;font-size:12px"><strong>Erreurs</strong><ul style="margin:6px 0 0 18px">${errors.map(e=>`<li>${esc(e)}</li>`).join("")}</ul></div>`:`<div style="margin-top:10px;color:var(--success,#15803D);font-size:13px">Import terminé.</div>`}`;
+    toast("Import CSV terminé.","ok");
+    await refreshTransactionRows();
+  }catch(e){
+    summary.style.display="block";
+    summary.innerHTML=`<div style="padding:10px 12px;border-radius:8px;background:#FEF2F2;color:#991B1B;font-size:13px">${esc(e.message||"Échec de l’import CSV")}</div>`;
+    toast("Échec de l’import CSV.","err");
+  }finally{button.disabled=false;button.textContent="Importer transactions CSV";}
+}
+
+function importStat(label,value){return `<div class="kpi-card"><div class="kpi-label">${label}</div><div class="kpi-value">${esc(value??0)}</div></div>`;}
+
+async function refreshTransactionRows(){
+  if(CURRENT!=="transactions")return;
+  try{
+    let rows=await api(TABLES.transactions.ep);
+    if(!Array.isArray(rows))rows=rows&&rows.content?rows.content:[];
+    CACHE.transactions=rows; paintRows("transactions",rows);
+  }catch(_){/* Keep the import summary visible if the list refresh fails. */}
+}
+
 function cell(row,col){
   const [field,,type]=col;let v=row[field];
   switch(type){
     case "strong":return `<span class="strong">${esc(v||"—")}</span>`;
     case "mono":return `<span class="mono">${esc(v||"—")}</span>`;
     case "money":return money(v);
+    case "moneyCurrency":return `${money(v)}${row.currency?` <span style="color:var(--muted);font-size:11px">${esc(row.currency)}</span>`:""}`;
     case "date":return `<span style="color:var(--text-2)">${dt(v)}</span>`;
     case "badge":return badge(v);
+    case "transactionStatus":return badge(v|| (row.matched?"Rapprochée":"Non rapprochée"));
+    case "matchingStatus":return badge(v?"Rapprochée":"Non rapprochée");
+    case "transactionDate":return `<span style="color:var(--text-2)">${dt(v||row.receivedAt)}</span>`;
     case "bool":return v?`<span class="badge b-ok">${t("yes")}</span>`:`<span class="badge b-muted">${t("no")}</span>`;
     case "lock":return v?`<span class="badge b-danger">${t("locked")}</span>`:`<span class="badge b-ok">${t("active_word")}</span>`;
     case "numval":return `<span class="strong">${esc(v??"—")}${row.cashbackType==="PERCENTAGE"?" %":""}</span>`;

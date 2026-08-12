@@ -3,6 +3,8 @@ package com.afriland.ticket2cash.cashback.engine;
 import com.afriland.ticket2cash.campaign.Campaign;
 import com.afriland.ticket2cash.campaign.CampaignStatus;
 import com.afriland.ticket2cash.product.CashbackType;
+import com.afriland.ticket2cash.cashback.CashbackPaymentRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -12,6 +14,17 @@ import java.time.LocalDateTime;
 
 @Service
 public class CashbackCalculationService {
+
+    private final CashbackPaymentRepository paymentRepository;
+
+    public CashbackCalculationService() {
+        this.paymentRepository = null;
+    }
+
+    @Autowired
+    public CashbackCalculationService(CashbackPaymentRepository paymentRepository) {
+        this.paymentRepository = paymentRepository;
+    }
 
     public CashbackDecision calculate(Campaign campaign, CashbackCalculationRequest request) {
         if (request == null || request.getTicketAmount() == null
@@ -83,6 +96,172 @@ public class CashbackCalculationService {
                 campaign.getId(),
                 request.getMerchantId(),
                 request.getTicketId());
+    }
+
+    public CashbackDecision calculateFromTransaction(Campaign campaign,
+                                                     CashbackTransactionRequest request) {
+        if (request == null || request.getTransactionRef() == null
+                || request.getTransactionRef().isBlank()) {
+            return transactionRejected(CashbackDecisionCode.REJECTED_TRANSACTION_REF_REQUIRED,
+                    "Transaction reference is required", request, campaign);
+        }
+        if (request.getAmount() == null || request.getAmount().signum() <= 0) {
+            return transactionRejected(CashbackDecisionCode.REJECTED_INVALID_AMOUNT,
+                    "Transaction amount must be greater than zero", request, campaign);
+        }
+        if (request.getCardHash() == null || request.getCardHash().isBlank()) {
+            return transactionRejected(CashbackDecisionCode.REJECTED_CARD_HASH_REQUIRED,
+                    "Card hash is required", request, campaign);
+        }
+        if (paymentRepository != null && paymentRepository.findByTransactionRef(request.getTransactionRef().trim()).isPresent()) {
+            return transactionRejected(CashbackDecisionCode.REJECTED_DUPLICATE_TICKET,
+                    "Transaction has already been processed", request, campaign);
+        }
+
+        if (campaign == null) {
+            return transactionRejected(CashbackDecisionCode.REJECTED_CAMPAIGN_NULL,
+                    "Campaign is required", request, campaign);
+        }
+
+        if (campaign.getMccCode() != null && !matchesMcc(campaign.getMccCode().getCode(), request.getMccCode())) {
+            return transactionRejected(CashbackDecisionCode.REJECTED_MCC_NOT_ELIGIBLE,
+                    "Transaction MCC does not match the campaign", request, campaign);
+        }
+        if (campaign.getChannelFilter() != null
+                && campaign.getChannelFilter().name() != null
+                && !"ALL".equalsIgnoreCase(campaign.getChannelFilter().name())
+                && !equalsIgnoreCase(campaign.getChannelFilter().name(), request.getChannel())) {
+            return transactionRejected(CashbackDecisionCode.REJECTED_CHANNEL_NOT_ELIGIBLE,
+                    "Transaction channel does not match the campaign", request, campaign);
+        }
+        if (!matchesCardBin(campaign.getCardBinStart(), campaign.getCardBinEnd(), request.getCardBin())) {
+            return transactionRejected(CashbackDecisionCode.REJECTED_CARD_BIN_NOT_ELIGIBLE,
+                    "Transaction card BIN does not match the campaign", request, campaign);
+        }
+
+        CashbackCalculationRequest calculationRequest = new CashbackCalculationRequest();
+        calculationRequest.setTicketAmount(request.getAmount());
+        calculationRequest.setCardHash(request.getCardHash());
+        calculationRequest.setFraudScore(null);
+        calculationRequest.setTransactionDateTime(request.getTransactionDateTime());
+        calculationRequest.setMerchantId(request.getMerchantId());
+        calculationRequest.setCampaignId(campaign.getId());
+        CashbackDecision decision = calculate(campaign, calculationRequest);
+        if (!decision.isEligible()) return decision;
+
+        BigDecimal finalCashback = decision.getCalculatedCashback();
+        BigDecimal budgetRemaining = remainingBudget(campaign);
+        if (campaign.getTotalBudget() != null) {
+            decision.setCampaignBudgetRemaining(budgetRemaining.max(BigDecimal.ZERO));
+            if (budgetRemaining.signum() <= 0) {
+                return transactionRejected(CashbackDecisionCode.REJECTED_BUDGET_EXCEEDED,
+                        "Campaign budget is exhausted", request, campaign);
+            }
+            if (finalCashback.compareTo(budgetRemaining) > 0) {
+                finalCashback = budgetRemaining;
+                decision.setCode(CashbackDecisionCode.APPROVED_WITH_LIMIT);
+            }
+        }
+
+        BigDecimal clientCommitted = committedForCard(campaign, request.getCardHash());
+        BigDecimal dailyRemaining = remainingLimit(campaign.getDailyLimitPerClient(),
+                committedForCardOnDate(campaign, request.getCardHash(), request.getTransactionDateTime(), true));
+        BigDecimal monthlyRemaining = remainingLimit(campaign.getMonthlyLimitPerClient(),
+                committedForCardOnDate(campaign, request.getCardHash(), request.getTransactionDateTime(), false));
+        if (dailyRemaining != null && finalCashback.compareTo(dailyRemaining) > 0) {
+            finalCashback = dailyRemaining.max(BigDecimal.ZERO);
+            decision.setCode(CashbackDecisionCode.APPROVED_WITH_LIMIT);
+        }
+        if (monthlyRemaining != null && finalCashback.compareTo(monthlyRemaining) > 0) {
+            finalCashback = monthlyRemaining.max(BigDecimal.ZERO);
+            decision.setCode(CashbackDecisionCode.APPROVED_WITH_LIMIT);
+        }
+        if (campaign.getMaxCashbackPerClient() != null) {
+            BigDecimal clientRemaining = campaign.getMaxCashbackPerClient().subtract(clientCommitted);
+            if (clientRemaining.signum() <= 0) {
+                return transactionRejected(CashbackDecisionCode.REJECTED_CLIENT_CAP_REACHED,
+                        "Client cashback cap is exhausted", request, campaign);
+            }
+            if (finalCashback.compareTo(clientRemaining) > 0) {
+                finalCashback = clientRemaining;
+                decision.setCode(CashbackDecisionCode.APPROVED_WITH_LIMIT);
+            }
+        }
+        decision.setFinalCashback(finalCashback.max(BigDecimal.ZERO));
+        decision.setDailyRemaining(dailyRemaining);
+        decision.setMonthlyRemaining(monthlyRemaining);
+        return decision;
+    }
+
+    private BigDecimal remainingBudget(Campaign campaign) {
+        if (campaign.getTotalBudget() == null || paymentRepository == null) return BigDecimal.ZERO;
+        return campaign.getTotalBudget().subtract(paymentRepository.findByCampaignId(campaign.getId()).stream()
+                .filter(this::isCommitted)
+                .map(p -> p.getAmount() == null ? BigDecimal.ZERO : p.getAmount())
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
+    }
+
+    private BigDecimal committedForCard(Campaign campaign, String cardHash) {
+        if (paymentRepository == null || cardHash == null) return BigDecimal.ZERO;
+        return paymentRepository.findByCampaignIdAndCardHash(campaign.getId(), cardHash).stream()
+                .filter(this::isCommitted)
+                .map(p -> p.getAmount() == null ? BigDecimal.ZERO : p.getAmount())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal committedForCardOnDate(Campaign campaign, String cardHash,
+                                               LocalDateTime transactionDateTime, boolean day) {
+        if (paymentRepository == null || cardHash == null) return BigDecimal.ZERO;
+        LocalDate date = (transactionDateTime == null ? LocalDate.now() : transactionDateTime.toLocalDate());
+        return paymentRepository.findByCampaignIdAndCardHash(campaign.getId(), cardHash).stream()
+                .filter(this::isCommitted)
+                .filter(p -> p.getTransactionDateTime() != null)
+                .filter(p -> day ? p.getTransactionDateTime().toLocalDate().equals(date)
+                        : p.getTransactionDateTime().getYear() == date.getYear()
+                        && p.getTransactionDateTime().getMonthValue() == date.getMonthValue())
+                .map(p -> p.getAmount() == null ? BigDecimal.ZERO : p.getAmount())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal remainingLimit(BigDecimal limit, BigDecimal used) {
+        return limit == null ? null : limit.subtract(used).max(BigDecimal.ZERO);
+    }
+
+    private boolean isCommitted(com.afriland.ticket2cash.cashback.CashbackPayment payment) {
+        return payment.getStatus() != com.afriland.ticket2cash.cashback.CashbackPaymentStatus.FAILED;
+    }
+
+    private CashbackDecision transactionRejected(CashbackDecisionCode code, String message,
+                                                 CashbackTransactionRequest request,
+                                                 Campaign campaign) {
+        CashbackDecision decision = CashbackDecision.rejected(code, message,
+                request == null ? null : request.getAmount(), null,
+                campaign == null ? null : campaign.getId(),
+                request == null ? null : request.getMerchantId(), null);
+        return decision;
+    }
+
+    private boolean matchesMcc(String configured, String actual) {
+        if (actual == null || actual.isBlank()) return false;
+        return configured.equalsIgnoreCase(actual.trim())
+                || configured.replace("MCC_", "").equalsIgnoreCase(actual.trim());
+    }
+
+    private boolean matchesCardBin(String start, String end, String actual) {
+        if ((start == null || start.isBlank()) && (end == null || end.isBlank())) return true;
+        if (actual == null || actual.isBlank()) return false;
+        try {
+            long value = Long.parseLong(actual.trim());
+            long min = start == null || start.isBlank() ? Long.MIN_VALUE : Long.parseLong(start.trim());
+            long max = end == null || end.isBlank() ? Long.MAX_VALUE : Long.parseLong(end.trim());
+            return value >= min && value <= max;
+        } catch (NumberFormatException ex) {
+            return false;
+        }
+    }
+
+    private boolean equalsIgnoreCase(String left, String right) {
+        return right != null && left.equalsIgnoreCase(right.trim());
     }
 
     private CashbackDecision rejected(CashbackDecisionCode code, String message,

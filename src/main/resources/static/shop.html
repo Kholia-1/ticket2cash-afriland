@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>PlaYce Mall — Démo Ticket2Cash</title>
+<style>
+:root{--bg:#f6f7f9;--surface:#fff;--surface-2:#f2f4f7;--border:#e5e7eb;--text:#111827;--text-2:#4b5563;--muted:#9ca3af;
+--brand:#c8102e;--brand-2:#a00d25;--ok:#059669;--ok-bg:#ecfdf5;--warn:#b45309;--warn-bg:#fffbeb;--danger:#dc2626;--danger-bg:#fef2f2;
+--mono:ui-monospace,SFMono-Regular,Menlo,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:var(--sans);color:var(--text)}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:13px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:5;flex-wrap:wrap}
+.logo{font-weight:800;font-size:19px}.logo span{color:var(--brand)}
+.tag{font-size:11px;font-weight:700;background:var(--surface-2);color:var(--text-2);padding:4px 8px;border-radius:99px}
+.spacer{flex:1}
+.btn{border:1px solid var(--border);background:var(--surface);padding:9px 14px;border-radius:9px;font-weight:600;font-size:13px;cursor:pointer;color:var(--text)}
+.btn:hover{background:var(--surface-2)}
+.btn-primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn-primary:hover{background:var(--brand-2)}
+.btn-dark{background:var(--text);border-color:var(--text);color:#fff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.wrap{max-width:1120px;margin:20px auto;padding:0 18px;display:grid;grid-template-columns:1fr 350px;gap:18px}
+@media(max-width:900px){.wrap{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:16px}
+.card-h{padding:13px 16px;border-bottom:1px solid var(--border);font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px}
+.card-b{padding:16px}
+.shops{display:flex;gap:8px;flex-wrap:wrap}
+.shop{border:1px solid var(--border);background:var(--surface);padding:8px 13px;border-radius:99px;font-size:13px;font-weight:600;cursor:pointer}
+.shop.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px}
+.prod{border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center}
+.prod .e{font-size:28px}.prod .n{font-size:13px;font-weight:600;margin:6px 0 2px}
+.prod .p{font-size:13px;color:var(--text-2);margin-bottom:8px}
+.prod button{width:100%;padding:7px;border-radius:8px;border:1px solid var(--brand);background:var(--brand);color:#fff;font-weight:600;font-size:12px;cursor:pointer}
+.line{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed var(--border);font-size:13px}
+.tot{display:flex;justify-content:space-between;font-weight:800;font-size:16px;margin-top:10px;padding-top:10px;border-top:2px solid var(--text)}
+label{display:block;font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:5px}
+input,select{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text)}
+input{font-family:var(--mono)}
+.field{margin-bottom:11px}
+.hint{font-size:11px;color:var(--muted);margin-top:4px}
+#ticketCanvas{width:100%;border:1px dashed #cbb;border-radius:10px;background:#fffef8}
+.verdict{padding:12px 14px;border-radius:10px;font-weight:700;font-size:14px;margin-bottom:10px}
+.v-ok{background:var(--ok-bg);color:var(--ok);border:1px solid #a7f3d0}
+.v-warn{background:var(--warn-bg);color:var(--warn);border:1px solid #fde68a}
+.v-bad{background:var(--danger-bg);color:var(--danger);border:1px solid #fecaca}
+.chk{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--border);font-family:var(--mono)}
+.yes{color:var(--ok);font-weight:700}.no{color:var(--danger);font-weight:700}
+.ocr{background:var(--surface-2);border-radius:8px;padding:10px;font-family:var(--mono);font-size:11.5px;color:var(--text-2);margin-bottom:10px;white-space:pre-wrap}
+.toast{position:fixed;bottom:18px;right:18px;background:var(--text);color:#fff;padding:11px 15px;border-radius:9px;font-size:13px;opacity:0;transform:translateY(8px);transition:.2s;z-index:9;max-width:360px}
+.toast.show{opacity:1;transform:none}
+.steps{font-size:12.5px;color:var(--text-2);line-height:1.75}
+.steps b{color:var(--text)}
+.pill{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:99px;background:var(--surface-2);color:var(--text-2)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">PlaYce<span> Mall</span></div>
+  <span class="tag">Démo — plateforme de vente d'un centre commercial</span>
+  <div class="spacer"></div>
+  <button class="btn" onclick="toggleCfg()">⚙ Configuration</button>
+</header>
+
+<div class="wrap">
+  <div>
+    <div class="card" id="cfgCard" style="display:none">
+      <div class="card-h">Configuration (une seule fois)</div>
+      <div class="card-b">
+        <div class="field"><label>URL du backend Ticket2Cash</label><input id="cfgBase" placeholder="http://localhost:3000"></div>
+        <div class="field"><label>Clé API (page « API partenaires »)</label><input id="cfgKey" placeholder="t2c_..."></div>
+        <div class="field"><label>Boutiques du centre (noms EXACTS des partenaires/sous-partenaires, séparés par une virgule)</label>
+          <input id="cfgShops" placeholder="Carrefour PlaYce, Orange Cameroun, KFC PlaYce" style="font-family:var(--sans)"></div>
+        <button class="btn btn-primary" onclick="saveCfg()">Enregistrer</button>
+        <div class="hint">⚠ Démo : en production la clé API vit sur le serveur du supermarché, jamais dans le navigateur.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">🏬 Boutiques du centre commercial</div>
+      <div class="card-b"><div class="shops" id="shops"></div>
+        <div class="hint" style="margin-top:10px">Chaque boutique est un partenaire (ou sous-partenaire) de Ticket2Cash. Le ticket portera son nom.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">Rayon — <span id="shopName">…</span></div>
+      <div class="card-b"><div class="grid" id="prods"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">Ce que la démo prouve</div>
+      <div class="card-b steps">
+        <b>Carte</b> → la caisse appelle <code>POST /api/v1/transactions</code> (<span class="pill">API</span> avec clé) → la transaction existe chez vous.<br>
+        <b>Espèces</b> → aucune transaction envoyée → sert à montrer le cas « non rapproché ».<br>
+        <b>Scanner</b> → le ticket est transformé en image, envoyé à <code>POST /api/mobile/ocr</code> (<span class="pill">OCR</span>), puis à <code>POST /api/mobile/verify-ticket</code> :<br>
+        &nbsp;&nbsp;• <b>Phase 2</b> doublon + règles + score de fraude<br>
+        &nbsp;&nbsp;• <b>Phase 3</b> rapprochement avec la vraie transaction<br>
+        Rescanner le même ticket → <b>REJETÉ</b> (doublon).
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <div class="card-h">🛒 Panier</div>
+      <div class="card-b">
+        <div id="cart"><div style="color:var(--muted);font-size:13px">Panier vide</div></div>
+        <div class="tot"><span>TOTAL</span><span id="total">0 FCFA</span></div>
+        <div class="field" style="margin-top:14px"><label>Numéro de carte</label><input id="card" value="4111 1111 1111 1234"></div>
+        <button class="btn btn-primary" style="width:100%;margin-bottom:8px" id="payCard" onclick="pay(true)">💳 Payer par carte</button>
+        <button class="btn" style="width:100%" id="payCash" onclick="pay(false)">💵 Payer en espèces</button>
+      </div>
+    </div>
+
+    <div class="card" id="recCard" style="display:none">
+      <div class="card-h">🧾 Ticket de caisse</div>
+      <div class="card-b">
+        <canvas id="ticketCanvas" width="380" height="460"></canvas>
+        <button class="btn btn-dark" style="width:100%;margin-top:12px" onclick="scanTicket()">📷 Scanner ce ticket (comme le client)</button>
+        <div id="out" style="margin-top:14px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CATALOG={
+ "default":[{n:"Riz 5kg",p:6800,e:"🍚"},{n:"Huile 1L",p:3200,e:"🛢️"},{n:"Lait Nido",p:2500,e:"🥛"},{n:"Pain",p:800,e:"🍞"},{n:"Eau 1.5L",p:500,e:"💧"},{n:"Sucre 1kg",p:1500,e:"🧂"}],
+ "orange":[{n:"Forfait 10Go",p:12000,e:"📶"},{n:"Recharge 5000",p:5000,e:"💳"},{n:"Téléphone",p:45000,e:"📱"},{n:"Écouteurs",p:8000,e:"🎧"}],
+ "kfc":[{n:"Menu Poulet",p:4500,e:"🍗"},{n:"Burger",p:3000,e:"🍔"},{n:"Frites",p:1200,e:"🍟"},{n:"Soda",p:800,e:"🥤"}]
+};
+let SHOPS=[],SHOP="",CART={},LAST=null;
+
+const cfg=()=>({base:(localStorage.getItem("mall_base")||"http://localhost:3000").replace(/\/+$/,""),
+  key:localStorage.getItem("mall_key")||"",
+  shops:(localStorage.getItem("mall_shops")||"Carrefour PlaYce, Orange Cameroun, KFC PlaYce").split(",").map(s=>s.trim()).filter(Boolean)});
+function toggleCfg(){const c=document.getElementById("cfgCard");const s=c.style.display==="none";c.style.display=s?"block":"none";
+ if(s){const g=cfg();cfgBase.value=g.base;cfgKey.value=g.key;cfgShops.value=g.shops.join(", ");}}
+function saveCfg(){localStorage.setItem("mall_base",cfgBase.value.trim().replace(/\/+$/,""));
+ localStorage.setItem("mall_key",cfgKey.value.trim());localStorage.setItem("mall_shops",cfgShops.value.trim());
+ toast("Configuration enregistrée");toggleCfg();init();}
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),3200);}
+const money=n=>new Intl.NumberFormat("fr-FR").format(n)+" FCFA";
+function catalogFor(name){const l=name.toLowerCase();
+ if(l.includes("orange"))return CATALOG.orange; if(l.includes("kfc"))return CATALOG.kfc; return CATALOG.default;}
+
+function init(){SHOPS=cfg().shops;SHOP=SHOPS[0]||"";renderShops();renderProds();CART={};renderCart();
+ document.getElementById("recCard").style.display="none";}
+function renderShops(){document.getElementById("shops").innerHTML=SHOPS.map(s=>
+ `<div class="shop ${s===SHOP?"on":""}" onclick="pickShop('${s.replace(/'/g,"\\'")}')">${s}</div>`).join("");
+ document.getElementById("shopName").textContent=SHOP||"—";}
+function pickShop(s){SHOP=s;CART={};renderShops();renderProds();renderCart();}
+function renderProds(){const list=catalogFor(SHOP||"");
+ document.getElementById("prods").innerHTML=list.map((p,i)=>
+ `<div class="prod"><div class="e">${p.e}</div><div class="n">${p.n}</div><div class="p">${money(p.p)}</div>
+  <button onclick="add(${i})">Ajouter</button></div>`).join("");}
+function add(i){const p=catalogFor(SHOP)[i];CART[p.n]=CART[p.n]||{...p,q:0};CART[p.n].q++;renderCart();}
+function total(){return Object.values(CART).reduce((s,x)=>s+x.p*x.q,0);}
+function renderCart(){const items=Object.values(CART);
+ document.getElementById("cart").innerHTML=items.length?items.map(x=>
+  `<div class="line"><span>${x.n} × ${x.q}</span><span>${money(x.p*x.q)}</span></div>`).join("")
+  :`<div style="color:var(--muted);font-size:13px">Panier vide</div>`;
+ document.getElementById("total").textContent=money(total());}
+
+async function pay(byCard){
+ const g=cfg();
+ if(!SHOP){toast("Choisis une boutique");return;}
+ if(total()<=0){toast("Panier vide");return;}
+ if(byCard&&!g.key){toast("Configure d'abord la clé API (⚙)");toggleCfg();return;}
+ const b1=document.getElementById("payCard"),b2=document.getElementById("payCash");
+ b1.disabled=b2.disabled=true;
+ const now=new Date(),iso=now.toISOString().slice(0,19);
+ const ref="TX-"+Date.now(),num="T-"+Math.floor(100000+Math.random()*899999);
+ const card=document.getElementById("card").value.trim().replace(/\s/g,"");
+ const amount=total();
+ let sent=false;
+ if(byCard){
+  try{
+   const r=await fetch(g.base+"/api/v1/transactions",{method:"POST",
+     headers:{"Content-Type":"application/json","X-API-Key":g.key},
+     body:JSON.stringify({transactionRef:ref,cardNumber:card,maskedCard:"4XXX XXXX XXXX "+card.slice(-4),
+       merchantName:SHOP,amount:amount,currency:"FCFA",transactionDate:iso})});
+   const d=await r.json();
+   if(!r.ok||d.error){toast("API refusée: "+(d.error||r.status));b1.disabled=b2.disabled=false;return;}
+   sent=(d.status==="RECEIVED");
+   toast("API → transaction "+d.status);
+  }catch(e){toast("Backend injoignable: "+e.message);b1.disabled=b2.disabled=false;return;}
+ }else{toast("Paiement espèces : aucune transaction envoyée");}
+ LAST={shop:SHOP,num:num,amount:amount,iso:iso,card:byCard?card:"",ref:ref,sent:sent,items:Object.values(CART)};
+ drawTicket(now);
+ document.getElementById("recCard").style.display="block";
+ document.getElementById("out").innerHTML="";
+ CART={};renderCart();
+ b1.disabled=b2.disabled=false;
+}
+
+/* Dessine un VRAI ticket sur canvas -> devient une image scannable */
+function drawTicket(now){
+ const c=document.getElementById("ticketCanvas"),x=c.getContext("2d");
+ x.fillStyle="#fffef8";x.fillRect(0,0,c.width,c.height);
+ x.fillStyle="#111";x.textAlign="center";
+ x.font="bold 20px monospace";x.fillText(LAST.shop.toUpperCase(),c.width/2,38);
+ x.font="13px monospace";x.fillText("Yaounde - Warda",c.width/2,58);
+ x.textAlign="left";x.font="13px monospace";
+ let y=88;
+ const sep=()=>{x.fillText("--------------------------------",18,y);y+=20;};
+ sep();
+ x.fillText("Ticket N "+LAST.num,18,y);y+=20;
+ x.fillText("Date: "+now.toLocaleDateString("fr-FR")+" "+now.toLocaleTimeString("fr-FR").slice(0,5),18,y);y+=20;
+ sep();
+ LAST.items.forEach(it=>{
+   x.fillText((it.n+" x"+it.q).slice(0,20),18,y);
+   x.textAlign="right";x.fillText(String(it.p*it.q),c.width-18,y);x.textAlign="left";y+=20;});
+ sep();
+ x.font="bold 16px monospace";
+ x.fillText("TOTAL TTC",18,y);x.textAlign="right";x.fillText(String(LAST.amount),c.width-18,y);x.textAlign="left";y+=26;
+ x.font="13px monospace";
+ x.fillText(LAST.card?("CARTE ****"+LAST.card.slice(-4)):"ESPECES",18,y);y+=20;
+ x.fillText("Ref: "+LAST.ref,18,y);y+=20;
+ sep();
+ x.textAlign="center";x.fillText("Merci de votre visite !",c.width/2,y+6);
+}
+
+async function scanTicket(){
+ if(!LAST)return;
+ const g=cfg(),out=document.getElementById("out");
+ out.innerHTML='<div style="font-size:13px;color:var(--muted)">📷 Scan en cours (OCR)…</div>';
+ const b64=document.getElementById("ticketCanvas").toDataURL("image/png").split(",")[1];
+ let f={};
+ try{
+  const r=await fetch(g.base+"/api/mobile/ocr",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({image:b64})});
+  f=await r.json();
+ }catch(e){out.innerHTML=`<div class="verdict v-bad">Serveur OCR injoignable : ${e.message}</div>`;return;}
+
+ const usedOcr=f&&f.ocr_success;
+ const merchantName=(usedOcr&&f.merchant_name)?f.merchant_name:LAST.shop;
+ const totalAmount=(usedOcr&&Number(f.total_amount)>0)?Number(f.total_amount):LAST.amount;
+ const ticketNumber=(usedOcr&&f.ticket_number)?f.ticket_number:LAST.num;
+
+ const ocrWarn = usedOcr && (f.needs_review || f.retake);
+ const ocrBox=`<div class="ocr">OCR ${usedOcr?"✓":"✕ (valeurs du ticket utilisées)"} — commerçant: ${merchantName} · total: ${totalAmount} · n°: ${ticketNumber}`
+   + (usedOcr&&f.confidence!=null?` · confiance: ${f.confidence}`:"")
+   + (usedOcr&&f.preprocessed?" · image améliorée":"")
+   + (ocrWarn?`\n⚠ ${f.message||"Lecture peu fiable : contrôle humain requis."}`:"")
+   + `</div>`;
+ out.innerHTML=ocrBox+'<div style="font-size:13px;color:var(--muted)">Vérification (Phases 2 & 3)…</div>';
+
+ try{
+  const body={merchantName:merchantName,ticketNumber:ticketNumber,totalAmount:totalAmount,
+    ticketDate:LAST.iso,submit:true};
+  if(LAST.card)body.cardNumber=LAST.card;
+  // Signaux de qualite OCR -> le backend n'approuvera pas automatiquement
+  if(usedOcr){
+    if(f.needs_review) body.ocrNeedsReview=true;
+    if(f.confidence!=null) body.ocrConfidence=f.confidence;
+  }
+  const r=await fetch(g.base+"/api/mobile/verify-ticket",{method:"POST",
+    headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  const d=await r.json();
+  const cls=d.verdict==="APPROVED"?"v-ok":d.verdict==="PENDING_REVIEW"?"v-warn":"v-bad";
+  const lab=d.verdict==="APPROVED"?"✓ APPROUVÉ":d.verdict==="PENDING_REVIEW"?"⏳ EN RÉVISION":"✕ REJETÉ";
+  const chk=Object.entries(d.checks||{}).map(([k,v])=>
+    `<div class="chk"><span>${k}</span><span class="${v?"yes":"no"}">${v?"OK":"NON"}</span></div>`).join("");
+  out.innerHTML=ocrBox+
+   `<div class="verdict ${cls}">${lab} — score fraude ${d.fraudScore??"—"}</div>
+    ${d.cashbackAmount?`<div style="font-size:14px;margin-bottom:8px">Cashback : <b>${money(d.cashbackAmount)}</b></div>`:""}
+    ${d.matchedTransactionRef?`<div style="font-size:12px;color:var(--text-2);margin-bottom:8px">Rapprochée avec : <span style="font-family:var(--mono)">${d.matchedTransactionRef}</span></div>`:""}
+    ${chk}
+    ${(d.reasons&&d.reasons.length)?`<div style="margin-top:10px;font-size:12px;color:var(--text-2)">${d.reasons.map(r=>"• "+r).join("<br>")}</div>`:""}`;
+ }catch(e){out.innerHTML=ocrBox+`<div class="verdict v-bad">Erreur : ${e.message}</div>`;}
+}
+init();
+</script>
+</body></html>

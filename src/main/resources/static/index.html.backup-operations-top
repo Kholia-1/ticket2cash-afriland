@@ -1,0 +1,3165 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket2Cash</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            color: #1f2937;
+        }
+
+        .sidebar {
+            width: 270px;
+            background: #0f172a;
+            color: white;
+            padding: 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+        }
+
+        .sidebar h1 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+        }
+
+        .sidebar p {
+            color: #cbd5e1;
+            font-size: 13px;
+            margin-bottom: 25px;
+        }
+
+        .menu button {
+            width: 100%;
+            display: block;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 8px;
+            background: #1e293b;
+            color: white;
+            text-align: left;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .menu button:hover {
+            background: #334155;
+        }
+
+        .content {
+            margin-left: 270px;
+            padding: 25px;
+        }
+
+        .topbar, .section, .card {
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+
+        .topbar {
+            padding: 18px;
+            margin-bottom: 20px;
+        }
+
+        .topbar h2 {
+            margin: 0;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            padding: 18px;
+        }
+
+        .card .label {
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .card .value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        .section {
+            display: none;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: bold;
+            color: #334155;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 4px;
+            margin-bottom: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+        }
+
+        .btn {
+            padding: 11px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-right: 6px;
+            margin-bottom: 8px;
+        }
+
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-success { background: #16a34a; color: white; }
+        .btn-dark { background: #111827; color: white; }
+
+        .response-box {
+            background: #0f172a;
+            color: #e5e7eb;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            white-space: pre-wrap;
+            font-size: 13px;
+            max-height: 300px;
+            overflow: auto;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            min-width: 900px;
+        }
+
+        th {
+            background: #f1f5f9;
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .status {
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .status-success { background: #dcfce7; color: #166534; }
+        .status-warning { background: #fef3c7; color: #92400e; }
+        .status-danger { background: #fee2e2; color: #991b1b; }
+        .status-info { background: #dbeafe; color: #1d4ed8; }
+
+        @media (max-width: 900px) {
+            .sidebar {
+                position: relative;
+                width: 100%;
+            }
+
+            .content {
+                margin-left: 0;
+            }
+
+            .cards, .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+            .role-hidden {
+            display: none !important;
+        }
+
+        .role-notice {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+</style>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<style id="ticket2cash-real-capture-menu">
+/* ==========================================================
+   Ticket2Cash - Layout proche des captures envoyees
+   Menu blanc, header noir, icones noires, actif gris
+   ========================================================== */
+
+:root {
+    --t2c-sidebar-width: 220px;
+    --t2c-topbar-height: 64px;
+    --t2c-bg: #F7F7F7;
+    --t2c-white: #FFFFFF;
+    --t2c-black: #111111;
+    --t2c-text: #222222;
+    --t2c-muted: #6B7280;
+    --t2c-border: #E5E7EB;
+    --t2c-active: #E5E7EB;
+    --afb-red: #D22630;
+    --afb-gold: #FFCC00;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0 !important;
+    background: var(--t2c-bg) !important;
+    color: var(--t2c-text);
+    font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+}
+
+/* CONTENU PRINCIPAL */
+main {
+    margin-left: var(--t2c-sidebar-width) !important;
+    padding: 86px 26px 30px 26px !important;
+    background: var(--t2c-bg) !important;
+    min-height: 100vh !important;
+}
+
+/* SIDEBAR EXACTEMENT PLUS PROCHE DES CAPTURES */
+aside,
+.sidebar,
+nav {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: var(--t2c-sidebar-width) !important;
+    background: #FFFFFF !important;
+    color: #222222 !important;
+    border-right: 1px solid #DADDE2 !important;
+    box-shadow: none !important;
+    overflow-y: auto !important;
+    z-index: 1000 !important;
+    padding: 0 !important;
+}
+
+/* En-tete noir logo */
+.t2c-capture-brand {
+    height: 64px;
+    background: #000000;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    border-bottom: 1px solid #222;
+}
+
+.t2c-capture-logo {
+    max-height: 42px;
+    max-width: 150px;
+    object-fit: contain;
+}
+
+.t2c-capture-logo-fallback {
+    color: white;
+    font-size: 20px;
+    font-weight: 900;
+    display: none;
+}
+
+/* Label espace partenaire */
+.t2c-menu-group-label {
+    padding: 13px 16px 8px 16px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #6B7280;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: #FFFFFF;
+}
+
+/* Masquer les anciens titres du menu */
+aside > h1,
+aside > h2,
+aside > h3,
+.sidebar > h1,
+.sidebar > h2,
+.sidebar > h3,
+nav > h1,
+nav > h2,
+nav > h3 {
+    display: none !important;
+}
+
+/* Items du menu */
+aside button,
+.sidebar button,
+nav button {
+    width: 100% !important;
+    height: 38px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 13px !important;
+    margin: 0 !important;
+    padding: 0 14px 0 22px !important;
+    border: none !important;
+    border-left: 4px solid transparent !important;
+    border-radius: 0 !important;
+    background: #FFFFFF !important;
+    color: #333333 !important;
+    text-align: left !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    box-shadow: none !important;
+}
+
+/* Hover sobre */
+aside button:hover,
+.sidebar button:hover,
+nav button:hover {
+    background: #F0F1F3 !important;
+    color: #111111 !important;
+    border-left-color: #111111 !important;
+}
+
+/* Actif comme les captures : gris + trait noir */
+aside button.t2c-active-menu,
+.sidebar button.t2c-active-menu,
+nav button.t2c-active-menu {
+    background: #E3E5E8 !important;
+    color: #111111 !important;
+    border-left-color: #111111 !important;
+    font-weight: 800 !important;
+}
+
+/* Icones noires simples */
+.t2c-menu-icon {
+    width: 18px !important;
+    min-width: 18px !important;
+    height: 18px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #111111 !important;
+    font-size: 16px !important;
+    font-weight: 900 !important;
+    background: transparent !important;
+    border: none !important;
+}
+
+.t2c-menu-label {
+    flex: 1;
+    color: inherit;
+}
+
+/* TOPBAR comme captures */
+.t2c-capture-topbar {
+    position: fixed;
+    top: 0;
+    left: var(--t2c-sidebar-width);
+    right: 0;
+    height: var(--t2c-topbar-height);
+    background: #FFFFFF;
+    border-bottom: 1px solid #E5E7EB;
+    z-index: 900;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 0 24px;
+}
+
+.t2c-capture-user-area {
+    justify-self: start;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.t2c-capture-user {
+    color: #6B7280;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 13px;
+}
+
+.t2c-capture-logout {
+    background: #FFFFFF !important;
+    color: #111111 !important;
+    border: 2px solid #111111 !important;
+    padding: 6px 12px !important;
+    height: 32px !important;
+    border-radius: 0 !important;
+    font-weight: 800 !important;
+    cursor: pointer !important;
+}
+
+.t2c-capture-logout:hover {
+    background: #111111 !important;
+    color: #FFFFFF !important;
+}
+
+.t2c-capture-title {
+    justify-self: center;
+    text-align: center;
+    font-size: 16px;
+    color: #111111;
+    font-weight: 900;
+}
+
+.t2c-capture-right {
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.t2c-afriland-mini {
+    max-height: 30px;
+    max-width: 120px;
+    object-fit: contain;
+}
+
+/* Anciennes barres utilisateur masquees */
+#authBar,
+.auth-bar,
+.user-bar {
+    display: none !important;
+}
+
+/* SECTIONS CONTENU STYLE BACK OFFICE */
+.section {
+    background: #FFFFFF !important;
+    border: 1px solid #E5E7EB !important;
+    border-radius: 0 !important;
+    padding: 22px !important;
+    margin-bottom: 22px !important;
+    box-shadow: none !important;
+}
+
+h1, h2, h3 {
+    color: #111111 !important;
+    font-weight: 900 !important;
+}
+
+h3 {
+    margin-top: 0 !important;
+    margin-bottom: 18px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 1px solid #E5E7EB !important;
+    font-size: 24px !important;
+}
+
+/* Cartes plus proches back-office */
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+    gap: 14px;
+    margin: 18px 0;
+}
+
+.card {
+    background: #FFFFFF !important;
+    border: 1px solid #E5E7EB !important;
+    border-radius: 0 !important;
+    padding: 16px !important;
+    box-shadow: none !important;
+}
+
+.card:hover {
+    background: #FAFAFA !important;
+}
+
+.card h4 {
+    color: #111111 !important;
+    font-size: 13px !important;
+    text-transform: none !important;
+    margin: 0 0 8px 0 !important;
+    font-weight: 800 !important;
+}
+
+.card p[id],
+.card .value {
+    font-size: 25px !important;
+    font-weight: 900 !important;
+    color: #111111 !important;
+}
+
+/* Boutons dans contenu : Afriland */
+.btn-primary,
+.btn-success,
+button:not(.t2c-capture-logout):not(.t2c-menu-button):not(.btn-dark):not(.btn-danger) {
+    background: var(--afb-red) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 0 !important;
+    font-weight: 800 !important;
+}
+
+.btn-dark {
+    background: var(--afb-gold) !important;
+    color: #111111 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    font-weight: 800 !important;
+}
+
+.btn-danger {
+    background: #9F1C24 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 0 !important;
+}
+
+/* Formulaires */
+input,
+select,
+textarea {
+    border-radius: 0 !important;
+    border: 1px solid #D1D5DB !important;
+    background: #FFFFFF !important;
+    color: #111111 !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: 2px solid rgba(210, 38, 48, 0.22) !important;
+    border-color: var(--afb-red) !important;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border: 1px solid #E5E7EB;
+    margin: 12px 0 24px 0;
+    box-shadow: none !important;
+}
+
+th {
+    background: #111111 !important;
+    color: white !important;
+    text-align: left;
+    font-size: 12px;
+    padding: 10px;
+    border-bottom: 3px solid var(--afb-gold);
+}
+
+td {
+    border-bottom: 1px solid #E5E7EB;
+    padding: 9px;
+    font-size: 13px;
+    vertical-align: top;
+}
+
+tr:nth-child(even) td {
+    background: #FAFAFA;
+}
+
+tr:hover td {
+    background: #F0F1F3;
+}
+
+/* Notices */
+.role-notice {
+    background: #FFF8D6 !important;
+    border: 1px solid #E8C64A !important;
+    border-left: 5px solid var(--afb-gold) !important;
+    border-radius: 0 !important;
+    padding: 13px 15px !important;
+    color: #111111 !important;
+    font-weight: 650;
+}
+
+.response-box {
+    background: #111111 !important;
+    color: #F9FAFB !important;
+    border-left: 5px solid var(--afb-gold) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    white-space: pre-wrap;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 13px;
+}
+
+.role-hidden {
+    display: none !important;
+}
+
+@media (max-width: 780px) {
+    aside,
+    .sidebar,
+    nav {
+        position: relative !important;
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    main {
+        margin-left: 0 !important;
+        padding: 84px 12px 20px 12px !important;
+    }
+
+    .t2c-capture-topbar {
+        left: 0;
+        grid-template-columns: 1fr;
+    }
+
+    .t2c-capture-user-area,
+    .t2c-capture-right {
+        display: none;
+    }
+}
+</style>
+
+
+<style id="ticket2cash-afriland-logo-big-fix">
+/* ==========================================================
+   Correctif logo Afriland topbar
+   Objectif : logo visible, plus grand, propre
+   ========================================================== */
+
+.t2c-capture-topbar {
+    grid-template-columns: 1fr auto 260px !important;
+    height: 70px !important;
+}
+
+.t2c-capture-right {
+    justify-self: end !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    min-width: 240px !important;
+}
+
+.t2c-afriland-mini {
+    max-height: 46px !important;
+    max-width: 230px !important;
+    width: auto !important;
+    object-fit: contain !important;
+    display: block !important;
+}
+
+/* Si le logo est dans un fichier avec beaucoup d'espace blanc,
+   on force une zone visuelle plus grande */
+.t2c-capture-right::before {
+    content: "";
+    display: none;
+}
+
+/* Ajustement du contenu principal car la topbar est un peu plus haute */
+main {
+    padding-top: 94px !important;
+}
+</style>
+
+
+<style id="ticket2cash-encoding-menu-fix">
+/* Correctif anti caracteres bizarres : icones ASCII propres */
+.t2c-menu-icon {
+    font-family: "Segoe UI", Arial, Helvetica, sans-serif !important;
+    font-size: 9px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0 !important;
+    color: #111111 !important;
+    width: 22px !important;
+    min-width: 22px !important;
+    height: 22px !important;
+    border: 1px solid #111111 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #FFFFFF !important;
+}
+
+aside button.t2c-active-menu .t2c-menu-icon,
+.sidebar button.t2c-active-menu .t2c-menu-icon,
+nav button.t2c-active-menu .t2c-menu-icon,
+aside button:hover .t2c-menu-icon,
+.sidebar button:hover .t2c-menu-icon,
+nav button:hover .t2c-menu-icon {
+    background: #111111 !important;
+    color: #FFFFFF !important;
+}
+
+.t2c-capture-logout {
+    font-family: "Segoe UI", Arial, Helvetica, sans-serif !important;
+}
+
+.t2c-capture-user {
+    font-family: "Segoe UI", Arial, Helvetica, sans-serif !important;
+}
+</style>
+
+
+<style id="ticket2cash-clean-page-icons-fix">
+/* ==========================================================
+   Correction presentation globale
+   - Masquer le bandeau role qui apparait sur toutes les pages
+   - Remplacer les codes TB/CD/DM par des icones SVG propres
+   ========================================================== */
+
+/* Le role est deja affiche dans la topbar, donc on masque ce bandeau */
+.role-notice {
+    display: none !important;
+}
+
+/* Icônes menu en SVG propre */
+.t2c-menu-icon {
+    width: 20px !important;
+    min-width: 20px !important;
+    height: 20px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: transparent !important;
+    border: none !important;
+    color: #111111 !important;
+}
+
+.t2c-menu-icon svg {
+    width: 17px !important;
+    height: 17px !important;
+    stroke: currentColor !important;
+    fill: none !important;
+    stroke-width: 2 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+}
+
+aside button.t2c-active-menu .t2c-menu-icon,
+.sidebar button.t2c-active-menu .t2c-menu-icon,
+nav button.t2c-active-menu .t2c-menu-icon {
+    color: #111111 !important;
+}
+
+aside button:hover .t2c-menu-icon,
+.sidebar button:hover .t2c-menu-icon,
+nav button:hover .t2c-menu-icon {
+    color: #111111 !important;
+}
+
+/* Espacement menu plus propre */
+aside button,
+.sidebar button,
+nav button {
+    gap: 12px !important;
+    padding-left: 20px !important;
+}
+
+/* Les cartes remontent maintenant que le bandeau role est masque */
+.cards {
+    margin-top: 10px !important;
+}
+
+/* Section d'accueil plus sobre */
+.section {
+    border-radius: 6px !important;
+}
+
+.card {
+    border-radius: 0 !important;
+}
+
+/* Topbar propre */
+.t2c-capture-topbar {
+    height: 66px !important;
+}
+
+main {
+    padding-top: 88px !important;
+}
+</style>
+
+</head>
+
+<body>
+
+<aside class="sidebar">
+    <h1>Ticket2Cash</h1>
+    <p>Cashback Supermarches - Prototype DEI</p>
+
+    <div class="menu">
+        <button onclick="showSection('dashboard')">Tableau de bord</button>
+        <button onclick="showSection('demoCenter')">Centre demo</button>
+        <button onclick="showSection('businessDashboard')">Dashboard metier</button>
+        <button onclick="showSection('demoFlow')">Parcours demo</button>
+        <button onclick="showSection('demoReport')">Rapport demo</button>
+        <button onclick="showSection('security')">Dashboard securite</button>
+        <button onclick="showSection('profile')">Mon profil</button>
+        <button onclick="showSection('ocr')">Simulation OCR</button>
+        <button onclick="showSection('merchants')">Commercants</button>
+        <button onclick="showSection('products')">Produits</button>
+        <button onclick="showSection('campaigns')">Campagnes</button>
+        <button onclick="showSection('tickets')">Tickets</button>
+        <button onclick="showSection('claims')">Claims</button>
+        <button onclick="showSection('payments')">Paiements cashback</button>
+        <button onclick="showSection('fraud')">Alertes fraude</button>
+        <button onclick="showSection('audit')">Logs transactions</button>
+        <button onclick="showSection('settings')">Parametres</button>
+        <button onclick="showSection('exports')">Exports CSV</button>
+        <button onclick="showSection('users')">Utilisateurs</button>
+    </div>
+</aside>
+
+<main class="content">
+
+    <div class="topbar">
+        <h2 id="page-title">Tableau de bord</h2>
+        <p>Interface web de supervision du prototype Ticket2Cash.</p>
+    </div>
+
+    <div class="cards" id="dashboard-cards"></div>
+
+    <section id="dashboard" class="section active">
+        <h3>Resume global</h3>
+        <button class="btn btn-primary" onclick="loadDashboard()">Actualiser dashboard</button>
+        <button class="btn btn-dark" onclick="refreshAll()">Actualiser tout</button>
+        <div id="dashboard-table"></div>
+    </section>
+
+    <section id="ocr" class="section">
+        <h3>Simulation OCR ticket</h3>
+
+        <div class="form-grid">
+            <div>
+                <label>Merchant ID</label>
+                <input id="ocrMerchantId" type="number" value="1">
+            </div>
+            <div>
+                <label>Campaign ID</label>
+                <input id="ocrCampaignId" type="number" value="1">
+            </div>
+            <div>
+                <label>User ID</label>
+                <input id="ocrUserId" type="text" value="demo_user_1">
+            </div>
+            <div>
+                <label>Numero ticket</label>
+                <input id="ocrTicketNumber" type="text" value="TICKET-400">
+            </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="simulateOcr()">Lancer OCR simule</button>
+        <div class="response-box" id="ocrResponse">Aucune simulation lancee.</div>
+    </section>
+
+    <section id="merchants" class="section">
+        <h3>Commercants partenaires</h3>
+
+        <div class="form-grid">
+            <div>
+                <label>Nom legal</label>
+                <input id="merchantName" type="text" value="Carrefour Market Yaounde">
+            </div>
+            <div>
+                <label>Nom commercial</label>
+                <input id="merchantBrandName" type="text" value="Carrefour Market">
+            </div>
+            <div>
+                <label>RCCM</label>
+                <input id="merchantRccm" type="text" value="RC/YAO/2026/B/002">
+            </div>
+            <div>
+                <label>NIU</label>
+                <input id="merchantNiu" type="text" value="M098765432101B">
+            </div>
+            <div>
+                <label>Telephone</label>
+                <input id="merchantPhone" type="text" value="+237677000000">
+            </div>
+            <div>
+                <label>Email</label>
+                <input id="merchantEmail" type="text" value="contact@carrefourmarket.cm">
+            </div>
+            <div>
+                <label>Ville</label>
+                <input id="merchantCity" type="text" value="Yaounde">
+            </div>
+            <div>
+                <label>Adresse</label>
+                <input id="merchantAddress" type="text" value="Bastos">
+            </div>
+            <div>
+                <label>Statut</label>
+                <select id="merchantStatus">
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="KYC_PENDING">KYC_PENDING</option>
+                    <option value="KYC_VALIDATED">KYC_VALIDATED</option>
+                    <option value="SUSPENDED">SUSPENDED</option>
+                    <option value="REJECTED">REJECTED</option>
+                </select>
+            </div>
+        </div>
+
+
+        <hr>
+
+        <h4>Changer statut commercant</h4>
+
+        <div class="form-grid">
+            <div>
+                <label>ID commercant</label>
+                <input id="merchantIdToUpdate" type="number" placeholder="Exemple : 1">
+            </div>
+
+            <div>
+                <label>Nouveau statut</label>
+                <select id="merchantNewStatus">
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="KYC_PENDING">KYC_PENDING</option>
+                    <option value="KYC_VALIDATED">KYC_VALIDATED</option>
+                    <option value="SUSPENDED">SUSPENDED</option>
+                    <option value="REJECTED">REJECTED</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="btn btn-dark" onclick="updateMerchantStatus()">Changer statut commercant</button>
+        <button class="btn btn-success" onclick="createMerchant()">Creer commercant</button>
+        <button class="btn btn-primary" onclick="loadMerchants()">Actualiser</button>
+
+        <div class="response-box" id="merchantResponse">Aucun commercant cree depuis l interface.</div>
+        <div id="merchants-table"></div>
+    </section>
+
+    <section id="products" class="section">
+        <h3>Catalogue produits</h3>
+
+        <div class="form-grid">
+            <div>
+                <label>Merchant ID</label>
+                <input id="productMerchantId" type="number" value="1">
+            </div>
+            <div>
+                <label>SKU</label>
+                <input id="productSku" type="text" value="RIZ-001">
+            </div>
+            <div>
+                <label>Nom produit</label>
+                <input id="productName" type="text" value="Riz parfume 5KG">
+            </div>
+            <div>
+                <label>Designation ticket</label>
+                <input id="productTicketDesignation" type="text" value="RIZ PARF 5KG">
+            </div>
+            <div>
+                <label>Categorie</label>
+                <input id="productCategory" type="text" value="Alimentaire">
+            </div>
+            <div>
+                <label>Marque</label>
+                <input id="productBrand" type="text" value="Super Rice">
+            </div>
+            <div>
+                <label>Prix</label>
+                <input id="productPrice" type="number" value="8500">
+            </div>
+            <div>
+                <label>Type cashback</label>
+                <select id="productCashbackType">
+                    <option value="PERCENTAGE">PERCENTAGE</option>
+                    <option value="FIXED_AMOUNT">FIXED_AMOUNT</option>
+                    <option value="NONE">NONE</option>
+                </select>
+            </div>
+            <div>
+                <label>Valeur cashback</label>
+                <input id="productCashbackValue" type="number" value="5">
+            </div>
+        </div>
+
+        <button class="btn btn-success" onclick="createProduct()">Creer produit</button>
+        <button class="btn btn-primary" onclick="loadProducts()">Actualiser</button>
+
+        <div class="response-box" id="productResponse">Aucun produit cree depuis l interface.</div>
+        <div id="products-table"></div>
+    </section>
+    <section id="campaigns" class="section">
+        <h3>Campagnes cashback</h3>
+
+        <div class="form-grid">
+            <div>
+                <label>Merchant ID</label>
+                <input id="campaignMerchantId" type="number" value="1">
+            </div>
+
+            <div>
+                <label>Nom campagne</label>
+                <input id="campaignName" type="text" value="Cashback alimentaire 5%">
+            </div>
+
+            <div>
+                <label>Description</label>
+                <input id="campaignDescription" type="text" value="Campagne cashback sur produits alimentaires">
+            </div>
+
+            <div>
+                <label>Date debut</label>
+                <input id="campaignStartDate" type="date" value="2026-06-01">
+            </div>
+
+            <div>
+                <label>Date fin</label>
+                <input id="campaignEndDate" type="date" value="2026-12-31">
+            </div>
+
+            <div>
+                <label>Type cashback</label>
+                <select id="campaignCashbackType">
+                    <option value="PERCENTAGE">PERCENTAGE</option>
+                    <option value="FIXED_AMOUNT">FIXED_AMOUNT</option>
+                    <option value="NONE">NONE</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Valeur cashback</label>
+                <input id="campaignCashbackValue" type="number" value="5">
+            </div>
+
+            <div>
+                <label>Limite jour/client</label>
+                <input id="campaignDailyLimit" type="number" value="5000">
+            </div>
+
+            <div>
+                <label>Limite mois/client</label>
+                <input id="campaignMonthlyLimit" type="number" value="50000">
+            </div>
+
+            <div>
+                <label>Budget total</label>
+                <input id="campaignTotalBudget" type="number" value="2000000">
+            </div>
+
+            <div>
+                <label>Statut</label>
+                <select id="campaignStatus">
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="DRAFT">DRAFT</option>
+                    <option value="PAUSED">PAUSED</option>
+                    <option value="EXPIRED">EXPIRED</option>
+                    <option value="CLOSED">CLOSED</option>
+                </select>
+            </div>
+        </div>
+
+
+        <hr>
+
+        <h4>Changer statut campagne</h4>
+
+        <div class="form-grid">
+            <div>
+                <label>ID campagne</label>
+                <input id="campaignIdToUpdate" type="number" placeholder="Exemple : 1">
+            </div>
+
+            <div>
+                <label>Nouveau statut</label>
+                <select id="campaignNewStatus">
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="DRAFT">DRAFT</option>
+                    <option value="PAUSED">PAUSED</option>
+                    <option value="EXPIRED">EXPIRED</option>
+                    <option value="CLOSED">CLOSED</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="btn btn-dark" onclick="updateCampaignStatus()">Changer statut campagne</button>
+        <button class="btn btn-success" onclick="createCampaign()">Creer campagne</button>
+        <button class="btn btn-primary" onclick="loadCampaigns()">Actualiser</button>
+
+        <div class="response-box" id="campaignResponse">Aucune campagne creee depuis l interface.</div>
+        <div id="campaigns-table"></div>
+    </section>
+
+    <section id="tickets" class="section">
+        <h3>Tickets OCR</h3>
+        <button class="btn btn-primary" onclick="loadTickets()">Actualiser</button>
+        <div id="tickets-table"></div>
+    </section>
+
+    <section id="claims" class="section">
+        <h3>Claims cashback</h3>
+
+        <div class="form-grid">
+            <div>
+                <label>ID claim</label>
+                <input id="claimIdToApprove" type="number" placeholder="Exemple : 1">
+            </div>
+        </div>
+
+        <button class="btn btn-success" onclick="approveClaim()">Approuver claim</button>
+        <button class="btn btn-primary" onclick="loadClaims()">Actualiser</button>
+        <div id="claims-table"></div>
+    </section>
+
+    <section id="payments" class="section">
+        <h3>Paiements cashback</h3>
+
+        <button class="btn btn-success" onclick="runCashbackBatch()">Lancer batch J+1</button>
+        <button class="btn btn-primary" onclick="loadPayments()">Actualiser</button>
+
+        <div class="response-box" id="batchResponse">Batch non lance.</div>
+        <div id="payments-table"></div>
+    </section>
+
+    <section id="fraud" class="section">
+        <h3>Alertes fraude</h3>
+        <button class="btn btn-primary" onclick="loadFraudAlerts()">Actualiser</button>
+        <div id="fraud-table"></div>
+    </section>
+
+
+    <section id="audit" class="section">
+        <h3>Logs transactions</h3>
+
+        <button class="btn btn-success" onclick="createTestAuditLog()">Creer log test</button>
+        <button class="btn btn-primary" onclick="loadAuditLogs()">Actualiser</button>
+
+        <div class="response-box" id="auditResponse">Aucun log test cree depuis l interface.</div>
+        <div id="audit-table"></div>
+    </section>
+
+    <section id="settings" class="section">
+        <h3>Parametres systeme</h3>
+
+        <div class="form-grid">
+            <div>
+                <label>Montant ticket simule</label>
+                <input id="settingTicketAmount" type="number" value="44500">
+            </div>
+
+            <div>
+                <label>Devise</label>
+                <input id="settingCurrency" type="text" value="FCFA">
+            </div>
+
+            <div>
+                <label>Score fraude normal</label>
+                <input id="settingNormalScore" type="number" value="20">
+            </div>
+
+            <div>
+                <label>Score fraude doublon</label>
+                <input id="settingDuplicateScore" type="number" value="95">
+            </div>
+
+            <div>
+                <label>Anti-fraude active</label>
+                <select id="settingAntiFraud">
+                    <option value="true">true</option>
+                    <option value="false">false</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Acteur par defaut</label>
+                <input id="settingActor" type="text" value="ADMIN_DEMO">
+            </div>
+        </div>
+
+        <button class="btn btn-success" onclick="saveSettings()">Enregistrer parametres</button>
+        <button class="btn btn-primary" onclick="loadSettings()">Actualiser</button>
+
+        <div class="response-box" id="settingsResponse">Aucune modification.</div>
+        <div id="settings-table"></div>
+    </section>
+
+    <section id="exports" class="section">
+        <h3>Exports CSV</h3>
+
+        <p>Telecharger les donnees principales du prototype Ticket2Cash au format CSV.</p>
+
+        <button class="btn btn-primary" onclick="downloadCsv('/api/exports/claims-csv')">Exporter Claims</button>
+        <button class="btn btn-primary" onclick="downloadCsv('/api/exports/payments-csv')">Exporter Paiements</button>
+        <button class="btn btn-primary" onclick="downloadCsv('/api/exports/fraud-alerts-csv')">Exporter Fraude</button>
+        <button class="btn btn-primary" onclick="downloadCsv('/api/exports/audit-logs-csv')">Exporter Logs</button>
+
+        <div class="response-box" id="exportsResponse">Aucun export lance.</div>
+    </section>
+
+    <section id="users" class="section">
+        <h3>Gestion utilisateurs</h3>
+        <div class="role-notice">Regle mot de passe : minimum 8 caracteres, au moins une lettre, au moins un chiffre, aucun espace.</div>
+
+        <div class="form-grid">
+            <div>
+                <label>Username</label>
+                <input id="newUsername" type="text" value="agent1">
+            </div>
+
+            <div>
+                <label>Nom complet</label>
+                <input id="newFullName" type="text" value="Agent Ticket2Cash">
+            </div>
+
+            <div>
+                <label>Email</label>
+                <input id="newEmail" type="text" value="agent1@ticket2cash.local">
+            </div>
+
+            <div>
+                <label>Mot de passe</label>
+                <input id="newPassword" type="password" value="agent2026">
+            </div>
+
+            <div>
+                <label>Role</label>
+                <select id="newUserRole">
+                    <option value="LECTEUR">LECTEUR</option>
+                    <option value="OPERATEUR">OPERATEUR</option>
+                    <option value="ADMIN">ADMIN</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="btn btn-success" onclick="createUser()">Creer utilisateur</button>
+        <button class="btn btn-primary" onclick="loadUsers()">Actualiser</button>
+
+        <hr>
+
+        <h4>Changer role utilisateur</h4>
+
+        <div class="form-grid">
+            <div>
+                <label>ID utilisateur</label>
+                <input id="userIdToRole" type="number" placeholder="Exemple : 2">
+            </div>
+
+            <div>
+                <label>Nouveau role</label>
+                <select id="userNewRole">
+                    <option value="ADMIN">ADMIN</option>
+                    <option value="OPERATEUR">OPERATEUR</option>
+                    <option value="LECTEUR">LECTEUR</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="btn btn-dark" onclick="updateUserRole()">Changer role</button>
+
+        <hr>
+
+
+        <hr>
+
+
+        <hr>
+
+        <h4>Debloquer compte utilisateur</h4>
+
+        <div class="form-grid">
+            <div>
+                <label>ID utilisateur</label>
+                <input id="unlockUserId" type="number" placeholder="Exemple : 4">
+            </div>
+        </div>
+
+        <button class="btn btn-success" onclick="unlockUserAccount()">Debloquer compte</button>
+        <h4>Reset mot de passe utilisateur</h4>
+
+        <div class="form-grid">
+            <div>
+                <label>ID utilisateur</label>
+                <input id="adminResetUserId" type="number" placeholder="Exemple : 3">
+            </div>
+
+            <div>
+                <label>Nouveau mot de passe</label>
+                <input id="adminResetPassword" type="password" value="User2026">
+            </div>
+
+            <div>
+                <label>Confirmer mot de passe</label>
+                <input id="adminResetConfirmPassword" type="password" value="User2026">
+            </div>
+        </div>
+
+        <button class="btn btn-dark" onclick="toggleAdminResetPasswordVisibility()">Afficher / masquer</button>
+        <button class="btn btn-danger" onclick="resetUserPassword()">Reset mot de passe</button>
+        <h4>Activer / desactiver utilisateur</h4>
+
+        <div class="form-grid">
+            <div>
+                <label>ID utilisateur</label>
+                <input id="userIdToEnabled" type="number" placeholder="Exemple : 2">
+            </div>
+
+            <div>
+                <label>Etat</label>
+                <select id="userEnabledValue">
+                    <option value="true">ACTIVE</option>
+                    <option value="false">DESACTIVE</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="btn btn-dark" onclick="updateUserEnabled()">Changer etat</button>
+
+        <div class="response-box" id="usersResponse">Aucune action utilisateur lancee.</div>
+        <div id="users-table"></div>
+    </section>
+
+    <section id="profile" class="section">
+        <h3>Mon profil</h3>
+
+        <div class="form-grid">
+            <div>
+                <label>Utilisateur connecte</label>
+                <input id="profileUsername" type="text" readonly>
+            </div>
+
+            <div>
+                <label>Nom complet</label>
+                <input id="profileFullName" type="text" readonly>
+            </div>
+
+            <div>
+                <label>Role</label>
+                <input id="profileRole" type="text" readonly>
+            </div>
+        </div>
+
+        <hr>
+
+        <h4>Changer mot de passe</h4>
+
+        <div class="role-notice">
+            Regle mot de passe : minimum 8 caracteres, au moins une lettre, au moins un chiffre, aucun espace.
+        </div>
+
+        <div class="form-grid">
+            <div>
+                <label>Ancien mot de passe</label>
+                <input id="profileOldPassword" type="password" autocomplete="current-password">
+            </div>
+
+            <div>
+                <label>Nouveau mot de passe</label>
+                <input id="profileNewPassword" type="password" autocomplete="new-password">
+            </div>
+
+            <div>
+                <label>Confirmer nouveau mot de passe</label>
+                <input id="profileConfirmPassword" type="password" autocomplete="new-password">
+            </div>
+        </div>
+
+        <button class="btn btn-dark" onclick="toggleProfilePasswordVisibility()">Afficher / masquer</button>
+        <button class="btn btn-success" onclick="changePassword()">Changer mot de passe</button>
+
+        <div class="response-box" id="profileResponse">Aucune action lancee.</div>
+    </section>
+
+
+    <section id="security" class="section">
+        <h3>Dashboard securite</h3>
+
+        <div class="cards">
+            <div class="card">
+                <h4>Utilisateurs</h4>
+                <p id="secTotalUsers">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Actifs</h4>
+                <p id="secActiveUsers">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Desactives</h4>
+                <p id="secDisabledUsers">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Verrouilles</h4>
+                <p id="secLockedUsers">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Admins actifs</h4>
+                <p id="secActiveAdmins">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Operateurs</h4>
+                <p id="secOperators">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Lecteurs</h4>
+                <p id="secReaders">0</p>
+            </div>
+        </div>
+
+        <hr>
+
+        <h4>Activite de connexion</h4>
+
+        <div class="cards">
+            <div class="card">
+                <h4>Connexions OK</h4>
+                <p id="secLoginSuccess">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Echecs connexion</h4>
+                <p id="secLoginFailed">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Comptes verrouilles</h4>
+                <p id="secLoginAccountLocked">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Tentatives compte verrouille</h4>
+                <p id="secLoginFailedLocked">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Deblocages ADMIN</h4>
+                <p id="secAdminUnlocks">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Reset password ADMIN</h4>
+                <p id="secAdminPasswordResets">0</p>
+            </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="loadSecurityDashboard()">Actualiser securite</button>
+
+        <div class="response-box" id="securityResponse">Aucune action lancee.</div>
+
+        <h4>Derniers logs securite</h4>
+        <div id="security-logs-table"></div>
+    </section>
+
+    <section id="businessDashboard" class="section">
+        <h3>Dashboard metier Cashback</h3>
+
+        <div class="cards">
+            <div class="card">
+                <h4>Commercants</h4>
+                <p id="bizTotalMerchants">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Commercants actifs</h4>
+                <p id="bizActiveMerchants">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Produits</h4>
+                <p id="bizTotalProducts">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Produits actifs</h4>
+                <p id="bizActiveProducts">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Campagnes</h4>
+                <p id="bizTotalCampaigns">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Campagnes actives</h4>
+                <p id="bizActiveCampaigns">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Tickets</h4>
+                <p id="bizTotalTickets">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Claims</h4>
+                <p id="bizTotalClaims">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Claims soumises</h4>
+                <p id="bizSubmittedClaims">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Claims approuvees</h4>
+                <p id="bizApprovedClaims">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Claims payees</h4>
+                <p id="bizPaidClaims">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Claims rejetees</h4>
+                <p id="bizRejectedClaims">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Paiements</h4>
+                <p id="bizTotalPayments">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Cashback paye</h4>
+                <p id="bizTotalCashbackPaid">0 FCFA</p>
+            </div>
+
+            <div class="card">
+                <h4>Alertes fraude</h4>
+                <p id="bizTotalFraudAlerts">0</p>
+            </div>
+
+            <div class="card">
+                <h4>Alertes ouvertes</h4>
+                <p id="bizOpenFraudAlerts">0</p>
+            </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="loadBusinessDashboard()">Actualiser dashboard metier</button>
+        <button class="btn btn-success" onclick="initDemoData()">Charger donnees demo</button>
+
+        <div class="response-box" id="businessDashboardResponse">Aucune action lancee.</div>
+
+        <h4>Top commercants par claims</h4>
+        <div id="biz-top-merchants-table"></div>
+
+        <h4>Dernieres claims</h4>
+        <div id="biz-recent-claims-table"></div>
+
+        <h4>Derniers paiements cashback</h4>
+        <div id="biz-recent-payments-table"></div>
+
+        <h4>Dernieres alertes fraude</h4>
+        <div id="biz-recent-fraud-table"></div>
+    </section>
+
+    <section id="demoFlow" class="section">
+        <h3>Parcours complet de demonstration</h3>
+
+        <div class="role-notice">
+            Cette page execute automatiquement le cycle complet :
+            OCR ticket, creation claim, approbation, paiement cashback et journalisation audit.
+        </div>
+
+        <button class="btn btn-success" onclick="runDemoFlow()">Lancer parcours complet</button>
+        <button class="btn btn-primary" onclick="loadBusinessDashboard()">Actualiser dashboard metier</button>
+
+        <div class="response-box" id="demoFlowResponse">Aucun parcours lance.</div>
+
+        <h4>Resultat du dernier parcours</h4>
+        <div id="demo-flow-result-table"></div>
+    </section>
+
+    <section id="demoReport" class="section">
+        <h3>Rapport de demonstration</h3>
+
+        <div class="role-notice">
+            Cette page genere automatiquement le resume du prototype Ticket2Cash pour une presentation DEI.
+        </div>
+
+        <button class="btn btn-primary" onclick="loadDemoReport()">Actualiser rapport</button>
+        <button class="btn btn-success" onclick="runDemoFlowThenReport()">Lancer parcours puis actualiser</button>
+        <button class="btn btn-dark" onclick="exportDemoReportHtml()">Exporter rapport HTML / PDF</button>
+
+        <div class="response-box" id="demoReportResponse">Aucun rapport charge.</div>
+
+        <h4>Identification projet</h4>
+        <div id="demo-report-project-table"></div>
+
+        <h4>Indicateurs metier</h4>
+        <div class="cards">
+            <div class="card"><h4>Commercants</h4><p id="repTotalMerchants">0</p></div>
+            <div class="card"><h4>Produits</h4><p id="repTotalProducts">0</p></div>
+            <div class="card"><h4>Campagnes actives</h4><p id="repActiveCampaigns">0</p></div>
+            <div class="card"><h4>Tickets</h4><p id="repTotalTickets">0</p></div>
+            <div class="card"><h4>Claims</h4><p id="repTotalClaims">0</p></div>
+            <div class="card"><h4>Claims payees</h4><p id="repPaidClaims">0</p></div>
+            <div class="card"><h4>Cashback paye</h4><p id="repTotalCashbackPaid">0 FCFA</p></div>
+            <div class="card"><h4>Alertes fraude</h4><p id="repTotalFraudAlerts">0</p></div>
+        </div>
+
+        <h4>Indicateurs securite</h4>
+        <div class="cards">
+            <div class="card"><h4>Utilisateurs</h4><p id="repTotalUsers">0</p></div>
+            <div class="card"><h4>Utilisateurs actifs</h4><p id="repActiveUsers">0</p></div>
+            <div class="card"><h4>Comptes verrouilles</h4><p id="repLockedUsers">0</p></div>
+            <div class="card"><h4>Admins actifs</h4><p id="repActiveAdmins">0</p></div>
+            <div class="card"><h4>Connexions OK</h4><p id="repLoginSuccess">0</p></div>
+            <div class="card"><h4>Echecs connexion</h4><p id="repLoginFailed">0</p></div>
+        </div>
+
+        <h4>Modules disponibles</h4>
+        <div id="demo-report-modules-table"></div>
+
+        <h4>Points de securite</h4>
+        <div id="demo-report-security-table"></div>
+
+        <h4>Points anti-fraude</h4>
+        <div id="demo-report-fraud-table"></div>
+
+        <h4>Dernier parcours demo</h4>
+        <div id="demo-report-flow-logs-table"></div>
+
+        <h4>Derniers logs importants</h4>
+        <div id="demo-report-important-logs-table"></div>
+    </section>
+
+    <section id="demoCenter" class="section">
+        <h3>Centre de demonstration</h3>
+
+        <div class="role-notice">
+            Cette page regroupe les actions principales a executer pendant la presentation DEI.
+            Elle permet de piloter rapidement la demo sans chercher dans tous les menus.
+        </div>
+
+        <div class="cards">
+            <div class="card">
+                <h4>1. Donnees demo</h4>
+                <p>Initialiser les commercants, produits, campagnes, tickets, claims, paiements et alertes.</p>
+                <button class="btn btn-success" onclick="demoCenterInitData()">Charger donnees demo</button>
+            </div>
+
+            <div class="card">
+                <h4>2. Parcours complet</h4>
+                <p>Executer automatiquement OCR, claim, approbation, paiement cashback et logs.</p>
+                <button class="btn btn-success" onclick="demoCenterRunFlow()">Lancer parcours complet</button>
+            </div>
+
+            <div class="card">
+                <h4>3. Dashboard metier</h4>
+                <p>Voir les indicateurs cashback : tickets, claims, paiements, alertes et commercants.</p>
+                <button class="btn btn-primary" onclick="demoCenterGo('businessDashboard')">Ouvrir dashboard metier</button>
+            </div>
+
+            <div class="card">
+                <h4>4. Dashboard securite</h4>
+                <p>Voir les connexions, comptes verrouilles, utilisateurs actifs et actions ADMIN.</p>
+                <button class="btn btn-primary" onclick="demoCenterGo('security')">Ouvrir dashboard securite</button>
+            </div>
+
+            <div class="card">
+                <h4>5. Rapport demo</h4>
+                <p>Afficher le resume du prototype, les modules, les statistiques et les logs importants.</p>
+                <button class="btn btn-primary" onclick="demoCenterGo('demoReport')">Ouvrir rapport demo</button>
+            </div>
+
+            <div class="card">
+                <h4>6. Export PDF</h4>
+                <p>Ouvrir le rapport imprimable, puis utiliser Ctrl + P pour enregistrer en PDF.</p>
+                <button class="btn btn-dark" onclick="demoCenterExportReport()">Exporter rapport HTML / PDF</button>
+            </div>
+
+            <div class="card">
+                <h4>7. Logs transactions</h4>
+                <p>Verifier la tracabilite des actions : login, demo flow, cashback, fraude, exports.</p>
+                <button class="btn btn-dark" onclick="demoCenterOpenLogs()">Ouvrir logs transactions</button>
+            </div>
+
+            <div class="card">
+                <h4>8. Verification finale</h4>
+                <p>Actualiser les dashboards apres execution du parcours de demonstration.</p>
+                <button class="btn btn-primary" onclick="demoCenterRefreshAll()">Actualiser indicateurs</button>
+            </div>
+        </div>
+
+        <div class="response-box" id="demoCenterResponse">Centre de demonstration pret.</div>
+
+        <h4>Ordre recommande de presentation</h4>
+        <div id="demo-center-steps-table"></div>
+    </section>
+</main>
+
+<script>
+    const API = "";
+
+    function showSection(sectionId) {
+        document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+        document.getElementById(sectionId).classList.add("active");
+
+        const titles = {
+            dashboard: "Tableau de bord",
+            demoCenter: "Centre demo",
+            businessDashboard: "Dashboard metier",
+            demoFlow: "Parcours demo",
+            demoReport: "Rapport demo",
+            security: "Dashboard securite",
+            profile: "Mon profil",
+            ocr: "Simulation OCR",
+            merchants: "Commercants",
+            products: "Produits",
+            campaigns: "Campagnes",
+            tickets: "Tickets",
+            claims: "Claims",
+            payments: "Paiements cashback",
+            fraud: "Alertes fraude",
+            audit: "Logs transactions",
+            settings: "Parametres",
+            exports: "Exports CSV",
+            users: "Utilisateurs"
+        };
+
+        document.getElementById("page-title").innerText = titles[sectionId];
+
+        if (sectionId === "dashboard") loadDashboard();
+        if (sectionId === "demoCenter") loadDemoCenter();
+        if (sectionId === "businessDashboard") loadBusinessDashboard();
+        if (sectionId === "demoFlow") clearDemoFlow();
+        if (sectionId === "demoReport") loadDemoReport();
+        if (sectionId === "security") loadSecurityDashboard();
+        if (sectionId === "profile") loadProfile();
+        if (sectionId === "merchants") loadMerchants();
+        if (sectionId === "products") loadProducts();
+        if (sectionId === "campaigns") loadCampaigns();
+        if (sectionId === "tickets") loadTickets();
+        if (sectionId === "claims") loadClaims();
+        if (sectionId === "payments") loadPayments();
+        if (sectionId === "fraud") loadFraudAlerts();
+        if (sectionId === "audit") loadAuditLogs();
+        if (sectionId === "settings") loadSettings();
+        if (sectionId === "users") loadUsers();
+    }
+
+
+    let CURRENT_USER = null;
+
+    async function checkAuthentication() {
+        try {
+            const response = await fetch(`${API}/api/auth/me`);
+            const text = await response.text();
+            const me = text ? JSON.parse(text) : { authenticated: false };
+
+            if (!me.authenticated) {
+                window.location.href = "/login.html";
+                return;
+            }
+
+            CURRENT_USER = me;
+            renderAuthBar(me);
+            applyRoleRules(me.role);
+            applyUserMenuRules(me.role);
+            applySecurityMenuRules(me.role);
+            applyDemoCenterMenuRules(me.role);
+
+            await loadDashboard();
+
+        } catch (error) {
+            window.location.href = "/login.html";
+        }
+    }
+
+    function renderAuthBar(user) {
+        if (document.getElementById("authBar")) {
+            document.getElementById("authUserInfo").innerText =
+                user.fullName + " | " + user.username + " | " + user.role;
+            return;
+        }
+
+        const bar = document.createElement("div");
+        bar.className = "topbar";
+        bar.id = "authBar";
+
+        bar.innerHTML = `
+            <h3>Session utilisateur</h3>
+            <p id="authUserInfo">${user.fullName} | ${user.username} | ${user.role}</p>
+            <button class="btn btn-dark" onclick="logout()">Deconnexion</button>
+        `;
+
+        const main = document.querySelector("main.content");
+        const cards = document.querySelector(".cards");
+
+        main.insertBefore(bar, cards);
+    }
+
+    async function logout() {
+        try {
+            await fetch(`${API}/api/auth/logout`, { method: "POST" });
+        } catch (error) {
+        }
+
+        window.location.href = "/login.html";
+    }
+
+    function hideButtonByOnclick(onclickValue) {
+        document.querySelectorAll(`button[onclick="${onclickValue}"]`).forEach(btn => {
+            btn.classList.add("role-hidden");
+        });
+    }
+
+    function showButtonByOnclick(onclickValue) {
+        document.querySelectorAll(`button[onclick="${onclickValue}"]`).forEach(btn => {
+            btn.classList.remove("role-hidden");
+        });
+    }
+
+    function hideMenuBySection(sectionName) {
+        document.querySelectorAll(`button[onclick="showSection('${sectionName}')"]`).forEach(btn => {
+            btn.classList.add("role-hidden");
+        });
+    }
+
+    function showRoleNotice(message) {
+        let notice = document.getElementById("roleNotice");
+
+        if (!notice) {
+            notice = document.createElement("div");
+            notice.id = "roleNotice";
+            notice.className = "role-notice";
+
+            const topbar = document.querySelector(".topbar");
+            topbar.parentNode.insertBefore(notice, topbar.nextSibling);
+        }
+
+        notice.innerText = message;
+    }
+
+    function applyRoleRules(role) {
+        const adminOnlyActions = [
+            "createMerchant()",
+            "updateMerchantStatus()",
+            "createProduct()",
+            "createCampaign()",
+            "updateCampaignStatus()",
+            "saveSettings()",
+            "createTestAuditLog()"
+        ];
+
+        const operatorActions = [
+            "simulateOcr()",
+            "approveClaim()",
+            "runCashbackBatch()"
+        ];
+
+        adminOnlyActions.forEach(action => showButtonByOnclick(action));
+        operatorActions.forEach(action => showButtonByOnclick(action));
+
+        document.querySelectorAll(".role-hidden").forEach(el => {
+            el.classList.remove("role-hidden");
+        });
+
+        if (role === "ADMIN") {
+            showRoleNotice("Role ADMIN : acces complet a toutes les fonctionnalites.");
+            return;
+        }
+
+        if (role === "OPERATEUR") {
+            adminOnlyActions.forEach(action => hideButtonByOnclick(action));
+            showRoleNotice("Role OPERATEUR : operations metier autorisees, creation et parametres reserves a ADMIN.");
+            return;
+        }
+
+        if (role === "LECTEUR") {
+            adminOnlyActions.forEach(action => hideButtonByOnclick(action));
+            operatorActions.forEach(action => hideButtonByOnclick(action));
+            showRoleNotice("Role LECTEUR : consultation uniquement. Les actions de creation, modification et paiement sont masquees.");
+            return;
+        }
+    }
+
+    function applyUserMenuRules(role) {
+        document.querySelectorAll(`button[onclick="showSection('users')"]`).forEach(btn => {
+            if (role === "ADMIN") {
+                btn.classList.remove("role-hidden");
+            } else {
+                btn.classList.add("role-hidden");
+            }
+        });
+    }
+
+    function applySecurityMenuRules(role) {
+        document.querySelectorAll(`button[onclick="showSection('security')"]`).forEach(btn => {
+            if (role === "ADMIN") {
+                btn.classList.remove("role-hidden");
+            } else {
+                btn.classList.add("role-hidden");
+            }
+        });
+    }
+
+    function applyDemoCenterMenuRules(role) {
+        document.querySelectorAll(`button[onclick="showSection('demoCenter')"]`).forEach(btn => {
+            if (role === "ADMIN") {
+                btn.classList.remove("role-hidden");
+            } else {
+                btn.classList.add("role-hidden");
+            }
+        });
+    }
+    async function requestJson(url, options = {}) {
+        const response = await fetch(url, options);
+        const text = await response.text();
+
+        let data;
+        try {
+            data = text ? JSON.parse(text) : {};
+        } catch (e) {
+            data = text;
+        }
+
+        if (!response.ok) {
+            throw data;
+        }
+
+        return data;
+    }
+
+    function formatValue(value) {
+        if (value === null || value === undefined) return "";
+        if (typeof value === "object") return JSON.stringify(value);
+        return value;
+    }
+
+    function formatStatus(value) {
+        if (!value) return "";
+
+        let css = "status-info";
+
+        if (["SUCCESS", "PAID", "ACTIVE", "APPROVED", "RESOLVED"].includes(value)) css = "status-success";
+        if (["SUBMITTED", "PENDING", "OPEN", "OCR_PENDING", "DRAFT"].includes(value)) css = "status-warning";
+        if (["REJECTED", "FAILED", "PAYMENT_FAILED", "SUSPENDED"].includes(value)) css = "status-danger";
+
+        return `<span class="status ${css}">${value}</span>`;
+    }
+
+    function renderTable(containerId, rows) {
+        const container = document.getElementById(containerId);
+
+        if (!rows || rows.length === 0) {
+            container.innerHTML = "<p>Aucune donnee disponible.</p>";
+            return;
+        }
+
+        if (!Array.isArray(rows)) rows = [rows];
+
+        const columns = Object.keys(rows[0]);
+
+        let html = '<div class="table-wrapper"><table><thead><tr>';
+
+        columns.forEach(col => html += `<th>${col}</th>`);
+
+        html += "</tr></thead><tbody>";
+
+        rows.forEach(row => {
+            html += "<tr>";
+            columns.forEach(col => {
+                const value = row[col];
+                if (col.toLowerCase().includes("status")) {
+                    html += `<td>${formatStatus(value)}</td>`;
+                } else {
+                    html += `<td>${formatValue(value)}</td>`;
+                }
+            });
+            html += "</tr>";
+        });
+
+        html += "</tbody></table></div>";
+        container.innerHTML = html;
+    }
+
+    function renderDashboardCards(summary) {
+        const cards = [
+            ["Commercants", summary.commercantsPartenaires || 0],
+            ["Produits", summary.produitsCatalogues || 0],
+            ["Claims", summary.claimsSoumis || 0],
+            ["Cashback paye", `${summary.cashbackTotalPaye || 0} ${summary.devise || "FCFA"}`]
+        ];
+
+        let html = "";
+
+        cards.forEach(card => {
+            html += `
+                <div class="card">
+                    <div class="label">${card[0]}</div>
+                    <div class="value">${card[1]}</div>
+                </div>
+            `;
+        });
+
+        document.getElementById("dashboard-cards").innerHTML = html;
+    }
+
+
+    function setBusinessText(id, value) {
+        const element = document.getElementById(id);
+
+        if (element) {
+            element.innerText = value ?? 0;
+        }
+    }
+
+
+    async function initDemoData() {
+        const responseBox = document.getElementById("businessDashboardResponse");
+
+        try {
+            const data = await requestJson(`${API}/api/demo-data/init`, {
+                method: "POST"
+            });
+
+            responseBox.innerText = JSON.stringify(data, null, 2);
+
+            await loadBusinessDashboard();
+
+        } catch (error) {
+            responseBox.innerText = "Erreur chargement donnees demo : " + JSON.stringify(error, null, 2);
+        }
+    }
+
+
+    function setReportText(id, value) {
+        const element = document.getElementById(id);
+
+        if (element) {
+            element.innerText = value ?? 0;
+        }
+    }
+
+
+    function exportDemoReportHtml() {
+        window.open(`${API}/api/demo-report/export-html`, "_blank");
+    }
+    async function loadDemoReport() {
+        const responseBox = document.getElementById("demoReportResponse");
+
+        try {
+            const data = await requestJson(`${API}/api/demo-report/summary`);
+
+            responseBox.innerText =
+                "Rapport actualise.\n" +
+                "Projet : " + data.projectName + "\n" +
+                "Organisation : " + data.organization + "\n" +
+                "Genere par : " + data.generatedBy;
+
+            renderTable("demo-report-project-table", [{
+                projectName: data.projectName,
+                organization: data.organization,
+                generatedAt: data.generatedAt,
+                generatedBy: data.generatedBy,
+                businessObjective: data.businessObjective,
+                valueProposition: data.valueProposition
+            }]);
+
+            setReportText("repTotalMerchants", data.totalMerchants);
+            setReportText("repTotalProducts", data.totalProducts);
+            setReportText("repActiveCampaigns", data.activeCampaigns);
+            setReportText("repTotalTickets", data.totalTickets);
+            setReportText("repTotalClaims", data.totalClaims);
+            setReportText("repPaidClaims", data.paidClaims);
+            setReportText("repTotalCashbackPaid", (data.totalCashbackPaid || 0) + " FCFA");
+            setReportText("repTotalFraudAlerts", data.totalFraudAlerts);
+
+            setReportText("repTotalUsers", data.totalUsers);
+            setReportText("repActiveUsers", data.activeUsers);
+            setReportText("repLockedUsers", data.lockedUsers);
+            setReportText("repActiveAdmins", data.activeAdmins);
+            setReportText("repLoginSuccess", data.loginSuccess);
+            setReportText("repLoginFailed", data.loginFailed);
+
+            renderTable("demo-report-modules-table", data.modules || []);
+            renderTable("demo-report-security-table", data.securityHighlights || []);
+            renderTable("demo-report-fraud-table", data.fraudHighlights || []);
+            renderTable("demo-report-flow-logs-table", data.lastDemoFlowLogs || []);
+            renderTable("demo-report-important-logs-table", data.recentImportantLogs || []);
+
+        } catch (error) {
+            responseBox.innerText = "Erreur rapport demo : " + JSON.stringify(error, null, 2);
+        }
+    }
+
+    async function runDemoFlowThenReport() {
+        const responseBox = document.getElementById("demoReportResponse");
+
+        try {
+            responseBox.innerText = "Execution du parcours demo...";
+            await requestJson(`${API}/api/demo-flow/run`, {
+                method: "POST"
+            });
+
+            responseBox.innerText = "Parcours execute. Actualisation du rapport...";
+            await loadDemoReport();
+
+        } catch (error) {
+            responseBox.innerText = "Erreur parcours + rapport : " + JSON.stringify(error, null, 2);
+        }
+    }
+    function clearDemoFlow() {
+        const box = document.getElementById("demoFlowResponse");
+
+        if (box) {
+            box.innerText = "Pret pour lancer un parcours complet.";
+        }
+    }
+
+    async function runDemoFlow() {
+        const responseBox = document.getElementById("demoFlowResponse");
+
+        try {
+            responseBox.innerText = "Execution du parcours en cours...";
+
+            const data = await requestJson(`${API}/api/demo-flow/run`, {
+                method: "POST"
+            });
+
+            responseBox.innerText =
+                "Parcours execute avec succes.\n" +
+                "Ticket : " + data.ticketNumber + "\n" +
+                "Claim : " + data.claimReference + " / " + data.claimStatus + "\n" +
+                "Cashback : " + data.cashbackAmount + " " + data.currency + "\n" +
+                "Paiement : " + data.paymentReference + " / " + data.paymentStatus;
+
+            renderTable("demo-flow-result-table", [data]);
+
+        } catch (error) {
+            responseBox.innerText = "Erreur parcours demo : " + JSON.stringify(error, null, 2);
+        }
+    }
+    async function loadBusinessDashboard() {
+        const responseBox = document.getElementById("businessDashboardResponse");
+
+        try {
+            const data = await requestJson(`${API}/api/business-dashboard/summary`);
+
+            setBusinessText("bizTotalMerchants", data.totalMerchants);
+            setBusinessText("bizActiveMerchants", data.activeMerchants);
+            setBusinessText("bizTotalProducts", data.totalProducts);
+            setBusinessText("bizActiveProducts", data.activeProducts);
+            setBusinessText("bizTotalCampaigns", data.totalCampaigns);
+            setBusinessText("bizActiveCampaigns", data.activeCampaigns);
+            setBusinessText("bizTotalTickets", data.totalTickets);
+            setBusinessText("bizTotalClaims", data.totalClaims);
+            setBusinessText("bizSubmittedClaims", data.submittedClaims);
+            setBusinessText("bizApprovedClaims", data.approvedClaims);
+            setBusinessText("bizPaidClaims", data.paidClaims);
+            setBusinessText("bizRejectedClaims", data.rejectedClaims);
+            setBusinessText("bizTotalPayments", data.totalPayments);
+            setBusinessText("bizTotalCashbackPaid", (data.totalCashbackPaid || 0) + " FCFA");
+            setBusinessText("bizTotalFraudAlerts", data.totalFraudAlerts);
+            setBusinessText("bizOpenFraudAlerts", data.openFraudAlerts);
+
+            renderTable("biz-top-merchants-table", data.topMerchantsByClaims || []);
+            renderTable("biz-recent-claims-table", data.recentClaims || []);
+            renderTable("biz-recent-payments-table", data.recentPayments || []);
+            renderTable("biz-recent-fraud-table", data.recentFraudAlerts || []);
+
+            responseBox.innerText = "Dashboard metier actualise.";
+
+        } catch (error) {
+            responseBox.innerText = "Erreur dashboard metier : " + JSON.stringify(error, null, 2);
+        }
+    }
+
+    function loadDemoCenter() {
+        const steps = [
+            { ordre: 1, action: "Connexion", detail: "Se connecter avec secours / Secours2026" },
+            { ordre: 2, action: "Donnees demo", detail: "Cliquer sur Charger donnees demo" },
+            { ordre: 3, action: "Parcours complet", detail: "Cliquer sur Lancer parcours complet" },
+            { ordre: 4, action: "Dashboard metier", detail: "Verifier tickets, claims, paiements et cashback" },
+            { ordre: 5, action: "Dashboard securite", detail: "Verifier utilisateurs, connexions et comptes verrouilles" },
+            { ordre: 6, action: "Rapport demo", detail: "Afficher le rapport de synthese" },
+            { ordre: 7, action: "Export PDF", detail: "Exporter le rapport via Ctrl + P" },
+            { ordre: 8, action: "Logs", detail: "Montrer la tracabilite des actions sensibles" }
+        ];
+
+        renderTable("demo-center-steps-table", steps);
+
+        const box = document.getElementById("demoCenterResponse");
+        if (box) {
+            box.innerText = "Centre de demonstration pret. Suis les etapes dans l'ordre recommande.";
+        }
+    }
+
+    async function demoCenterInitData() {
+        const box = document.getElementById("demoCenterResponse");
+
+        try {
+            box.innerText = "Chargement des donnees demo en cours...";
+
+            const data = await requestJson(`${API}/api/demo-data/init`, {
+                method: "POST"
+            });
+
+            box.innerText = "Donnees demo chargees.\n" + JSON.stringify(data, null, 2);
+
+            if (typeof loadBusinessDashboard === "function") {
+                await loadBusinessDashboard();
+            }
+
+        } catch (error) {
+            box.innerText = "Erreur chargement donnees demo : " + JSON.stringify(error, null, 2);
+        }
+    }
+
+    async function demoCenterRunFlow() {
+        const box = document.getElementById("demoCenterResponse");
+
+        try {
+            box.innerText = "Execution du parcours complet en cours...";
+
+            const data = await requestJson(`${API}/api/demo-flow/run`, {
+                method: "POST"
+            });
+
+            box.innerText =
+                "Parcours complet execute avec succes.\n" +
+                "Ticket : " + data.ticketNumber + "\n" +
+                "Claim : " + data.claimReference + " / " + data.claimStatus + "\n" +
+                "Cashback : " + data.cashbackAmount + " " + data.currency + "\n" +
+                "Paiement : " + data.paymentReference + " / " + data.paymentStatus;
+
+            if (typeof loadBusinessDashboard === "function") {
+                await loadBusinessDashboard();
+            }
+
+        } catch (error) {
+            box.innerText = "Erreur parcours complet : " + JSON.stringify(error, null, 2);
+        }
+    }
+
+    function demoCenterGo(sectionId) {
+        if (document.getElementById(sectionId)) {
+            showSection(sectionId);
+        } else {
+            const box = document.getElementById("demoCenterResponse");
+            box.innerText = "Section introuvable : " + sectionId;
+        }
+    }
+
+    function demoCenterExportReport() {
+        if (typeof exportDemoReportHtml === "function") {
+            exportDemoReportHtml();
+        } else {
+            window.open(`${API}/api/demo-report/export-html`, "_blank");
+        }
+    }
+
+    function demoCenterOpenLogs() {
+        const possibleSections = ["auditLogs", "audit-logs", "audit", "logs", "auditlogs"];
+
+        for (const sectionId of possibleSections) {
+            if (document.getElementById(sectionId)) {
+                showSection(sectionId);
+                return;
+            }
+        }
+
+        const box = document.getElementById("demoCenterResponse");
+        box.innerText = "Section logs introuvable. Utilise le menu Logs transactions.";
+    }
+
+    async function demoCenterRefreshAll() {
+        const box = document.getElementById("demoCenterResponse");
+
+        try {
+            box.innerText = "Actualisation des indicateurs en cours...";
+
+            if (typeof loadBusinessDashboard === "function") {
+                await loadBusinessDashboard();
+            }
+
+            if (typeof loadSecurityDashboard === "function") {
+                await loadSecurityDashboard();
+            }
+
+            if (typeof loadDemoReport === "function") {
+                await loadDemoReport();
+            }
+
+            box.innerText = "Indicateurs actualises. Tu peux ouvrir les dashboards et le rapport.";
+
+        } catch (error) {
+            box.innerText = "Erreur actualisation indicateurs : " + JSON.stringify(error, null, 2);
+        }
+    }
+    async function loadDashboard() {
+        const data = await requestJson(`${API}/api/dashboard/summary`);
+        renderDashboardCards(data);
+
+        const rows = Object.keys(data).map(key => ({
+            indicateur: key,
+            valeur: data[key]
+        }));
+
+        renderTable("dashboard-table", rows);
+    }
+
+    async function loadMerchants() {
+        const data = await requestJson(`${API}/api/merchants`);
+        renderTable("merchants-table", data);
+    }
+
+    async function createMerchant() {
+        const body = {
+            name: document.getElementById("merchantName").value,
+            brandName: document.getElementById("merchantBrandName").value,
+            rccm: document.getElementById("merchantRccm").value,
+            niu: document.getElementById("merchantNiu").value,
+            phone: document.getElementById("merchantPhone").value,
+            email: document.getElementById("merchantEmail").value,
+            city: document.getElementById("merchantCity").value,
+            address: document.getElementById("merchantAddress").value,
+            status: document.getElementById("merchantStatus").value
+        };
+
+        try {
+            const data = await requestJson(`${API}/api/merchants`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+
+            document.getElementById("merchantResponse").innerText = JSON.stringify(data, null, 2);
+            await loadMerchants();
+            await loadDashboard();
+
+        } catch (error) {
+            document.getElementById("merchantResponse").innerText = JSON.stringify(error, null, 2);
+        }
+    }
+
+
+    async function updateMerchantStatus() {
+        const merchantId = document.getElementById("merchantIdToUpdate").value;
+        const status = document.getElementById("merchantNewStatus").value;
+
+        if (!merchantId) {
+            alert("Entre ID du commercant.");
+            return;
+        }
+
+        try {
+            const data = await requestJson(`${API}/api/merchants/${merchantId}/status?status=${status}`, {
+                method: "PUT"
+            });
+
+            document.getElementById("merchantResponse").innerText = JSON.stringify(data, null, 2);
+
+            await loadMerchants();
+            await loadDashboard();
+
+        } catch (error) {
+            document.getElementById("merchantResponse").innerText = JSON.stringify(error, null, 2);
+        }
+    }
+    async function loadProducts() {
+        const data = await requestJson(`${API}/api/products`);
+        renderTable("products-table", data);
+    }
+
+    async function createProduct() {
+        const body = {
+            merchantId: Number(document.getElementById("productMerchantId").value),
+            sku: document.getElementById("productSku").value,
+            name: document.getElementById("productName").value,
+            ticketDesignation: document.getElementById("productTicketDesignation").value,
+            synonyms: document.getElementById("productTicketDesignation").value,
+            category: document.getElementById("productCategory").value,
+            brand: document.getElementById("productBrand").value,
+            price: Number(document.getElementById("productPrice").value),
+            groupKey: document.getElementById("productCategory").value,
+            cashbackType: document.getElementById("productCashbackType").value,
+            cashbackValue: Number(document.getElementById("productCashbackValue").value),
+            active: true
+        };
+
+        try {
+            const data = await requestJson(`${API}/api/products`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+
+            document.getElementById("productResponse").innerText = JSON.stringify(data, null, 2);
+            await loadProducts();
+            await loadDashboard();
+
+        } catch (error) {
+            document.getElementById("productResponse").innerText = JSON.stringify(error, null, 2);
+        }
+    }
+
+    async function loadCampaigns() {
+        const data = await requestJson(`${API}/api/campaigns`);
+        renderTable("campaigns-table", data);
+    }
+
+
+    async function createCampaign() {
+        const body = {
+            merchantId: Number(document.getElementById("campaignMerchantId").value),
+            name: document.getElementById("campaignName").value,
+            description: document.getElementById("campaignDescription").value,
+            startDate: document.getElementById("campaignStartDate").value,
+            endDate: document.getElementById("campaignEndDate").value,
+            cashbackType: document.getElementById("campaignCashbackType").value,
+            cashbackValue: Number(document.getElementById("campaignCashbackValue").value),
+            dailyLimitPerClient: Number(document.getElementById("campaignDailyLimit").value),
+            monthlyLimitPerClient: Number(document.getElementById("campaignMonthlyLimit").value),
+            totalBudget: Number(document.getElementById("campaignTotalBudget").value),
+            status: document.getElementById("campaignStatus").value
+        };
+
+        try {
+            const data = await requestJson(`${API}/api/campaigns`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+
+            document.getElementById("campaignResponse").innerText = JSON.stringify(data, null, 2);
+
+            await loadCampaigns();
+            await loadDashboard();
+
+        } catch (error) {
+            document.getElementById("campaignResponse").innerText = JSON.stringify(error, null, 2);
+        }
+    }
+
+    async function updateCampaignStatus() {
+        const campaignId = document.getElementById("campaignIdToUpdate").value;
+        const status = document.getElementById("campaignNewStatus").value;
+
+        if (!campaignId) {
+            alert("Entre ID de la campagne.");
+            return;
+        }
+
+        try {
+            const data = await requestJson(`${API}/api/campaigns/${campaignId}/status?status=${status}`, {
+                method: "PUT"
+            });
+
+            document.getElementById("campaignResponse").innerText = JSON.stringify(data, null, 2);
+
+            await loadCampaigns();
+            await loadDashboard();
+
+        } catch (error) {
+            document.getElementById("campaignResponse").innerText = JSON.stringify(error, null, 2);
+        }
+    }
+    async function loadTickets() {
+        const data = await requestJson(`${API}/api/tickets`);
+        renderTable("tickets-table", data);
+    }
+
+    async function loadClaims() {
+        const data = await requestJson(`${API}/api/claims`);
+        renderTable("claims-table", data);
+    }
+
+    async function loadPayments() {
+        const data = await requestJson(`${API}/api/cashback/payments`);
+        renderTable("payments-table", data);
+    }
+
+    async function loadFraudAlerts() {
+        const data = await requestJson(`${API}/api/fraud/alerts`);
+        renderTable("fraud-table", data);
+    }
+
+    async function simulateOcr() {
+        const body = {
+            merchantId: Number(document.getElementById("ocrMerchantId").value),
+            campaignId: Number(document.getElementById("ocrCampaignId").value),
+            userId: document.getElementById("ocrUserId").value,
+            ticketNumber: document.getElementById("ocrTicketNumber").value
+        };
+
+        try {
+            const data = await requestJson(`${API}/api/tickets/simulate-ocr`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+
+            document.getElementById("ocrResponse").innerText = JSON.stringify(data, null, 2);
+            await loadTickets();
+            await loadClaims();
+            await loadFraudAlerts();
+            await loadDashboard();
+
+        } catch (error) {
+            document.getElementById("ocrResponse").innerText = JSON.stringify(error, null, 2);
+            await loadFraudAlerts();
+        }
+    }
+
+    async function approveClaim() {
+        const claimId = document.getElementById("claimIdToApprove").value;
+
+        if (!claimId) {
+            alert("Entre ID du claim.");
+            return;
+        }
+
+        try {
+            await requestJson(`${API}/api/claims/${claimId}/status?status=APPROVED`, {
+                method: "PUT"
+            });
+
+            alert("Claim approuve.");
+            await loadClaims();
+            await loadDashboard();
+
+        } catch (error) {
+            alert("Erreur : " + JSON.stringify(error));
+        }
+    }
+
+    async function runCashbackBatch() {
+        try {
+            const data = await requestJson(`${API}/api/cashback/batch/run`, {
+                method: "POST"
+            });
+
+            document.getElementById("batchResponse").innerText = JSON.stringify(data, null, 2);
+
+            await loadClaims();
+            await loadPayments();
+            await loadDashboard();
+
+        } catch (error) {
+            document.getElementById("batchResponse").innerText = JSON.stringify(error, null, 2);
+        }
+    }
+
+
+    async function loadAuditLogs() {
+        const data = await requestJson(`${API}/api/audit-logs`);
+        renderTable("audit-table", data);
+    }
+
+    async function createTestAuditLog() {
+        try {
+            const data = await requestJson(`${API}/api/audit-logs/test`, {
+                method: "POST"
+            });
+
+            document.getElementById("auditResponse").innerText = JSON.stringify(data, null, 2);
+
+            await loadAuditLogs();
+
+        } catch (error) {
+            document.getElementById("auditResponse").innerText = JSON.stringify(error, null, 2);
+        }
+    }
+
+    async function loadSettings() {
+        const data = await requestJson(`${API}/api/settings`);
+        renderTable("settings-table", data);
+
+        data.forEach(item => {
+            if (item.settingKey === "TICKET_SIMULATED_AMOUNT") {
+                document.getElementById("settingTicketAmount").value = item.settingValue;
+            }
+
+            if (item.settingKey === "DEFAULT_CURRENCY") {
+                document.getElementById("settingCurrency").value = item.settingValue;
+            }
+
+            if (item.settingKey === "FRAUD_NORMAL_SCORE") {
+                document.getElementById("settingNormalScore").value = item.settingValue;
+            }
+
+            if (item.settingKey === "FRAUD_DUPLICATE_SCORE") {
+                document.getElementById("settingDuplicateScore").value = item.settingValue;
+            }
+
+            if (item.settingKey === "ANTI_FRAUD_ENABLED") {
+                document.getElementById("settingAntiFraud").value = item.settingValue;
+            }
+
+            if (item.settingKey === "DEFAULT_ACTOR") {
+                document.getElementById("settingActor").value = item.settingValue;
+            }
+        });
+    }
+
+    async function updateSettingValue(key, value) {
+        return await requestJson(`${API}/api/settings/${key}?value=${encodeURIComponent(value)}`, {
+            method: "PUT"
+        });
+    }
+
+    async function saveSettings() {
+        try {
+            const results = [];
+
+            results.push(await updateSettingValue("TICKET_SIMULATED_AMOUNT", document.getElementById("settingTicketAmount").value));
+            results.push(await updateSettingValue("DEFAULT_CURRENCY", document.getElementById("settingCurrency").value));
+            results.push(await updateSettingValue("FRAUD_NORMAL_SCORE", document.getElementById("settingNormalScore").value));
+            results.push(await updateSettingValue("FRAUD_DUPLICATE_SCORE", document.getElementById("settingDuplicateScore").value));
+            results.push(await updateSettingValue("ANTI_FRAUD_ENABLED", document.getElementById("settingAntiFraud").value));
+            results.push(await updateSettingValue("DEFAULT_ACTOR", document.getElementById("settingActor").value));
+
+            document.getElementById("settingsResponse").innerText = JSON.stringify(results, null, 2);
+
+            await loadSettings();
+            await loadDashboard();
+
+        } catch (error) {
+            document.getElementById("settingsResponse").innerText = JSON.stringify(error, null, 2);
+        }
+    }
+
+    function downloadCsv(url) {
+        document.getElementById("exportsResponse").innerText = "Export lance : " + url;
+        window.location.href = url;
+    }
+
+
+    function setSecurityText(id, value) {
+        const element = document.getElementById(id);
+
+        if (element) {
+            element.innerText = value ?? 0;
+        }
+    }
+
+    async function loadSecurityDashboard() {
+        const responseBox = document.getElementById("securityResponse");
+
+        try {
+            const data = await requestJson(`${API}/api/security-dashboard/summary`);
+
+            setSecurityText("secTotalUsers", data.totalUsers);
+            setSecurityText("secActiveUsers", data.activeUsers);
+            setSecurityText("secDisabledUsers", data.disabledUsers);
+            setSecurityText("secLockedUsers", data.lockedUsers);
+            setSecurityText("secActiveAdmins", data.activeAdmins);
+            setSecurityText("secOperators", data.operators);
+            setSecurityText("secReaders", data.readers);
+
+            setSecurityText("secLoginSuccess", data.loginSuccess);
+            setSecurityText("secLoginFailed", data.loginFailed);
+            setSecurityText("secLoginFailedLocked", data.loginFailedLocked);
+            setSecurityText("secLoginAccountLocked", data.loginAccountLocked);
+            setSecurityText("secAdminUnlocks", data.adminUnlocks);
+            setSecurityText("secAdminPasswordResets", data.adminPasswordResets);
+
+            renderTable("security-logs-table", data.recentSecurityLogs || []);
+
+            responseBox.innerText = "Dashboard securite actualise.";
+
+        } catch (error) {
+            responseBox.innerText = "Erreur dashboard securite : " + JSON.stringify(error, null, 2);
+        }
+    }
+    async function loadUsers() {
+        try {
+            const data = await requestJson(`${API}/api/auth/users`);
+            renderTable("users-table", data);
+        } catch (error) {
+            document.getElementById("usersResponse").innerText = JSON.stringify(error, null, 2);
+        }
+    }
+
+    async function createUser() {
+        const body = {
+            username: document.getElementById("newUsername").value,
+            fullName: document.getElementById("newFullName").value,
+            email: document.getElementById("newEmail").value,
+            password: document.getElementById("newPassword").value,
+            role: document.getElementById("newUserRole").value
+        };
+
+        try {
+            const data = await requestJson(`${API}/api/auth/users`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+
+            document.getElementById("usersResponse").innerText = JSON.stringify(data, null, 2);
+            await loadUsers();
+
+        } catch (error) {
+            document.getElementById("usersResponse").innerText = JSON.stringify(error, null, 2);
+        }
+    }
+
+
+
+    async function unlockUserAccount() {
+        const userId = document.getElementById("unlockUserId").value;
+        const responseBox = document.getElementById("usersResponse");
+
+        if (!userId) {
+            responseBox.innerText = "Erreur : ID utilisateur obligatoire.";
+            return;
+        }
+
+        try {
+            const data = await requestJson(`${API}/api/auth/users/${userId}/unlock`, {
+                method: "PUT"
+            });
+
+            responseBox.innerText = "Compte utilisateur debloque avec succes : ID " + userId;
+
+            await loadUsers();
+
+        } catch (error) {
+            responseBox.innerText = "Erreur deblocage compte : " + JSON.stringify(error, null, 2);
+        }
+    }
+    function toggleAdminResetPasswordVisibility() {
+        const fields = ["adminResetPassword", "adminResetConfirmPassword"];
+
+        fields.forEach(id => {
+            const input = document.getElementById(id);
+
+            if (input) {
+                input.type = input.type === "password" ? "text" : "password";
+            }
+        });
+    }
+
+    async function resetUserPassword() {
+        const userId = document.getElementById("adminResetUserId").value;
+        const newPassword = document.getElementById("adminResetPassword").value.trim();
+        const confirmPassword = document.getElementById("adminResetConfirmPassword").value.trim();
+
+        const responseBox = document.getElementById("usersResponse");
+
+        if (!userId || !newPassword || !confirmPassword) {
+            responseBox.innerText = "Erreur : ID utilisateur et mot de passe obligatoires.";
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            responseBox.innerText = "Erreur : le mot de passe et la confirmation sont differents.";
+            return;
+        }
+
+        if (newPassword.length < 8) {
+            responseBox.innerText = "Erreur : le mot de passe doit contenir au moins 8 caracteres.";
+            return;
+        }
+
+        if (newPassword.includes(" ")) {
+            responseBox.innerText = "Erreur : le mot de passe ne doit pas contenir d'espace.";
+            return;
+        }
+
+        const body = {
+            newPassword: newPassword
+        };
+
+        try {
+            const data = await requestJson(`${API}/api/auth/users/${userId}/reset-password`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+
+            responseBox.innerText = "Mot de passe reinitialise avec succes pour utilisateur ID " + userId;
+
+            document.getElementById("adminResetPassword").value = "";
+            document.getElementById("adminResetConfirmPassword").value = "";
+
+            await loadUsers();
+
+        } catch (error) {
+            responseBox.innerText = "Erreur reset mot de passe : " + JSON.stringify(error, null, 2);
+        }
+    }
+    async function updateUserRole() {
+        const userId = document.getElementById("userIdToRole").value;
+        const role = document.getElementById("userNewRole").value;
+
+        if (!userId) {
+            alert("Entre ID utilisateur.");
+            return;
+        }
+
+        try {
+            const data = await requestJson(`${API}/api/auth/users/${userId}/role?role=${role}`, {
+                method: "PUT"
+            });
+
+            document.getElementById("usersResponse").innerText = JSON.stringify(data, null, 2);
+            await loadUsers();
+
+        } catch (error) {
+            document.getElementById("usersResponse").innerText = JSON.stringify(error, null, 2);
+        }
+    }
+
+    async function updateUserEnabled() {
+        const userId = document.getElementById("userIdToEnabled").value;
+        const enabled = document.getElementById("userEnabledValue").value;
+
+        if (!userId) {
+            alert("Entre ID utilisateur.");
+            return;
+        }
+
+        try {
+            const data = await requestJson(`${API}/api/auth/users/${userId}/enabled?enabled=${enabled}`, {
+                method: "PUT"
+            });
+
+            document.getElementById("usersResponse").innerText = JSON.stringify(data, null, 2);
+            await loadUsers();
+
+        } catch (error) {
+            document.getElementById("usersResponse").innerText = JSON.stringify(error, null, 2);
+        }
+    }
+    async function loadProfile() {
+        if (!CURRENT_USER) {
+            return;
+        }
+
+        document.getElementById("profileUsername").value = CURRENT_USER.username || "";
+        document.getElementById("profileFullName").value = CURRENT_USER.fullName || "";
+        document.getElementById("profileRole").value = CURRENT_USER.role || "";
+    }
+
+    function toggleProfilePasswordVisibility() {
+        const fields = ["profileOldPassword", "profileNewPassword", "profileConfirmPassword"];
+
+        fields.forEach(id => {
+            const input = document.getElementById(id);
+
+            if (input) {
+                input.type = input.type === "password" ? "text" : "password";
+            }
+        });
+    }
+
+    async function changePassword() {
+        const oldPassword = document.getElementById("profileOldPassword").value.trim();
+        const newPassword = document.getElementById("profileNewPassword").value.trim();
+        const confirmPassword = document.getElementById("profileConfirmPassword").value.trim();
+
+        const responseBox = document.getElementById("profileResponse");
+
+        if (!oldPassword || !newPassword || !confirmPassword) {
+            responseBox.innerText = "Erreur : tous les champs sont obligatoires.";
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            responseBox.innerText =
+                "Erreur : le nouveau mot de passe et la confirmation sont differents.\n" +
+                "Longueur nouveau : " + newPassword.length + "\n" +
+                "Longueur confirmation : " + confirmPassword.length;
+            return;
+        }
+
+        if (newPassword.length < 8) {
+            responseBox.innerText = "Erreur : le nouveau mot de passe doit contenir au moins 8 caracteres.";
+            return;
+        }
+
+        if (newPassword.includes(" ")) {
+            responseBox.innerText = "Erreur : le mot de passe ne doit pas contenir d'espace.";
+            return;
+        }
+
+        const body = {
+            oldPassword: oldPassword,
+            newPassword: newPassword
+        };
+
+        try {
+            await requestJson(`${API}/api/auth/change-password`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+
+            responseBox.innerText =
+                "Mot de passe change avec succes. Deconnecte-toi puis reconnecte-toi avec le nouveau mot de passe.";
+
+            document.getElementById("profileOldPassword").value = "";
+            document.getElementById("profileNewPassword").value = "";
+            document.getElementById("profileConfirmPassword").value = "";
+
+        } catch (error) {
+            responseBox.innerText = "Erreur changement mot de passe : " + JSON.stringify(error, null, 2);
+        }
+    }
+
+    async function refreshAll() {
+        await loadDashboard();
+        await loadMerchants();
+        await loadProducts();
+        await loadCampaigns();
+        await loadTickets();
+        await loadClaims();
+        await loadPayments();
+        await loadFraudAlerts();
+    }
+
+    checkAuthentication();
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script id="ticket2cash-real-capture-menu-js">
+(function () {
+    function svg(path) {
+        return '<svg viewBox="0 0 24 24" aria-hidden="true">' + path + '</svg>';
+    }
+
+    const icons = {
+        dashboard: svg('<rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect>'),
+        demoCenter: svg('<polygon points="8 5 19 12 8 19 8 5"></polygon>'),
+        businessDashboard: svg('<line x1="4" y1="19" x2="20" y2="19"></line><rect x="6" y="10" width="3" height="7"></rect><rect x="11" y="6" width="3" height="11"></rect><rect x="16" y="13" width="3" height="4"></rect>'),
+        security: svg('<path d="M12 3l7 4v5c0 5-3 8-7 9-4-1-7-4-7-9V7l7-4z"></path><path d="M9 12l2 2 4-4"></path>'),
+        demoFlow: svg('<circle cx="6" cy="12" r="2"></circle><circle cx="18" cy="6" r="2"></circle><circle cx="18" cy="18" r="2"></circle><path d="M8 12h4l4-6"></path><path d="M12 12l4 6"></path>'),
+        demoReport: svg('<path d="M6 3h9l3 3v15H6V3z"></path><path d="M14 3v4h4"></path><path d="M8 12h8"></path><path d="M8 16h8"></path>'),
+        profile: svg('<circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 14.5-4 16 0"></path>'),
+        merchants: svg('<path d="M4 10h16"></path><path d="M5 10l1-5h12l1 5"></path><path d="M6 10v10h12V10"></path><path d="M9 20v-6h6v6"></path>'),
+        products: svg('<path d="M21 8l-9-5-9 5 9 5 9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path><path d="M12 13v8"></path>'),
+        campaigns: svg('<path d="M4 13v6h4l10-6V5L8 11H4v2z"></path><path d="M18 9h3"></path>'),
+        tickets: svg('<path d="M4 5h16v4a3 3 0 0 0 0 6v4H4v-4a3 3 0 0 0 0-6V5z"></path><path d="M9 9h6"></path><path d="M9 15h6"></path>'),
+        claims: svg('<path d="M5 12l4 4L19 6"></path>'),
+        payments: svg('<path d="M4 7h16v10H4V7z"></path><path d="M4 11h16"></path><path d="M8 15h4"></path>'),
+        fraud: svg('<path d="M12 3l10 18H2L12 3z"></path><path d="M12 9v5"></path><path d="M12 17h.01"></path>'),
+        auditLogs: svg('<path d="M5 4h14v16H5V4z"></path><path d="M8 8h8"></path><path d="M8 12h8"></path><path d="M8 16h5"></path>'),
+        settings: svg('<circle cx="12" cy="12" r="3"></circle><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.5-2.4 1a7 7 0 0 0-1.8-1L14.4 3h-4.8L9.3 6a7 7 0 0 0-1.8 1l-2.4-1-2 3.5 2 1.5A7 7 0 0 0 5 12a7 7 0 0 0 .1 1l-2 1.5 2 3.5 2.4-1a7 7 0 0 0 1.8 1l.3 3h4.8l.3-3a7 7 0 0 0 1.8-1l2.4 1 2-3.5-2-1.5c.1-.3.1-.7.1-1z"></path>'),
+        users: svg('<circle cx="9" cy="8" r="3"></circle><path d="M3 21c1-4 11-4 12 0"></path><circle cx="17" cy="10" r="2"></circle><path d="M15 21c.5-2 4-2 5 0"></path>'),
+        exports: svg('<path d="M12 3v12"></path><path d="M7 10l5 5 5-5"></path><path d="M5 21h14"></path>')
+    };
+
+    const menuItems = [
+        { key: "dashboard", text: "Tableau de bord" },
+        { key: "demoCenter", text: "Centre demo" },
+        { key: "businessDashboard", text: "Dashboard metier" },
+        { key: "security", text: "Dashboard securite" },
+        { key: "demoFlow", text: "Parcours demo" },
+        { key: "demoReport", text: "Rapport demo" },
+        { key: "profile", text: "Mon profil" },
+        { key: "merchants", text: "Commercants" },
+        { key: "products", text: "Produits" },
+        { key: "campaigns", text: "Campagnes" },
+        { key: "tickets", text: "Tickets" },
+        { key: "claims", text: "Claims" },
+        { key: "payments", text: "Paiements cashback" },
+        { key: "fraud", text: "Alertes fraude" },
+        { key: "auditLogs", text: "Logs transactions" },
+        { key: "settings", text: "Parametres" },
+        { key: "users", text: "Utilisateurs" },
+        { key: "exports", text: "Exports CSV" }
+    ];
+
+    function sidebar() {
+        return document.querySelector("aside") || document.querySelector(".sidebar") || document.querySelector("nav");
+    }
+
+    function sectionExists(id) {
+        return !!document.getElementById(id);
+    }
+
+    function buildSidebar() {
+        const sb = sidebar();
+        if (!sb) return;
+
+        const oldButtons = Array.from(sb.querySelectorAll("button"));
+        const existing = oldButtons.map(btn => {
+            const onclick = btn.getAttribute("onclick") || "";
+            const match = onclick.match(/showSection\('([^']+)'\)/);
+            return match ? match[1] : null;
+        }).filter(Boolean);
+
+        sb.innerHTML = "";
+
+        const brand = document.createElement("div");
+        brand.className = "t2c-capture-brand";
+        brand.innerHTML =
+            '<img class="t2c-capture-logo" ' +
+            'src="/assets/logo-ticket2cash.png" ' +
+            'alt="Ticket2Cash" ' +
+            'onerror="this.style.display=\'none\'; this.parentElement.querySelector(\'.t2c-capture-logo-fallback\').style.display=\'block\';">' +
+            '<div class="t2c-capture-logo-fallback">Ticket2Cash</div>';
+
+        sb.appendChild(brand);
+
+        const label = document.createElement("div");
+        label.className = "t2c-menu-group-label";
+        label.textContent = "ESPACE PARTENAIRE";
+        sb.appendChild(label);
+
+        menuItems.forEach(item => {
+            if (!existing.includes(item.key) && !sectionExists(item.key)) return;
+
+            const btn = document.createElement("button");
+            btn.className = "t2c-menu-button";
+            btn.dataset.sectionId = item.key;
+            btn.setAttribute("onclick", "showSection('" + item.key + "')");
+
+            const iconHtml = icons[item.key] || icons.dashboard;
+
+            btn.innerHTML =
+                '<span class="t2c-menu-icon">' + iconHtml + '</span>' +
+                '<span class="t2c-menu-label">' + item.text + '</span>';
+
+            btn.addEventListener("click", function () {
+                markActive(item.key, item.text);
+            });
+
+            sb.appendChild(btn);
+        });
+    }
+
+    function createTopbar() {
+        document.querySelectorAll(".t2c-capture-topbar").forEach(e => e.remove());
+
+        const topbar = document.createElement("div");
+        topbar.className = "t2c-capture-topbar";
+        topbar.innerHTML =
+            '<div class="t2c-capture-user-area">' +
+                '<span class="t2c-capture-user" id="t2cCaptureUser">admin - ADMIN</span>' +
+                '<button class="t2c-capture-logout" onclick="logout()">Deconnexion</button>' +
+            '</div>' +
+            '<div class="t2c-capture-title" id="t2cCaptureTitle">Tableau de bord</div>' +
+            '<div class="t2c-capture-right">' +
+                '<img class="t2c-afriland-mini" src="/assets/logo-afriland.png" alt="Afriland First Bank" onerror="this.style.display=\'none\';">' +
+            '</div>';
+
+        document.body.appendChild(topbar);
+    }
+
+    function updateUser() {
+        try {
+            const user = window.CURRENT_USER || CURRENT_USER;
+            const box = document.getElementById("t2cCaptureUser");
+
+            if (box && user) {
+                box.textContent = (user.username || "utilisateur") + " - " + (user.role || "");
+            }
+        } catch (e) {}
+    }
+
+    function markActive(sectionId, text) {
+        document.querySelectorAll(".t2c-menu-button").forEach(btn => {
+            btn.classList.toggle("t2c-active-menu", btn.dataset.sectionId === sectionId);
+        });
+
+        const title = document.getElementById("t2cCaptureTitle");
+
+        if (title) {
+            const btnLabel = document.querySelector('.t2c-menu-button[data-section-id="' + sectionId + '"] .t2c-menu-label');
+            title.textContent = text || (btnLabel ? btnLabel.textContent.trim() : "Ticket2Cash");
+        }
+
+        updateUser();
+    }
+
+    function patchShowSection() {
+        if (window.__captureShowSectionPatched) return;
+        if (typeof window.showSection !== "function") return;
+
+        const original = window.showSection;
+
+        window.showSection = function (sectionId) {
+            const result = original.apply(this, arguments);
+            markActive(sectionId);
+            return result;
+        };
+
+        window.__captureShowSectionPatched = true;
+    }
+
+    function init() {
+        buildSidebar();
+        createTopbar();
+        patchShowSection();
+        updateUser();
+
+        const visible = Array.from(document.querySelectorAll("section.section"))
+            .find(s => s.style.display !== "none" && !s.hidden);
+
+        if (visible && visible.id) {
+            markActive(visible.id);
+        } else {
+            markActive("dashboard", "Tableau de bord");
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", init);
+    setTimeout(init, 500);
+    setTimeout(init, 1200);
+})();
+</script>
+
+
+
+</body>
+</html>

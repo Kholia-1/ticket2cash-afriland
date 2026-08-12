@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fidélité Afriland — Ticket2Cash</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand:#C1121F; --brand-600:#A50F1A; --brand-700:#8A0C15; --brand-tint:#FDECEE;
+  --font-sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --font-display:'Plus Jakarta Sans',var(--font-sans);
+  --font-mono:'JetBrains Mono',ui-monospace,monospace;
+  --r-sm:8px; --r-md:12px; --r-lg:16px;
+  --ok:#127A45; --ok-bg:#E6F4EC;
+  --warn:#B25E09; --warn-bg:#FBEFDD;
+  --info:#1553B8; --info-bg:#E7F0FE;
+  --danger:#B42318; --danger-bg:#FCE9E7;
+  --muted-badge:#5A6472; --muted-bg:#EEF1F5;
+}
+html[data-theme="light"]{
+  --bg:#F4F6FA; --bg-grad:radial-gradient(1100px 480px at 82% -12%, #fbe9ea 0%, transparent 62%);
+  --surface:#FFFFFF; --surface-2:#F7F9FC; --elevated:#FFFFFF;
+  --border:#E6EAF1; --border-strong:#D6DCE7;
+  --text:#101828; --text-2:#48566B; --muted:#8A94A6;
+  --input-bg:#FFFFFF;
+  --shadow-sm:0 1px 2px rgba(16,24,40,.05);
+  --shadow-md:0 4px 16px rgba(16,24,40,.08);
+  --shadow-lg:0 12px 40px rgba(16,24,40,.14);
+}
+html[data-theme="dark"]{
+  --bg:#090C12; --bg-grad:radial-gradient(1100px 480px at 82% -12%, rgba(193,18,31,.15) 0%, transparent 62%);
+  --surface:#12161F; --surface-2:#161C27; --elevated:#161C27;
+  --border:#232B39; --border-strong:#2C3648;
+  --text:#E9EDF5; --text-2:#AEB7C6; --muted:#727D90;
+  --input-bg:#0E1219;
+  --ok-bg:#0e2a1c; --warn-bg:#2c1f0d; --info-bg:#0f1f3a; --danger-bg:#2c1512; --muted-bg:#1a2130;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.3);
+  --shadow-md:0 4px 16px rgba(0,0,0,.4);
+  --shadow-lg:0 16px 46px rgba(0,0,0,.55);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font-sans);background:var(--bg);background-image:var(--bg-grad);background-attachment:fixed;color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:14px;background:var(--input-bg);color:var(--text);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 12px;width:100%;transition:border-color .2s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand)}
+label{font-size:12px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:6px}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:20px;border:3px solid transparent;background-clip:padding-box}
+
+/* topbar */
+.topbar{height:64px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:20}
+.topbar h1{font-family:var(--font-display);font-size:16px;font-weight:800;display:flex;align-items:center;gap:10px}
+.topbar h1 span{width:8px;height:8px;background:var(--brand);border-radius:50%;box-shadow:0 0 0 4px var(--brand-tint)}
+.topbar .actions{display:flex;gap:8px;align-items:center}
+
+/* content */
+.container{max-width:1400px;margin:0 auto;padding:24px}
+.page-head{margin-bottom:24px}
+.page-head h1{font-family:var(--font-display);font-size:26px;font-weight:800;letter-spacing:-.3px}
+.page-head p{color:var(--text-2);margin-top:4px}
+
+/* KPI cards */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:18px;box-shadow:var(--shadow-sm)}
+.kpi .label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.kpi .value{font-family:var(--font-display);font-size:24px;font-weight:800;margin-top:6px}
+.kpi .sub{font-size:12px;color:var(--text-2);margin-top:4px}
+
+/* tabs */
+.tabs{display:flex;gap:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:4px;margin-bottom:20px;overflow-x:auto}
+.tab{padding:9px 16px;font-size:13px;font-weight:600;color:var(--text-2);border-radius:8px;white-space:nowrap;cursor:pointer;transition:all .2s}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--surface);color:var(--brand);box-shadow:var(--shadow-sm)}
+
+/* panel */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:20px;box-shadow:var(--shadow-sm);margin-bottom:16px}
+.panel h2{font-family:var(--font-display);font-size:16px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.panel h2 .sub{font-size:12px;font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:var(--r-sm);font-size:13px;font-weight:600;transition:all .2s;border:1px solid transparent;cursor:pointer}
+.btn svg{width:16px;height:16px;flex:0 0 16px}
+.btn-primary{background:var(--brand);color:#fff}
+.btn-primary:hover{background:var(--brand-600)}
+.btn-ghost{background:var(--surface-2);color:var(--text);border-color:var(--border)}
+.btn-ghost:hover{background:var(--border)}
+.btn-danger{background:var(--danger-bg);color:var(--danger);border-color:transparent}
+.btn-danger:hover{background:var(--danger);color:#fff}
+.btn-ok{background:var(--ok-bg);color:var(--ok);border-color:transparent}
+.btn-ok:hover{background:var(--ok);color:#fff}
+.btn-sm{padding:6px 10px;font-size:12px}
+.btn-sm svg{width:14px;height:14px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* tables */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;box-shadow:var(--shadow-sm)}
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--surface-2);text-align:left;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;padding:12px 16px;border-bottom:1px solid var(--border)}
+tbody td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--surface-2)}
+tbody td.num{font-family:var(--font-mono);text-align:right;white-space:nowrap}
+.empty{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+
+/* badge */
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+.b-ok{background:var(--ok-bg);color:var(--ok)}
+.b-warn{background:var(--warn-bg);color:var(--warn)}
+.b-info{background:var(--info-bg);color:var(--info)}
+.b-danger{background:var(--danger-bg);color:var(--danger)}
+.b-muted{background:var(--muted-bg);color:var(--muted-badge)}
+
+/* grid + forms */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+@media(max-width:900px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+.form-row{margin-bottom:14px}
+.form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
+
+/* upload drop zone */
+.dropzone{border:2px dashed var(--border-strong);border-radius:var(--r-md);padding:36px;text-align:center;transition:all .2s;cursor:pointer;background:var(--surface-2)}
+.dropzone:hover,.dropzone.drag{border-color:var(--brand);background:var(--brand-tint)}
+.dropzone svg{width:44px;height:44px;color:var(--muted);margin-bottom:10px}
+.dropzone.drag svg,.dropzone:hover svg{color:var(--brand)}
+.dropzone .title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px}
+.dropzone .sub{font-size:12px;color:var(--text-2)}
+.dropzone input[type=file]{display:none}
+
+/* modal */
+.modal-back{position:fixed;inset:0;background:rgba(15,20,32,.6);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal-back.on{display:flex}
+.modal{background:var(--surface);border-radius:var(--r-lg);width:100%;max-width:640px;max-height:90vh;overflow:auto;box-shadow:var(--shadow-lg)}
+.modal-head{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.modal-head h3{font-family:var(--font-display);font-size:17px;font-weight:700}
+.modal-body{padding:22px}
+.modal-close{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--text-2)}
+.modal-close:hover{background:var(--surface-2);color:var(--text)}
+
+/* toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);padding:12px 18px;border-radius:var(--r-md);box-shadow:var(--shadow-lg);z-index:200;font-size:13px;font-weight:600;transform:translateY(120%);transition:transform .3s;max-width:400px}
+.toast.on{transform:translateY(0)}
+.toast.err{border-left:4px solid var(--danger);color:var(--danger)}
+.toast.ok{border-left:4px solid var(--ok);color:var(--ok)}
+
+/* helper */
+.mono{font-family:var(--font-mono);font-size:12px}
+.stat-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--border)}
+.stat-row:last-child{border-bottom:none}
+.stat-row .k{color:var(--text-2)}
+.stat-row .v{font-weight:600}
+
+/* icon button (thead actions column) */
+.icon-btn{width:28px;height:28px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;color:var(--text-2)}
+.icon-btn:hover{background:var(--surface-2);color:var(--brand)}
+.icon-btn svg{width:15px;height:15px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1><span></span>Fidélité Afriland — Moteur de cashback</h1>
+  <div class="actions">
+    <button class="btn btn-ghost" onclick="location.href='/index.html'" title="Retour">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+      Portail admin
+    </button>
+    <button class="btn btn-ghost" onclick="toggleTheme()" title="Thème">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="page-head">
+    <h1>Moteur de cashback fidélité</h1>
+    <p>Uploadez l'historique de transactions de vos clients fidèles, appliquez une règle de cashback, et créditez leurs cartes en un clic.</p>
+  </div>
+
+  <!-- KPI Row -->
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" data-tab="batches" onclick="switchTab('batches')">
+      <span>Batches</span>
+    </div>
+    <div class="tab" data-tab="rules" onclick="switchTab('rules')">
+      <span>Règles</span>
+    </div>
+    <div class="tab" data-tab="clients" onclick="switchTab('clients')">
+      <span>Clients</span>
+    </div>
+  </div>
+
+  <!-- Tab content -->
+  <div id="tabContent"></div>
+</div>
+
+<!-- Modal -->
+<div class="modal-back" id="modalBack" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">—</h3>
+      <button class="modal-close" onclick="closeModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ THEME ============ */
+document.documentElement.setAttribute("data-theme", localStorage.getItem("t2c_theme") || "light");
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute("data-theme");
+  const next = cur === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  localStorage.setItem("t2c_theme", next);
+}
+
+/* ============ API ============ */
+const API = "";  // same origin
+async function api(path, opts={}){
+  const res = await fetch(API + path, Object.assign({credentials:"same-origin",headers:{"Content-Type":"application/json"}}, opts));
+  if(res.status === 401){location.href="/login.html";throw new Error("unauth");}
+  const txt = await res.text();
+  if(!res.ok) throw new Error(txt || res.status);
+  try{ return txt ? JSON.parse(txt) : null; }catch(_){ return txt; }
+}
+async function apiForm(path, formData){
+  const res = await fetch(API + path, {method:"POST",credentials:"same-origin",body:formData});
+  if(res.status === 401){location.href="/login.html";throw new Error("unauth");}
+  const txt = await res.text();
+  if(!res.ok) throw new Error(txt || res.status);
+  try{ return txt ? JSON.parse(txt) : null; }catch(_){ return txt; }
+}
+
+/* ============ FORMAT ============ */
+const nf = new Intl.NumberFormat("fr-FR");
+function money(v){ if(v==null||v==="") return "—"; return nf.format(Math.round(Number(v))) + " FCFA"; }
+function num(v){ return v==null ? "0" : nf.format(Number(v)); }
+function dt(v){ if(!v) return "—"; const d = new Date(v); if(isNaN(d)) return v; return d.toLocaleString("fr-FR",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]); }
+function statusBadge(s){
+  const u = String(s||"").toUpperCase();
+  const map = {
+    IMPORTED:"b-info", CALCULATING:"b-warn", CALCULATED:"b-info",
+    APPROVED:"b-warn", CREDITED:"b-ok", REJECTED:"b-danger", FAILED:"b-danger",
+    PENDING:"b-warn", QUEUED:"b-info", CANCELLED:"b-muted", ACTIVE:"b-ok", INACTIVE:"b-muted"
+  };
+  const label = {
+    IMPORTED:"Importé", CALCULATING:"Calcul…", CALCULATED:"Calculé",
+    APPROVED:"Approuvé", CREDITED:"Crédité", REJECTED:"Rejeté", FAILED:"Échoué",
+    PENDING:"En attente", QUEUED:"En file", CANCELLED:"Annulé"
+  };
+  return `<span class="badge ${map[u]||"b-muted"}">${label[u]||u}</span>`;
+}
+
+/* ============ TOAST + MODAL ============ */
+let toastTimer;
+function toast(msg, kind="ok"){
+  const t = document.getElementById("toast");
+  t.className = "toast on " + kind;
+  t.textContent = msg;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ t.className = "toast"; }, 3500);
+}
+function openModal(title, html){
+  document.getElementById("modalTitle").textContent = title;
+  document.getElementById("modalBody").innerHTML = html;
+  document.getElementById("modalBack").classList.add("on");
+}
+function closeModal(){ document.getElementById("modalBack").classList.remove("on"); }
+
+/* ============ STATE ============ */
+let CURRENT_TAB = "batches";
+let STATE = { batches:[], rules:[], clients:[] };
+
+/* ============ BOOT ============ */
+(async function boot(){
+  await refreshAll();
+  renderKpi();
+  switchTab("batches");
+})();
+
+async function refreshAll(){
+  try{
+    const [stats, batches, rules, clients] = await Promise.all([
+      api("/api/loyalty/stats"),
+      api("/api/loyalty/batches"),
+      api("/api/loyalty/rules"),
+      api("/api/loyalty/clients")
+    ]);
+    STATE.stats = stats;
+    STATE.batches = batches || [];
+    STATE.rules = rules || [];
+    STATE.clients = clients || [];
+  }catch(e){
+    toast("Erreur chargement: " + e.message, "err");
+  }
+}
+
+function renderKpi(){
+  const s = STATE.stats || {};
+  document.getElementById("kpiRow").innerHTML = `
+    <div class="kpi">
+      <div class="label">Clients enrôlés</div>
+      <div class="value">${num(s.clients||0)}</div>
+      <div class="sub">Programme fidélité</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Batches traités</div>
+      <div class="value">${num(s.batches||0)}</div>
+      <div class="sub">${num(s.creditedBatches||0)} crédités • ${num(s.pendingBatches||0)} en attente</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Cashback distribué</div>
+      <div class="value">${money(s.totalPaidCashback||0)}</div>
+      <div class="sub">Cumulé sur tous les clients</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Règles actives</div>
+      <div class="value">${num(s.rules||0)}</div>
+      <div class="sub">Configurations de cashback</div>
+    </div>`;
+}
+
+/* ============ TABS ============ */
+function switchTab(id){
+  CURRENT_TAB = id;
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === id));
+  if(id === "batches") renderBatches();
+  else if(id === "rules") renderRules();
+  else if(id === "clients") renderClients();
+}
+
+/* ============ BATCHES ============ */
+function renderBatches(){
+  const c = document.getElementById("tabContent");
+  const rows = STATE.batches;
+  c.innerHTML = `
+    <div class="panel">
+      <h2>Nouveau batch <span class="sub">CSV ou XLSX — colonnes reconnues: compte, nom, date, montant, description, catégorie, référence</span></h2>
+      <div class="grid-2">
+        <div>
+          <label>Nom du batch</label>
+          <input id="upName" placeholder="Ex: Cashback Juillet 2026 — Clients GOLD">
+        </div>
+        <div>
+          <label>Fichier</label>
+          <input type="file" id="upFile" accept=".csv,.xlsx,.xls,.tsv,.txt">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="uploadBatch()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Uploader
+        </button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Batches <span class="sub">${rows.length} batch${rows.length>1?"es":""}</span></h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Nom</th><th>Statut</th><th>Règle</th>
+            <th class="num">Lignes</th><th class="num">Volume</th><th class="num">Cashback</th>
+            <th class="num">Clients</th><th>Créé</th><th style="width:200px">Actions</th>
+          </tr></thead>
+          <tbody>
+            ${rows.length===0 ? `<tr><td colspan="9" class="empty">Aucun batch. Uploadez un fichier pour commencer.</td></tr>` :
+              rows.map(b => `
+                <tr>
+                  <td><strong>${esc(b.name)}</strong><br><span class="mono" style="color:var(--muted);font-size:11px">${esc(b.sourceFilename||"—")}</span></td>
+                  <td>${statusBadge(b.status)}</td>
+                  <td>${esc(b.ruleNameSnapshot||"—")}</td>
+                  <td class="num">${num(b.parsedRows)} / ${num(b.totalRows)}</td>
+                  <td class="num">${money(b.totalVolume)}</td>
+                  <td class="num"><strong>${money(b.totalCashback)}</strong></td>
+                  <td class="num">${num(b.clientCount)}</td>
+                  <td>${dt(b.createdAt)}</td>
+                  <td>${batchActions(b)}</td>
+                </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function batchActions(b){
+  const s = b.status;
+  let btns = `<button class="icon-btn" title="Détails" onclick="openBatchDetails(${b.id})">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+  </button>`;
+  if(s === "IMPORTED" || s === "CALCULATED" || s === "FAILED"){
+    btns += `<button class="btn btn-sm btn-ghost" onclick="openCalcModal(${b.id})">Calculer</button>`;
+  }
+  if(s === "CALCULATED"){
+    btns += `<button class="btn btn-sm btn-ok" onclick="approveBatch(${b.id})">Approuver</button>`;
+  }
+  if(s === "APPROVED"){
+    btns += `<button class="btn btn-sm btn-primary" onclick="creditBatch(${b.id})">Créditer</button>`;
+  }
+  if(s !== "CREDITED"){
+    btns += `<button class="icon-btn" title="Supprimer" onclick="deleteBatch(${b.id})">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+    </button>`;
+  }
+  return btns;
+}
+
+async function uploadBatch(){
+  const name = document.getElementById("upName").value.trim();
+  const file = document.getElementById("upFile").files[0];
+  if(!file){ toast("Sélectionnez un fichier", "err"); return; }
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("name", name || file.name);
+  try{
+    toast("Import en cours…");
+    const batch = await apiForm("/api/loyalty/batches/upload", fd);
+    toast(`Batch importé — ${batch.parsedRows} lignes`, "ok");
+    await refreshAll();
+    renderKpi();
+    renderBatches();
+  }catch(e){
+    toast("Erreur import: " + e.message, "err");
+  }
+}
+
+function openCalcModal(batchId){
+  const activeRules = STATE.rules.filter(r => r.active);
+  if(activeRules.length === 0){
+    toast("Aucune règle active. Créez-en une d'abord.", "err");
+    return;
+  }
+  openModal("Appliquer une règle", `
+    <div class="form-row">
+      <label>Règle de cashback</label>
+      <select id="calcRuleId">
+        ${activeRules.map(r => `<option value="${r.id}">${esc(r.name)} — ${r.type}</option>`).join("")}
+      </select>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="runCalc(${batchId})">Lancer le calcul</button>
+    </div>`);
+}
+
+async function runCalc(batchId){
+  const ruleId = document.getElementById("calcRuleId").value;
+  try{
+    toast("Calcul en cours…");
+    const batch = await api(`/api/loyalty/batches/${batchId}/calculate?ruleId=${ruleId}`, {method:"POST"});
+    toast(`Calculé: ${money(batch.totalCashback)} sur ${batch.clientCount} clients`, "ok");
+    closeModal();
+    await refreshAll();
+    renderKpi();
+    renderBatches();
+  }catch(e){
+    toast("Erreur calcul: " + e.message, "err");
+  }
+}
+
+async function approveBatch(id){
+  if(!confirm("Approuver ce batch ? Après approbation, les cashbacks pourront être crédités.")) return;
+  try{
+    await api(`/api/loyalty/batches/${id}/approve`, {method:"POST"});
+    toast("Batch approuvé", "ok");
+    await refreshAll();
+    renderBatches();
+  }catch(e){ toast("Erreur: " + e.message, "err"); }
+}
+async function creditBatch(id){
+  if(!confirm("Créditer les cashbacks sur les cartes des clients ? Cette action est irréversible.")) return;
+  try{
+    toast("Crédit en cours…");
+    const b = await api(`/api/loyalty/batches/${id}/credit`, {method:"POST"});
+    toast("Crédité: " + b.note, "ok");
+    await refreshAll();
+    renderKpi();
+    renderBatches();
+  }catch(e){ toast("Erreur crédit: " + e.message, "err"); }
+}
+async function deleteBatch(id){
+  if(!confirm("Supprimer ce batch ? Toutes les lignes et résultats seront perdus.")) return;
+  try{
+    await api(`/api/loyalty/batches/${id}`, {method:"DELETE"});
+    toast("Batch supprimé", "ok");
+    await refreshAll();
+    renderKpi();
+    renderBatches();
+  }catch(e){ toast("Erreur: " + e.message, "err"); }
+}
+
+async function openBatchDetails(id){
+  try{
+    const [batch, results] = await Promise.all([
+      api(`/api/loyalty/batches/${id}`),
+      api(`/api/loyalty/batches/${id}/results`)
+    ]);
+    const topResults = results.slice(0, 100);
+    openModal(`Batch #${batch.id} — ${esc(batch.name)}`, `
+      <div class="stat-row"><div class="k">Statut</div><div class="v">${statusBadge(batch.status)}</div></div>
+      <div class="stat-row"><div class="k">Fichier source</div><div class="v mono">${esc(batch.sourceFilename||"—")}</div></div>
+      <div class="stat-row"><div class="k">Règle appliquée</div><div class="v">${esc(batch.ruleNameSnapshot||"—")}</div></div>
+      <div class="stat-row"><div class="k">Lignes</div><div class="v">${num(batch.parsedRows)} / ${num(batch.totalRows)} (${num(batch.failedRows)} ignorées)</div></div>
+      <div class="stat-row"><div class="k">Lignes qualifiées</div><div class="v">${num(batch.qualifiedRows)}</div></div>
+      <div class="stat-row"><div class="k">Volume total</div><div class="v">${money(batch.totalVolume)}</div></div>
+      <div class="stat-row"><div class="k">Cashback total</div><div class="v" style="color:var(--brand);font-weight:700">${money(batch.totalCashback)}</div></div>
+      <div class="stat-row"><div class="k">Clients</div><div class="v">${num(batch.clientCount)}</div></div>
+      <div class="stat-row"><div class="k">Créé le</div><div class="v">${dt(batch.createdAt)}</div></div>
+      ${batch.calculatedAt ? `<div class="stat-row"><div class="k">Calculé le</div><div class="v">${dt(batch.calculatedAt)}</div></div>` : ""}
+      ${batch.approvedAt ? `<div class="stat-row"><div class="k">Approuvé le</div><div class="v">${dt(batch.approvedAt)} par ${esc(batch.approvedBy||"—")}</div></div>` : ""}
+      ${batch.creditedAt ? `<div class="stat-row"><div class="k">Crédité le</div><div class="v">${dt(batch.creditedAt)}</div></div>` : ""}
+      ${batch.note ? `<div style="margin-top:12px;padding:10px 14px;background:var(--surface-2);border-radius:8px;font-size:12px;color:var(--text-2)">${esc(batch.note)}</div>` : ""}
+
+      <h3 style="font-family:var(--font-display);font-size:14px;font-weight:700;margin-top:20px;margin-bottom:10px">Top résultats (${results.length})</h3>
+      <div style="max-height:280px;overflow:auto;border:1px solid var(--border);border-radius:8px">
+        <table>
+          <thead><tr><th>Client</th><th>Tier</th><th class="num">Volume</th><th class="num">Cashback</th><th>Statut</th></tr></thead>
+          <tbody>
+            ${topResults.length===0 ? `<tr><td colspan="5" class="empty">Pas encore de résultats — calculez le batch.</td></tr>` :
+              topResults.map(r => `
+                <tr>
+                  <td><strong>${esc(r.clientName||"—")}</strong><br><span class="mono" style="font-size:11px;color:var(--muted)">${esc(r.accountNumber)}</span></td>
+                  <td><span class="badge b-muted">${esc(r.tier||"—")}</span></td>
+                  <td class="num">${money(r.totalVolume)}</td>
+                  <td class="num"><strong>${money(r.cashbackAmount)}</strong></td>
+                  <td>${statusBadge(r.status)}</td>
+                </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>
+    `);
+  }catch(e){ toast("Erreur: " + e.message, "err"); }
+}
+
+/* ============ RULES ============ */
+function renderRules(){
+  const c = document.getElementById("tabContent");
+  const rows = STATE.rules;
+  c.innerHTML = `
+    <div class="panel">
+      <h2>Règles de cashback <span class="sub">${rows.length} règle${rows.length>1?"s":""}</span>
+        <button class="btn btn-primary btn-sm" onclick="openRuleModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Nouvelle règle
+        </button>
+      </h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Nom</th><th>Type</th><th>Taux / Tiers</th>
+            <th class="num">Min tx</th><th class="num">Min période</th><th class="num">Cap client</th>
+            <th>Filtre</th><th>Statut</th><th style="width:120px">Actions</th>
+          </tr></thead>
+          <tbody>
+            ${rows.length===0 ? `<tr><td colspan="9" class="empty">Aucune règle. Créez-en une pour appliquer un cashback.</td></tr>` :
+              rows.map(r => `
+                <tr>
+                  <td><strong>${esc(r.name)}</strong><br><span style="font-size:11px;color:var(--muted)">${esc(r.description||"")}</span></td>
+                  <td><span class="badge b-info">${esc(r.type)}</span></td>
+                  <td>${r.type === "TIERED_VOLUME" ? renderTiers(r.tiersJson) : (r.percentage ? esc(r.percentage) + " %" : "—")}</td>
+                  <td class="num">${money(r.minTransactionAmount)}</td>
+                  <td class="num">${money(r.minPeriodVolume)}</td>
+                  <td class="num">${money(r.maxCashbackPerClient)}</td>
+                  <td>${r.categoryFilter ? `<span class="mono" style="font-size:11px">Cat: ${esc(r.categoryFilter)}</span><br>` : ""}${r.tierFilter ? `<span class="mono" style="font-size:11px">Tier: ${esc(r.tierFilter)}</span>` : ""}${(!r.categoryFilter && !r.tierFilter) ? "—" : ""}</td>
+                  <td>${statusBadge(r.active ? "ACTIVE" : "INACTIVE")}</td>
+                  <td>
+                    <button class="icon-btn" title="Modifier" onclick="openRuleModal(${r.id})">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5Z"/></svg>
+                    </button>
+                    <button class="icon-btn" title="Désactiver" onclick="deleteRule(${r.id})">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93 19.07 19.07"/></svg>
+                    </button>
+                  </td>
+                </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function renderTiers(json){
+  if(!json) return "—";
+  try{
+    const arr = JSON.parse(json);
+    return arr.map(t => `${money(t.minVolume)} → ${t.percentage}%`).join("<br>");
+  }catch(_){ return "<em>Format invalide</em>"; }
+}
+
+function openRuleModal(id){
+  const r = id ? STATE.rules.find(x => x.id === id) : {type:"FLAT_PERCENTAGE",active:true};
+  openModal(id ? "Modifier la règle" : "Nouvelle règle de cashback", `
+    <div class="form-row"><label>Nom</label><input id="rName" value="${esc(r.name||"")}" placeholder="Ex: Cashback GOLD 1%"></div>
+    <div class="form-row"><label>Description</label><input id="rDesc" value="${esc(r.description||"")}"></div>
+    <div class="grid-2">
+      <div>
+        <label>Type</label>
+        <select id="rType" onchange="toggleRuleFields()">
+          <option value="FLAT_PERCENTAGE" ${r.type==="FLAT_PERCENTAGE"?"selected":""}>Pourcentage fixe</option>
+          <option value="TIERED_VOLUME" ${r.type==="TIERED_VOLUME"?"selected":""}>Paliers par volume</option>
+          <option value="CATEGORY_BASED" ${r.type==="CATEGORY_BASED"?"selected":""}>Par catégorie de transaction</option>
+        </select>
+      </div>
+      <div>
+        <label>Statut</label>
+        <select id="rActive">
+          <option value="true" ${r.active!==false?"selected":""}>Actif</option>
+          <option value="false" ${r.active===false?"selected":""}>Inactif</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="fPct" class="form-row" style="margin-top:14px">
+      <label>Pourcentage (%)</label>
+      <input id="rPct" type="number" step="0.001" value="${r.percentage||""}" placeholder="Ex: 1.5">
+    </div>
+
+    <div id="fTiers" class="form-row" style="display:none">
+      <label>Paliers (JSON)</label>
+      <textarea id="rTiers" rows="4" style="font-family:var(--font-mono);font-size:12px">${esc(r.tiersJson||'[{"minVolume":0,"percentage":1.0},{"minVolume":1000000,"percentage":1.5},{"minVolume":10000000,"percentage":2.5}]')}</textarea>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">Trier par minVolume croissant. L'engine sélectionne le plus haut palier atteint.</div>
+    </div>
+
+    <div id="fCat" class="form-row" style="display:none">
+      <label>Catégorie de transaction</label>
+      <input id="rCat" value="${esc(r.categoryFilter||"")}" placeholder="Ex: CARD_PURCHASE">
+    </div>
+
+    <div class="grid-2" style="margin-top:14px">
+      <div><label>Min. par transaction (FCFA)</label><input id="rMinTx" type="number" value="${r.minTransactionAmount||""}"></div>
+      <div><label>Min. volume période (FCFA)</label><input id="rMinPer" type="number" value="${r.minPeriodVolume||""}" placeholder="Ex: 500000"></div>
+    </div>
+    <div class="grid-2">
+      <div><label>Cap cashback / client</label><input id="rMax" type="number" value="${r.maxCashbackPerClient||""}" placeholder="Ex: 100000"></div>
+      <div><label>Filtre tiers clients</label><input id="rTierFilter" value="${esc(r.tierFilter||"")}" placeholder="Ex: GOLD,PLATINUM"></div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveRule(${id||"null"})">Enregistrer</button>
+    </div>`);
+  toggleRuleFields();
+}
+
+function toggleRuleFields(){
+  const t = document.getElementById("rType").value;
+  document.getElementById("fPct").style.display   = (t === "TIERED_VOLUME") ? "none" : "";
+  document.getElementById("fTiers").style.display = (t === "TIERED_VOLUME") ? "" : "none";
+  document.getElementById("fCat").style.display   = (t === "CATEGORY_BASED") ? "" : "none";
+}
+
+async function saveRule(id){
+  const body = {
+    name: document.getElementById("rName").value.trim(),
+    description: document.getElementById("rDesc").value.trim(),
+    type: document.getElementById("rType").value,
+    active: document.getElementById("rActive").value === "true"
+  };
+  const pct = document.getElementById("rPct").value; if(pct) body.percentage = parseFloat(pct);
+  const tiers = document.getElementById("rTiers").value.trim(); if(tiers) body.tiersJson = tiers;
+  const cat = document.getElementById("rCat").value.trim(); if(cat) body.categoryFilter = cat;
+  const minTx = document.getElementById("rMinTx").value; if(minTx) body.minTransactionAmount = parseFloat(minTx);
+  const minPer = document.getElementById("rMinPer").value; if(minPer) body.minPeriodVolume = parseFloat(minPer);
+  const max = document.getElementById("rMax").value; if(max) body.maxCashbackPerClient = parseFloat(max);
+  const tf = document.getElementById("rTierFilter").value.trim(); if(tf) body.tierFilter = tf;
+  if(!body.name){ toast("Nom requis", "err"); return; }
+
+  try{
+    const method = id ? "PUT" : "POST";
+    const url = id ? `/api/loyalty/rules/${id}` : "/api/loyalty/rules";
+    await api(url, {method, body: JSON.stringify(body)});
+    toast("Règle enregistrée", "ok");
+    closeModal();
+    await refreshAll();
+    renderKpi();
+    renderRules();
+  }catch(e){ toast("Erreur: " + e.message, "err"); }
+}
+
+async function deleteRule(id){
+  if(!confirm("Désactiver cette règle ?")) return;
+  try{
+    await api(`/api/loyalty/rules/${id}`, {method:"DELETE"});
+    toast("Règle désactivée", "ok");
+    await refreshAll();
+    renderRules();
+  }catch(e){ toast("Erreur: " + e.message, "err"); }
+}
+
+/* ============ CLIENTS ============ */
+function renderClients(){
+  const c = document.getElementById("tabContent");
+  const rows = STATE.clients;
+  c.innerHTML = `
+    <div class="panel">
+      <h2>Clients fidélité <span class="sub">${rows.length} client${rows.length>1?"s":""}</span>
+        <button class="btn btn-primary btn-sm" onclick="openClientModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Nouveau client
+        </button>
+      </h2>
+      <div class="form-row">
+        <input id="clientSearch" placeholder="Rechercher: nom, compte, téléphone…" oninput="filterClients()">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Nom</th><th>Compte</th><th>Tier</th><th>Ville</th><th>Téléphone</th>
+            <th class="num">Volume cumul.</th><th class="num">Cashback cumul.</th><th style="width:80px">Actions</th>
+          </tr></thead>
+          <tbody id="clientRows"></tbody>
+        </table>
+      </div>
+    </div>`;
+  drawClientRows(rows);
+}
+
+function drawClientRows(rows){
+  const tb = document.getElementById("clientRows");
+  if(!rows.length){ tb.innerHTML = `<tr><td colspan="8" class="empty">Aucun client enrôlé. Ils seront auto-créés lors du premier upload.</td></tr>`; return; }
+  tb.innerHTML = rows.map(c => `
+    <tr>
+      <td><strong>${esc(c.fullName||"—")}</strong></td>
+      <td><span class="mono">${esc(c.accountNumber)}</span></td>
+      <td><span class="badge b-info">${esc(c.tier||"CLASSIC")}</span></td>
+      <td>${esc(c.city||"—")}</td>
+      <td>${esc(c.phone||"—")}</td>
+      <td class="num">${money(c.lifetimeVolume)}</td>
+      <td class="num"><strong>${money(c.lifetimeCashback)}</strong></td>
+      <td>
+        <button class="icon-btn" title="Modifier" onclick="openClientModal(${c.id})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5Z"/></svg>
+        </button>
+      </td>
+    </tr>`).join("");
+}
+
+function filterClients(){
+  const q = document.getElementById("clientSearch").value.toLowerCase();
+  const filtered = STATE.clients.filter(c =>
+    (c.fullName||"").toLowerCase().includes(q) ||
+    (c.accountNumber||"").toLowerCase().includes(q) ||
+    (c.phone||"").toLowerCase().includes(q) ||
+    (c.city||"").toLowerCase().includes(q)
+  );
+  drawClientRows(filtered);
+}
+
+function openClientModal(id){
+  const c = id ? STATE.clients.find(x => x.id === id) : {tier:"CLASSIC"};
+  openModal(id ? "Modifier client" : "Nouveau client", `
+    <div class="grid-2">
+      <div><label>N° compte bancaire *</label><input id="cAcc" value="${esc(c.accountNumber||"")}" ${id?"readonly":""}></div>
+      <div><label>Nom complet</label><input id="cName" value="${esc(c.fullName||"")}"></div>
+    </div>
+    <div class="grid-2">
+      <div><label>Téléphone</label><input id="cPhone" value="${esc(c.phone||"")}"></div>
+      <div><label>Email</label><input id="cEmail" value="${esc(c.email||"")}"></div>
+    </div>
+    <div class="grid-2">
+      <div><label>N° carte (16 chiffres)</label><input id="cCard" value="${esc(c.cardNumber||"")}"></div>
+      <div>
+        <label>Tier</label>
+        <select id="cTier">
+          ${["CLASSIC","SILVER","GOLD","PLATINUM"].map(x=>`<option value="${x}" ${c.tier===x?"selected":""}>${x}</option>`).join("")}
+        </select>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div><label>Ville</label><input id="cCity" value="${esc(c.city||"")}"></div>
+      <div><label>Agence</label><input id="cBranch" value="${esc(c.branch||"")}"></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveClient(${id||"null"})">Enregistrer</button>
+    </div>`);
+}
+
+async function saveClient(id){
+  const body = {
+    accountNumber: document.getElementById("cAcc").value.trim(),
+    fullName: document.getElementById("cName").value.trim(),
+    phone: document.getElementById("cPhone").value.trim(),
+    email: document.getElementById("cEmail").value.trim(),
+    cardNumber: document.getElementById("cCard").value.trim(),
+    tier: document.getElementById("cTier").value,
+    city: document.getElementById("cCity").value.trim(),
+    branch: document.getElementById("cBranch").value.trim()
+  };
+  if(!body.accountNumber){ toast("Numéro de compte requis", "err"); return; }
+  try{
+    const method = id ? "PUT" : "POST";
+    const url = id ? `/api/loyalty/clients/${id}` : "/api/loyalty/clients";
+    await api(url, {method, body: JSON.stringify(body)});
+    toast("Client enregistré", "ok");
+    closeModal();
+    await refreshAll();
+    renderKpi();
+    renderClients();
+  }catch(e){ toast("Erreur: " + e.message, "err"); }
+}
+</script>
+</body>
+</html>

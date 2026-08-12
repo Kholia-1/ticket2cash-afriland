@@ -1,0 +1,369 @@
+package com.afriland.ticket2cash.auth;
+
+import com.afriland.ticket2cash.audit.AuditLogService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/auth")
+public class AuthController {
+
+    private final AppUserRepository userRepository;
+    private final AuthService authService;
+    private final AuditLogService auditLogService;
+
+    public AuthController(AppUserRepository userRepository,
+                          AuthService authService,
+                          AuditLogService auditLogService) {
+        this.userRepository = userRepository;
+        this.authService = authService;
+        this.auditLogService = auditLogService;
+    }
+
+
+    @PostMapping("/dev-reset-admin")
+    public ResponseEntity<?> devResetAdminPassword() {
+
+        AppUser admin = userRepository.findByUsername("admin").orElse(null);
+
+        if (admin == null) {
+            admin = authService.createUser(
+                    "admin",
+                    "Administrateur Ticket2Cash",
+                    "admin@ticket2cash.local",
+                    "admin123",
+                    UserRole.ADMIN
+            );
+        } else {
+            admin.setRole(UserRole.ADMIN);
+            admin.setEnabled(true);
+            admin = authService.changePassword(admin, "admin123");
+        }
+
+        auditLogService.log(
+                "DEV_RESET_ADMIN_PASSWORD",
+                "AUTH",
+                "AppUser",
+                admin.getId(),
+                "SYSTEM",
+                "SUCCESS",
+                "Admin password reset to default demo password"
+        );
+
+        return ResponseEntity.ok(toUserMap(admin, false));
+    }
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest request,
+                                   HttpServletRequest httpRequest) {
+
+        AppUser user = userRepository.findByUsername(request.getUsername()).orElse(null);
+
+        if (user == null) {
+            auditLogService.log(
+                    "LOGIN_FAILED",
+                    "AUTH",
+                    "AppUser",
+                    null,
+                    request.getUsername(),
+                    "FAILED",
+                    "Unknown username"
+            );
+
+            return ResponseEntity.status(401).body("Invalid username or password");
+        }
+
+        if (user.getEnabled() == null || !user.getEnabled()) {
+            auditLogService.log(
+                    "LOGIN_FAILED",
+                    "AUTH",
+                    "AppUser",
+                    user.getId(),
+                    user.getUsername(),
+                    "FAILED",
+                    "User disabled"
+            );
+
+            return ResponseEntity.status(403).body("User disabled");
+        }
+
+        if (!authService.verifyPassword(request.getPassword(), user)) {
+            auditLogService.log(
+                    "LOGIN_FAILED",
+                    "AUTH",
+                    "AppUser",
+                    user.getId(),
+                    user.getUsername(),
+                    "FAILED",
+                    "Invalid password"
+            );
+
+            return ResponseEntity.status(401).body("Invalid username or password");
+        }
+
+        HttpSession session = httpRequest.getSession(true);
+        session.setAttribute("AUTH_USER_ID", user.getId());
+        session.setAttribute("AUTH_USERNAME", user.getUsername());
+        session.setAttribute("AUTH_ROLE", user.getRole().name());
+        session.setAttribute("AUTH_FULL_NAME", user.getFullName());
+
+        authService.updateLastLogin(user);
+
+        auditLogService.log(
+                "LOGIN_SUCCESS",
+                "AUTH",
+                "AppUser",
+                user.getId(),
+                user.getUsername(),
+                "SUCCESS",
+                "User logged in"
+        );
+
+        return ResponseEntity.ok(toUserMap(user, true));
+    }
+
+    @PostMapping("/logout")
+    public Map<String, Object> logout(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+
+        String username = "UNKNOWN";
+
+        if (session != null && session.getAttribute("AUTH_USERNAME") != null) {
+            username = String.valueOf(session.getAttribute("AUTH_USERNAME"));
+            session.invalidate();
+        }
+
+        auditLogService.log(
+                "LOGOUT",
+                "AUTH",
+                "Session",
+                null,
+                username,
+                "SUCCESS",
+                "User logged out"
+        );
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("message", "Logged out");
+        return response;
+    }
+
+    @GetMapping("/me")
+    public Map<String, Object> me(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+
+        Map<String, Object> response = new LinkedHashMap<>();
+
+        if (session == null || session.getAttribute("AUTH_USER_ID") == null) {
+            response.put("authenticated", false);
+            return response;
+        }
+
+        response.put("authenticated", true);
+        response.put("id", session.getAttribute("AUTH_USER_ID"));
+        response.put("username", session.getAttribute("AUTH_USERNAME"));
+        response.put("role", session.getAttribute("AUTH_ROLE"));
+        response.put("fullName", session.getAttribute("AUTH_FULL_NAME"));
+
+        return response;
+    }
+
+
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request,
+                                            HttpServletRequest httpRequest) {
+
+        HttpSession session = httpRequest.getSession(false);
+
+        if (session == null || session.getAttribute("AUTH_USER_ID") == null) {
+            return ResponseEntity.status(401).body("Authentication required");
+        }
+
+        Long userId = Long.valueOf(String.valueOf(session.getAttribute("AUTH_USER_ID")));
+
+        AppUser user = userRepository.findById(userId).orElse(null);
+
+        if (user == null) {
+            return ResponseEntity.status(404).body("User not found");
+        }
+
+        if (request.getOldPassword() == null || request.getNewPassword() == null) {
+            return ResponseEntity.badRequest().body("Old password and new password are required");
+        }
+
+        if (request.getNewPassword().length() < 6) {
+            return ResponseEntity.badRequest().body("New password must contain at least 6 characters");
+        }
+
+        if (!authService.verifyPassword(request.getOldPassword(), user)) {
+            auditLogService.log(
+                    "CHANGE_PASSWORD_FAILED",
+                    "AUTH",
+                    "AppUser",
+                    user.getId(),
+                    user.getUsername(),
+                    "FAILED",
+                    "Invalid old password"
+            );
+
+            return ResponseEntity.status(400).body("Invalid old password");
+        }
+
+        AppUser updatedUser = authService.changePassword(user, request.getNewPassword());
+
+        auditLogService.log(
+                "CHANGE_PASSWORD_SUCCESS",
+                "AUTH",
+                "AppUser",
+                updatedUser.getId(),
+                updatedUser.getUsername(),
+                "SUCCESS",
+                "Password changed by user"
+        );
+
+        return ResponseEntity.ok(toUserMap(updatedUser, true));
+    }
+    @GetMapping("/users")
+    public ResponseEntity<?> getUsers(HttpServletRequest request) {
+        if (!isAdmin(request)) {
+            return ResponseEntity.status(403).body("ADMIN role required");
+        }
+
+        List<Map<String, Object>> users = userRepository.findAll()
+                .stream()
+                .map(user -> toUserMap(user, false))
+                .toList();
+
+        return ResponseEntity.ok(users);
+    }
+
+    @PostMapping("/users")
+    public ResponseEntity<?> createUser(@RequestBody CreateUserRequest request,
+                                        HttpServletRequest httpRequest) {
+        if (!isAdmin(httpRequest)) {
+            return ResponseEntity.status(403).body("ADMIN role required");
+        }
+
+        if (userRepository.existsByUsername(request.getUsername())) {
+            return ResponseEntity.badRequest().body("Username already exists");
+        }
+
+        if (request.getEmail() != null && userRepository.existsByEmail(request.getEmail())) {
+            return ResponseEntity.badRequest().body("Email already exists");
+        }
+
+        AppUser user = authService.createUser(
+                request.getUsername(),
+                request.getFullName(),
+                request.getEmail(),
+                request.getPassword(),
+                request.getRole() != null ? request.getRole() : UserRole.LECTEUR
+        );
+
+        auditLogService.log(
+                "CREATE_USER",
+                "AUTH",
+                "AppUser",
+                user.getId(),
+                getCurrentUsername(httpRequest),
+                "SUCCESS",
+                "User created: " + user.getUsername()
+        );
+
+        return ResponseEntity.ok(toUserMap(user, false));
+    }
+
+    @PutMapping("/users/{id}/role")
+    public ResponseEntity<?> updateUserRole(@PathVariable Long id,
+                                            @RequestParam UserRole role,
+                                            HttpServletRequest request) {
+        if (!isAdmin(request)) {
+            return ResponseEntity.status(403).body("ADMIN role required");
+        }
+
+        return userRepository.findById(id)
+                .map(user -> {
+                    user.setRole(role);
+                    AppUser updated = userRepository.save(user);
+
+                    auditLogService.log(
+                            "UPDATE_USER_ROLE",
+                            "AUTH",
+                            "AppUser",
+                            updated.getId(),
+                            getCurrentUsername(request),
+                            "SUCCESS",
+                            "User role changed to " + role
+                    );
+
+                    return ResponseEntity.ok(toUserMap(updated, false));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/users/{id}/enabled")
+    public ResponseEntity<?> updateUserEnabled(@PathVariable Long id,
+                                               @RequestParam Boolean enabled,
+                                               HttpServletRequest request) {
+        if (!isAdmin(request)) {
+            return ResponseEntity.status(403).body("ADMIN role required");
+        }
+
+        return userRepository.findById(id)
+                .map(user -> {
+                    user.setEnabled(enabled);
+                    AppUser updated = userRepository.save(user);
+
+                    auditLogService.log(
+                            "UPDATE_USER_STATUS",
+                            "AUTH",
+                            "AppUser",
+                            updated.getId(),
+                            getCurrentUsername(request),
+                            "SUCCESS",
+                            "User enabled changed to " + enabled
+                    );
+
+                    return ResponseEntity.ok(toUserMap(updated, false));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    private Map<String, Object> toUserMap(AppUser user, boolean authenticated) {
+        Map<String, Object> map = new LinkedHashMap<>();
+
+        map.put("authenticated", authenticated);
+        map.put("id", user.getId());
+        map.put("username", user.getUsername());
+        map.put("fullName", user.getFullName());
+        map.put("email", user.getEmail());
+        map.put("role", user.getRole());
+        map.put("enabled", user.getEnabled());
+        map.put("createdAt", user.getCreatedAt());
+        map.put("lastLoginAt", user.getLastLoginAt());
+
+        return map;
+    }
+
+    private boolean isAdmin(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+
+        return session != null
+                && "ADMIN".equals(String.valueOf(session.getAttribute("AUTH_ROLE")));
+    }
+
+    private String getCurrentUsername(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+
+        if (session == null || session.getAttribute("AUTH_USERNAME") == null) {
+            return "UNKNOWN";
+        }
+
+        return String.valueOf(session.getAttribute("AUTH_USERNAME"));
+    }
+}

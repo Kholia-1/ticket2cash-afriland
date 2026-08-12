@@ -1,0 +1,44 @@
+# Build artifacts
+target/
+*.jar
+*.war
+*.class
+
+# Backups locaux (jamais committes)
+backup_*/
+*.bak
+*.bak-*
+
+# Zips de deploiement (jamais committes)
+ticket2cash-deployment-*.zip
+
+# Base de donnees locale H2
+data/
+*.db
+*.trace.db
+*.lock.db
+*.mv.db
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Fichiers temporaires
+*.tmp
+*.swp
+*~

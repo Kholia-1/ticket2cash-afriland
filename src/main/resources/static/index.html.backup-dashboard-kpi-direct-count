@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket2Cash - Admin Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        :root {
+            --sidebar-width: 230px;
+            --topbar-height: 66px;
+            --bg: #F4F6F9;
+            --white: #FFFFFF;
+            --black: #111111;
+            --text: #222222;
+            --muted: #6B7280;
+            --border: #E5E7EB;
+            --active: #E5E7EB;
+            --red: #D22630;
+            --red-dark: #9F1C24;
+            --gold: #FFCC00;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: var(--sidebar-width);
+            background: var(--white);
+            border-right: 1px solid #DADDE2;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .brand {
+            height: 66px;
+            background: #000000;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+        }
+
+        .brand img {
+            max-width: 150px;
+            max-height: 46px;
+            object-fit: contain;
+        }
+
+        .brand-fallback {
+            color: white;
+            font-size: 20px;
+            font-weight: 900;
+        }
+
+        .menu-label {
+            padding: 13px 16px 8px 16px;
+            font-size: 11px;
+            font-weight: 900;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .menu-btn {
+            width: 100%;
+            height: 39px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: none;
+            border-left: 4px solid transparent;
+            background: var(--white);
+            color: #222222;
+            padding: 0 14px 0 22px;
+            text-align: left;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .menu-btn:hover {
+            background: #F0F1F3;
+            border-left-color: #111111;
+        }
+
+        .menu-btn.active {
+            background: var(--active);
+            border-left-color: #111111;
+            font-weight: 900;
+        }
+
+        .menu-icon {
+            width: 18px;
+            min-width: 18px;
+            height: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #111111;
+        }
+
+        .menu-icon svg {
+            width: 17px;
+            height: 17px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .topbar {
+            position: fixed;
+            top: 0;
+            left: var(--sidebar-width);
+            right: 0;
+            height: var(--topbar-height);
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            padding: 0 24px;
+            z-index: 900;
+        }
+
+        .top-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-info {
+            color: #374151;
+            font-size: 13px;
+        }
+
+        .logout-btn {
+            background: white;
+            color: #111111;
+            border: 2px solid #111111;
+            padding: 7px 13px;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        .logout-btn:hover {
+            background: #111111;
+            color: white;
+        }
+
+        .page-title-top {
+            font-size: 16px;
+            font-weight: 900;
+            color: #111111;
+            text-align: center;
+        }
+
+        .top-logo {
+            justify-self: end;
+        }
+
+        .top-logo img {
+            max-height: 46px;
+            max-width: 230px;
+            object-fit: contain;
+        }
+
+        main {
+            margin-left: var(--sidebar-width);
+            padding: 88px 26px 32px 26px;
+            min-height: 100vh;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .hero {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 22px;
+            margin-bottom: 20px;
+        }
+
+        .hero h1 {
+            margin: 0 0 10px 0;
+            font-size: 26px;
+            color: #111111;
+        }
+
+        .hero p {
+            margin: 0;
+            color: #111111;
+            line-height: 1.6;
+        }
+
+        .kpis {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .kpi {
+            background: white;
+            border: 1px solid var(--border);
+            padding: 16px;
+        }
+
+        .kpi-label {
+            color: #52627A;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 25px;
+            font-weight: 900;
+            color: #000000;
+        }
+
+        .panel {
+            background: white;
+            border: 1px solid var(--border);
+            padding: 18px;
+            margin-bottom: 18px;
+        }
+
+        .panel-title {
+            margin: 0 0 14px 0;
+            font-size: 19px;
+            color: #111111;
+            font-weight: 900;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .operation-panel {
+            background: white;
+            border: 1px solid #DADDE2;
+            border-left: 5px solid #111111;
+            padding: 14px 16px;
+            margin-bottom: 18px;
+            position: sticky;
+            top: 76px;
+            z-index: 80;
+        }
+
+        .operation-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 900;
+            color: #111111;
+            margin-bottom: 12px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        label {
+            font-size: 12px;
+            font-weight: 800;
+            display: block;
+            margin-bottom: 4px;
+            color: #374151;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 9px 10px;
+            border: 1px solid #D1D5DB;
+            background: white;
+            color: #111111;
+            font-family: inherit;
+        }
+
+        textarea {
+            min-height: 82px;
+        }
+
+        .btn {
+            border: none;
+            padding: 10px 14px;
+            cursor: pointer;
+            font-weight: 900;
+            margin: 3px;
+        }
+
+        .btn-primary {
+            background: var(--red);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--gold);
+            color: #111111;
+        }
+
+        .btn-dark {
+            background: #111111;
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--red-dark);
+            color: white;
+        }
+
+        .btn-light {
+            background: #F3F4F6;
+            color: #111111;
+            border: 1px solid #D1D5DB;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border: 1px solid var(--border);
+            margin-top: 12px;
+        }
+
+        th {
+            background: #111111;
+            color: white;
+            text-align: left;
+            padding: 10px;
+            font-size: 12px;
+            border-bottom: 3px solid var(--gold);
+        }
+
+        td {
+            padding: 9px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            vertical-align: top;
+        }
+
+        tr:nth-child(even) td {
+            background: #FAFAFA;
+        }
+
+        .response {
+            background: #111111;
+            color: white;
+            padding: 14px;
+            border-left: 5px solid var(--gold);
+            white-space: pre-wrap;
+            overflow-x: auto;
+            font-family: Consolas, monospace;
+            font-size: 12px;
+            margin-top: 12px;
+        }
+
+        .about-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .about-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-top: 4px solid #111111;
+            padding: 18px;
+        }
+
+        .about-card.red {
+            border-top-color: var(--red);
+        }
+
+        .about-card.gold {
+            border-top-color: var(--gold);
+        }
+
+        .about-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 17px;
+        }
+
+        .about-card p, .about-card li {
+            color: #374151;
+            line-height: 1.55;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 820px) {
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+            }
+
+            .topbar {
+                left: 0;
+                grid-template-columns: 1fr;
+            }
+
+            .top-left, .top-logo {
+                display: none;
+            }
+
+            main {
+                margin-left: 0;
+                padding: 88px 12px 24px 12px;
+            }
+
+            .operation-panel {
+                position: static;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="brand">
+            <img src="/assets/logo-ticket2cash.png" alt="Ticket2Cash" onerror="this.style.display='none';document.getElementById('brandFallback').style.display='block';">
+            <div id="brandFallback" class="brand-fallback" style="display:none;">Ticket2Cash</div>
+        </div>
+
+        <div class="menu-label">Espace partenaire</div>
+
+        <button class="menu-btn active" data-page="dashboard"></button>
+        <button class="menu-btn" data-page="demoCenter"></button>
+        <button class="menu-btn" data-page="businessDashboard"></button>
+        <button class="menu-btn" data-page="security"></button>
+        <button class="menu-btn" data-page="demoFlow"></button>
+        <button class="menu-btn" data-page="demoReport"></button>
+        <button class="menu-btn" data-page="about"></button>
+        <button class="menu-btn" data-page="profile"></button>
+        <button class="menu-btn" data-page="merchants"></button>
+        <button class="menu-btn" data-page="products"></button>
+        <button class="menu-btn" data-page="campaigns"></button>
+        <button class="menu-btn" data-page="tickets"></button>
+        <button class="menu-btn" data-page="claims"></button>
+        <button class="menu-btn" data-page="payments"></button>
+        <button class="menu-btn" data-page="fraud"></button>
+        <button class="menu-btn" data-page="auditLogs"></button>
+        <button class="menu-btn" data-page="settings"></button>
+        <button class="menu-btn admin-only" data-page="users"></button>
+        <button class="menu-btn" data-page="exports"></button>
+    </aside>
+
+    <header class="topbar">
+        <div class="top-left">
+            <span id="currentUser" class="user-info">Utilisateur</span>
+            <button class="logout-btn" onclick="logout()">Deconnexion</button>
+        </div>
+
+        <div id="topTitle" class="page-title-top">Tableau de bord</div>
+
+        <div class="top-logo">
+            <img src="/assets/logo-afriland.png" alt="Afriland First Bank">
+        </div>
+    </header>
+
+    <main>
+        <section id="dashboard" class="page active">
+            <div class="hero">
+                <h1>Tableau de bord</h1>
+                <p>Interface web de supervision du prototype Ticket2Cash.</p>
+            </div>
+
+            <div class="kpis" id="dashboardKpis"></div>
+
+            <div class="panel">
+                <h2 class="panel-title">Resume global</h2>
+                <button class="btn btn-primary" onclick="loadDashboard()">Actualiser dashboard</button>
+                <button class="btn btn-secondary" onclick="loadAll()">Actualiser tout</button>
+                <div id="dashboardTable"></div>
+            </div>
+        </section>
+
+        <section id="demoCenter" class="page">
+            <div class="hero">
+                <h1>Centre demo</h1>
+                <p>Point central pour initialiser les donnees, executer le parcours complet et ouvrir les rapports.</p>
+            </div>
+
+            <div class="panel">
+                <h2 class="panel-title">Operations demo</h2>
+                <button class="btn btn-primary" onclick="initDemoData()">Initialiser donnees demo</button>
+                <button class="btn btn-secondary" onclick="runDemoFlow()">Executer parcours complet</button>
+                <button class="btn btn-light" onclick="showPage('businessDashboard')">Ouvrir dashboard metier</button>
+                <button class="btn btn-light" onclick="showPage('demoReport')">Ouvrir rapport demo</button>
+                <button class="btn btn-dark" onclick="openUrl('/api/demo-report/export-html')">Exporter rapport HTML / PDF</button>
+                <div id="demoCenterResponse" class="response"></div>
+            </div>
+        </section>
+
+        <section id="businessDashboard" class="page">
+            <div class="hero">
+                <h1>Dashboard metier</h1>
+                <p>Vue metier sur les commercants, campagnes, claims, paiements et alertes.</p>
+            </div>
+
+            <div class="kpis" id="businessKpis"></div>
+            <div id="businessDetails"></div>
+        </section>
+
+        <section id="security" class="page">
+            <div class="hero">
+                <h1>Dashboard securite</h1>
+                <p>Supervision des utilisateurs, connexions, verrouillages et actions sensibles.</p>
+            </div>
+
+            <div class="kpis" id="securityKpis"></div>
+            <div id="securityDetails"></div>
+        </section>
+
+        <section id="demoFlow" class="page">
+            <div class="hero">
+                <h1>Parcours demo</h1>
+                <p>Simulation du parcours complet ticket, claim, validation et paiement cashback.</p>
+            </div>
+
+            <div class="panel">
+                <h2 class="panel-title">Execution</h2>
+                <button class="btn btn-primary" onclick="runDemoFlow()">Executer le parcours complet</button>
+                <div id="demoFlowResponse" class="response"></div>
+            </div>
+        </section>
+
+        <section id="demoReport" class="page">
+            <div class="hero">
+                <h1>Rapport demo</h1>
+                <p>Rapport de synthese du prototype et des indicateurs disponibles.</p>
+            </div>
+
+            <div class="panel">
+                <h2 class="panel-title">Rapport</h2>
+                <button class="btn btn-primary" onclick="loadDemoReport()">Actualiser rapport</button>
+                <button class="btn btn-dark" onclick="openUrl('/api/demo-report/export-html')">Exporter HTML / PDF</button>
+                <div id="demoReportContent"></div>
+            </div>
+        </section>
+
+        <section id="about" class="page">
+            <div class="hero">
+                <h1>A propos du prototype Ticket2Cash</h1>
+                <p>Ticket2Cash est un prototype de supervision du programme de cashback entre Afriland First Bank, les supermarches partenaires et les clients porteurs de carte co-brande.</p>
+            </div>
+
+            <div class="about-grid">
+                <div class="about-card red">
+                    <h3>Contexte</h3>
+                    <p>Digitalisation du suivi des operations cashback, avec une meilleure tracabilite des tickets, claims, paiements et alertes fraude.</p>
+                </div>
+
+                <div class="about-card gold">
+                    <h3>Objectif</h3>
+                    <p>Fournir une plateforme web permettant de piloter les commercants, produits, campagnes, tickets, claims, paiements et controles.</p>
+                </div>
+
+                <div class="about-card">
+                    <h3>Valeur banque</h3>
+                    <ul>
+                        <li>Fidelisation client.</li>
+                        <li>Suivi des campagnes cashback.</li>
+                        <li>Controle des risques de fraude.</li>
+                        <li>Centralisation des operations.</li>
+                        <li>Journalisation et audit.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="about-grid">
+                <div class="about-card">
+                    <h3>Modules implementes</h3>
+                    <ul>
+                        <li>Authentification et roles.</li>
+                        <li>Utilisateurs.</li>
+                        <li>Commercants, produits et campagnes.</li>
+                        <li>Tickets et simulation OCR.</li>
+                        <li>Claims et paiements cashback.</li>
+                        <li>Fraude, audit, dashboards et exports.</li>
+                    </ul>
+                </div>
+
+                <div class="about-card gold">
+                    <h3>Limites</h3>
+                    <ul>
+                        <li>Base H2 locale.</li>
+                        <li>OCR simule.</li>
+                        <li>Paiement simule.</li>
+                        <li>Pas encore connecte au core banking.</li>
+                    </ul>
+                </div>
+
+                <div class="about-card red">
+                    <h3>Perspectives</h3>
+                    <ul>
+                        <li>PostgreSQL.</li>
+                        <li>OCR reel.</li>
+                        <li>Connexion API bancaire.</li>
+                        <li>Workflow d'approbation.</li>
+                        <li>Scoring fraude avance.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="profile" class="page">
+            <div class="hero">
+                <h1>Mon profil</h1>
+                <p>Informations de l'utilisateur connecte.</p>
+            </div>
+
+            <div class="panel">
+                <h2 class="panel-title">Profil</h2>
+                <button class="btn btn-primary" onclick="loadProfile()">Actualiser</button>
+                <div id="profileContent"></div>
+            </div>
+        </section>
+
+        <section id="merchants" class="page">
+            <div class="hero"><h1>Commercants</h1><p>Gestion des commercants partenaires.</p></div>
+            <div class="operation-panel">
+                <div class="operation-title">Operations rapides</div>
+                <div class="form-grid">
+                    <div><label>Nom</label><input id="mName"></div>
+                    <div><label>Nom commercial</label><input id="mBrand"></div>
+                    <div><label>RCCM</label><input id="mRccm"></div>
+                    <div><label>NIU</label><input id="mNiu"></div>
+                    <div><label>Telephone</label><input id="mPhone"></div>
+                    <div><label>Email</label><input id="mEmail"></div>
+                    <div><label>Ville</label><input id="mCity"></div>
+                    <div><label>Adresse</label><input id="mAddress"></div>
+                </div>
+                <button class="btn btn-primary" onclick="createMerchant()">Creer commercant</button>
+                <button class="btn btn-secondary" onclick="loadMerchants()">Actualiser</button>
+            </div>
+            <div id="merchantsContent"></div>
+        </section>
+
+        <section id="products" class="page">
+            <div class="hero"><h1>Produits</h1><p>Gestion du catalogue produit.</p></div>
+            <div class="operation-panel">
+                <div class="operation-title">Operations rapides</div>
+                <div class="form-grid">
+                    <div><label>Merchant ID</label><input id="pMerchantId" type="number"></div>
+                    <div><label>SKU</label><input id="pSku"></div>
+                    <div><label>Nom</label><input id="pName"></div>
+                    <div><label>Designation ticket</label><input id="pTicketDesignation"></div>
+                    <div><label>Categorie</label><input id="pCategory"></div>
+                    <div><label>Marque</label><input id="pBrand"></div>
+                    <div><label>Prix</label><input id="pPrice" type="number"></div>
+                    <div><label>Cashback Type</label><select id="pCashbackType"><option>PERCENTAGE</option><option>FIXED_AMOUNT</option><option>NONE</option></select></div>
+                    <div><label>Cashback Value</label><input id="pCashbackValue" type="number"></div>
+                </div>
+                <button class="btn btn-primary" onclick="createProduct()">Creer produit</button>
+                <button class="btn btn-secondary" onclick="loadProducts()">Actualiser</button>
+            </div>
+            <div id="productsContent"></div>
+        </section>
+
+        <section id="campaigns" class="page">
+            <div class="hero"><h1>Campagnes</h1><p>Gestion des campagnes cashback.</p></div>
+            <div class="operation-panel">
+                <div class="operation-title">Operations rapides</div>
+                <div class="form-grid">
+                    <div><label>Merchant ID</label><input id="cMerchantId" type="number"></div>
+                    <div><label>Nom</label><input id="cName"></div>
+                    <div><label>Description</label><input id="cDescription"></div>
+                    <div><label>Date debut</label><input id="cStart" type="date"></div>
+                    <div><label>Date fin</label><input id="cEnd" type="date"></div>
+                    <div><label>Cashback Type</label><select id="cCashbackType"><option>PERCENTAGE</option><option>FIXED_AMOUNT</option></select></div>
+                    <div><label>Cashback Value</label><input id="cCashbackValue" type="number"></div>
+                    <div><label>Budget total</label><input id="cBudget" type="number"></div>
+                </div>
+                <button class="btn btn-primary" onclick="createCampaign()">Creer campagne</button>
+                <button class="btn btn-secondary" onclick="loadCampaigns()">Actualiser</button>
+            </div>
+            <div id="campaignsContent"></div>
+        </section>
+
+        <section id="tickets" class="page">
+            <div class="hero"><h1>Tickets</h1><p>Consultation des tickets et simulation OCR.</p></div>
+            <div class="operation-panel">
+                <div class="operation-title">Simulation OCR</div>
+                <div class="form-grid">
+                    <div><label>Merchant ID</label><input id="tMerchantId" type="number"></div>
+                    <div><label>Campaign ID</label><input id="tCampaignId" type="number"></div>
+                    <div><label>User ID</label><input id="tUserId" value="CLIENT-DEMO"></div>
+                    <div><label>Numero ticket</label><input id="tNumber" value="TCK-DEMO-001"></div>
+                </div>
+                <button class="btn btn-primary" onclick="simulateOcr()">Simuler OCR</button>
+                <button class="btn btn-secondary" onclick="loadTickets()">Actualiser</button>
+            </div>
+            <div id="ticketsContent"></div>
+        </section>
+
+        <section id="claims" class="page">
+            <div class="hero"><h1>Claims</h1><p>Suivi et traitement des demandes cashback.</p></div>
+            <div class="operation-panel">
+                <div class="operation-title">Traitement claim</div>
+                <div class="form-grid">
+                    <div><label>Claim ID</label><input id="claimId" type="number"></div>
+                    <div><label>Status</label><select id="claimStatus"><option>APPROVED</option><option>REJECTED</option><option>SUBMITTED</option><option>PAID</option></select></div>
+                </div>
+                <button class="btn btn-primary" onclick="updateClaimStatus()">Mettre a jour</button>
+                <button class="btn btn-secondary" onclick="loadClaims()">Actualiser</button>
+            </div>
+            <div id="claimsContent"></div>
+        </section>
+
+        <section id="payments" class="page">
+            <div class="hero"><h1>Paiements cashback</h1><p>Suivi des paiements cashback generes.</p></div>
+            <div class="operation-panel">
+                <div class="operation-title">Batch paiement</div>
+                <button class="btn btn-primary" onclick="runCashbackBatch()">Executer batch cashback</button>
+                <button class="btn btn-secondary" onclick="loadPayments()">Actualiser</button>
+            </div>
+            <div id="paymentsContent"></div>
+        </section>
+
+        <section id="fraud" class="page">
+            <div class="hero"><h1>Alertes fraude</h1><p>Controle et traitement des alertes fraude.</p></div>
+            <div class="operation-panel">
+                <div class="operation-title">Traitement alerte</div>
+                <div class="form-grid">
+                    <div><label>Alerte ID</label><input id="fraudId" type="number"></div>
+                    <div><label>Status</label><select id="fraudStatus"><option>UNDER_REVIEW</option><option>RESOLVED</option><option>REJECTED</option><option>OPEN</option></select></div>
+                </div>
+                <button class="btn btn-primary" onclick="updateFraudStatus()">Mettre a jour</button>
+                <button class="btn btn-secondary" onclick="loadFraudAlerts()">Actualiser</button>
+            </div>
+            <div id="fraudContent"></div>
+        </section>
+
+        <section id="auditLogs" class="page">
+            <div class="hero"><h1>Logs transactions</h1><p>Journal d'audit des actions du systeme.</p></div>
+            <div class="operation-panel">
+                <div class="operation-title">Consultation</div>
+                <button class="btn btn-secondary" onclick="loadAuditLogs()">Actualiser</button>
+            </div>
+            <div id="auditLogsContent"></div>
+        </section>
+
+        <section id="settings" class="page">
+            <div class="hero"><h1>Parametres</h1><p>Parametres fonctionnels du prototype.</p></div>
+            <div class="operation-panel">
+                <div class="operation-title">Consultation</div>
+                <button class="btn btn-secondary" onclick="loadSettings()">Actualiser</button>
+            </div>
+            <div id="settingsContent"></div>
+        </section>
+
+        <section id="users" class="page">
+            <div class="hero"><h1>Utilisateurs</h1><p>Administration des comptes et roles.</p></div>
+            <div class="operation-panel">
+                <div class="operation-title">Creation utilisateur</div>
+                <div class="form-grid">
+                    <div><label>Username</label><input id="uUsername"></div>
+                    <div><label>Nom complet</label><input id="uFullName"></div>
+                    <div><label>Email</label><input id="uEmail"></div>
+                    <div><label>Password</label><input id="uPassword" type="password"></div>
+                    <div><label>Role</label><select id="uRole"><option>ADMIN</option><option>OPERATEUR</option><option>LECTEUR</option></select></div>
+                </div>
+                <button class="btn btn-primary" onclick="createUser()">Creer utilisateur</button>
+                <button class="btn btn-secondary" onclick="loadUsers()">Actualiser</button>
+
+                <hr>
+                <div class="form-grid">
+                    <div><label>User ID</label><input id="uTargetId" type="number"></div>
+                    <div><label>Nouveau role</label><select id="uTargetRole"><option>ADMIN</option><option>OPERATEUR</option><option>LECTEUR</option></select></div>
+                    <div><label>Nouveau mot de passe</label><input id="uResetPassword" type="password" value="Reset2026"></div>
+                </div>
+                <button class="btn btn-light" onclick="updateUserRole()">Changer role</button>
+                <button class="btn btn-light" onclick="resetUserPassword()">Reset password</button>
+                <button class="btn btn-light" onclick="unlockUser()">Debloquer</button>
+            </div>
+            <div id="usersContent"></div>
+        </section>
+
+        <section id="exports" class="page">
+            <div class="hero"><h1>Exports CSV</h1><p>Telechargement des donnees principales.</p></div>
+            <div class="panel">
+                <h2 class="panel-title">Exports disponibles</h2>
+                <button class="btn btn-primary" onclick="openUrl('/api/exports/claims-csv')">Claims CSV</button>
+                <button class="btn btn-primary" onclick="openUrl('/api/exports/payments-csv')">Paiements CSV</button>
+                <button class="btn btn-primary" onclick="openUrl('/api/exports/fraud-alerts-csv')">Alertes fraude CSV</button>
+                <button class="btn btn-primary" onclick="openUrl('/api/exports/audit-logs-csv')">Logs audit CSV</button>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const pageTitles = {
+            dashboard: "Tableau de bord",
+            demoCenter: "Centre demo",
+            businessDashboard: "Dashboard metier",
+            security: "Dashboard securite",
+            demoFlow: "Parcours demo",
+            demoReport: "Rapport demo",
+            about: "A propos",
+            profile: "Mon profil",
+            merchants: "Commercants",
+            products: "Produits",
+            campaigns: "Campagnes",
+            tickets: "Tickets",
+            claims: "Claims",
+            payments: "Paiements cashback",
+            fraud: "Alertes fraude",
+            auditLogs: "Logs transactions",
+            settings: "Parametres",
+            users: "Utilisateurs",
+            exports: "Exports CSV"
+        };
+
+        const pageIcons = {
+            dashboard: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>',
+            demoCenter: '<svg viewBox="0 0 24 24"><polygon points="8 5 19 12 8 19 8 5"></polygon></svg>',
+            businessDashboard: '<svg viewBox="0 0 24 24"><line x1="4" y1="19" x2="20" y2="19"></line><rect x="6" y="10" width="3" height="7"></rect><rect x="11" y="6" width="3" height="11"></rect><rect x="16" y="13" width="3" height="4"></rect></svg>',
+            security: '<svg viewBox="0 0 24 24"><path d="M12 3l7 4v5c0 5-3 8-7 9-4-1-7-4-7-9V7l7-4z"></path><path d="M9 12l2 2 4-4"></path></svg>',
+            demoFlow: '<svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2"></circle><circle cx="18" cy="6" r="2"></circle><circle cx="18" cy="18" r="2"></circle><path d="M8 12h4l4-6"></path><path d="M12 12l4 6"></path></svg>',
+            demoReport: '<svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6V3z"></path><path d="M14 3v4h4"></path><path d="M8 12h8"></path><path d="M8 16h8"></path></svg>',
+            about: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 10v7"></path><path d="M12 7h.01"></path></svg>',
+            profile: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 14.5-4 16 0"></path></svg>',
+            merchants: '<svg viewBox="0 0 24 24"><path d="M4 10h16"></path><path d="M5 10l1-5h12l1 5"></path><path d="M6 10v10h12V10"></path></svg>',
+            products: '<svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path></svg>',
+            campaigns: '<svg viewBox="0 0 24 24"><path d="M4 13v6h4l10-6V5L8 11H4v2z"></path></svg>',
+            tickets: '<svg viewBox="0 0 24 24"><path d="M4 5h16v4a3 3 0 0 0 0 6v4H4v-4a3 3 0 0 0 0-6V5z"></path></svg>',
+            claims: '<svg viewBox="0 0 24 24"><path d="M5 12l4 4L19 6"></path></svg>',
+            payments: '<svg viewBox="0 0 24 24"><path d="M4 7h16v10H4V7z"></path><path d="M4 11h16"></path></svg>',
+            fraud: '<svg viewBox="0 0 24 24"><path d="M12 3l10 18H2L12 3z"></path><path d="M12 9v5"></path><path d="M12 17h.01"></path></svg>',
+            auditLogs: '<svg viewBox="0 0 24 24"><path d="M5 4h14v16H5V4z"></path><path d="M8 8h8"></path><path d="M8 12h8"></path></svg>',
+            settings: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.5-2.4 1a7 7 0 0 0-1.8-1L14.4 3h-4.8L9.3 6a7 7 0 0 0-1.8 1l-2.4-1-2 3.5 2 1.5A7 7 0 0 0 5 12a7 7 0 0 0 .1 1l-2 1.5 2 3.5 2.4-1a7 7 0 0 0 1.8 1l.3 3h4.8l.3-3a7 7 0 0 0 1.8-1l2.4 1 2-3.5-2-1.5c.1-.3.1-.7.1-1z"></path></svg>',
+            users: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"></circle><path d="M3 21c1-4 11-4 12 0"></path><circle cx="17" cy="10" r="2"></circle></svg>',
+            exports: '<svg viewBox="0 0 24 24"><path d="M12 3v12"></path><path d="M7 10l5 5 5-5"></path><path d="M5 21h14"></path></svg>'
+        };
+
+        let CURRENT_USER = null;
+
+        function setupMenu() {
+            document.querySelectorAll(".menu-btn").forEach(btn => {
+                const page = btn.dataset.page;
+                btn.innerHTML = '<span class="menu-icon">' + pageIcons[page] + '</span><span>' + pageTitles[page] + '</span>';
+                btn.addEventListener("click", () => showPage(page));
+            });
+        }
+
+        function showPage(page) {
+            document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+            document.querySelectorAll(".menu-btn").forEach(b => b.classList.remove("active"));
+
+            const target = document.getElementById(page);
+            if (target) target.classList.add("active");
+
+            const btn = document.querySelector('.menu-btn[data-page="' + page + '"]');
+            if (btn) btn.classList.add("active");
+
+            document.getElementById("topTitle").textContent = pageTitles[page] || "Ticket2Cash";
+            window.scrollTo(0, 0);
+
+            runLoader(page);
+        }
+
+        function runLoader(page) {
+            const map = {
+                dashboard: loadDashboard,
+                businessDashboard: loadBusinessDashboard,
+                security: loadSecurityDashboard,
+                profile: loadProfile,
+                merchants: loadMerchants,
+                products: loadProducts,
+                campaigns: loadCampaigns,
+                tickets: loadTickets,
+                claims: loadClaims,
+                payments: loadPayments,
+                fraud: loadFraudAlerts,
+                auditLogs: loadAuditLogs,
+                settings: loadSettings,
+                users: loadUsers,
+                demoReport: loadDemoReport
+            };
+
+            if (map[page]) map[page]();
+        }
+
+        async function api(path, options = {}) {
+            const opts = Object.assign({
+                headers: {}
+            }, options);
+
+            if (opts.body && typeof opts.body !== "string") {
+                opts.headers["Content-Type"] = "application/json";
+                opts.body = JSON.stringify(opts.body);
+            }
+
+            const res = await fetch(path, opts);
+
+            if (res.status === 401 || res.status === 403) {
+                if (path !== "/api/auth/me") {
+                    alert("Session expiree ou acces refuse.");
+                }
+                if (res.status === 401) window.location.href = "/login.html";
+            }
+
+            const text = await res.text();
+
+            if (!text) return null;
+
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                return text;
+            }
+        }
+
+        function val(id) {
+            return document.getElementById(id)?.value || "";
+        }
+
+        function num(id) {
+            const v = val(id);
+            return v === "" ? null : Number(v);
+        }
+
+        function money(v) {
+            if (v === null || v === undefined) return "0";
+            return String(v);
+        }
+
+        function setResponse(id, data) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = typeof data === "string" ? data : JSON.stringify(data, null, 2);
+        }
+
+        function renderTable(containerId, data) {
+            const el = document.getElementById(containerId);
+            if (!el) return;
+
+            const rows = Array.isArray(data) ? data : (data?.content || data?.items || data?.data || []);
+            if (!rows || rows.length === 0) {
+                el.innerHTML = '<div class="panel"><p>Aucune donnee disponible.</p></div>';
+                return;
+            }
+
+            const columns = Array.from(new Set(rows.flatMap(r => Object.keys(r)))).slice(0, 10);
+
+            let html = "<table><thead><tr>";
+            columns.forEach(c => html += "<th>" + c + "</th>");
+            html += "</tr></thead><tbody>";
+
+            rows.forEach(row => {
+                html += "<tr>";
+                columns.forEach(c => {
+                    let value = row[c];
+                    if (value && typeof value === "object") value = JSON.stringify(value);
+                    html += "<td>" + (value ?? "") + "</td>";
+                });
+                html += "</tr>";
+            });
+
+            html += "</tbody></table>";
+            el.innerHTML = html;
+        }
+
+        function renderKpis(containerId, items) {
+            const el = document.getElementById(containerId);
+            if (!el) return;
+
+            el.innerHTML = items.map(i => `
+                <div class="kpi">
+                    <div class="kpi-label">${i.label}</div>
+                    <div class="kpi-value">${i.value}</div>
+                </div>
+            `).join("");
+        }
+
+        function renderObject(containerId, obj) {
+            const el = document.getElementById(containerId);
+            if (!el) return;
+
+            if (!obj) {
+                el.innerHTML = '<p>Aucune donnee.</p>';
+                return;
+            }
+
+            const rows = Object.entries(obj).map(([k, v]) => ({ indicateur: k, valeur: typeof v === "object" ? JSON.stringify(v) : v }));
+            renderTable(containerId, rows);
+        }
+
+        async function loadMe() {
+            try {
+                CURRENT_USER = await api("/api/auth/me");
+                if (CURRENT_USER) {
+                    document.getElementById("currentUser").textContent = (CURRENT_USER.username || "user") + " - " + (CURRENT_USER.role || "");
+                    applyRoleRules();
+                }
+            } catch (e) {
+                window.location.href = "/login.html";
+            }
+        }
+
+        function applyRoleRules() {
+            if (!CURRENT_USER) return;
+            document.querySelectorAll(".admin-only").forEach(el => {
+                el.classList.toggle("hidden", CURRENT_USER.role !== "ADMIN");
+            });
+        }
+
+        async function logout() {
+            await api("/api/auth/logout", { method: "POST" });
+            window.location.href = "/login.html";
+        }
+
+        async function loadDashboard() {
+            const d = await api("/api/dashboard/summary");
+            renderKpis("dashboardKpis", [
+                { label: "Commercants", value: d?.merchantsCount ?? d?.totalMerchants ?? 0 },
+                { label: "Produits", value: d?.productsCount ?? d?.totalProducts ?? 0 },
+                { label: "Claims", value: d?.claimsCount ?? d?.totalClaims ?? 0 },
+                { label: "Cashback paye", value: money(d?.totalCashbackPaid ?? d?.cashbackPaid ?? 0) + " FCFA" }
+            ]);
+            renderObject("dashboardTable", d);
+        }
+
+        async function loadBusinessDashboard() {
+            const d = await api("/api/business-dashboard/summary");
+            renderKpis("businessKpis", [
+                { label: "Commercants", value: d?.totalMerchants ?? 0 },
+                { label: "Claims", value: d?.totalClaims ?? 0 },
+                { label: "Paiements", value: d?.totalPayments ?? 0 },
+                { label: "Cashback paye", value: money(d?.totalCashbackPaid ?? 0) + " FCFA" }
+            ]);
+            renderObject("businessDetails", d);
+        }
+
+        async function loadSecurityDashboard() {
+            const d = await api("/api/security-dashboard/summary");
+            renderKpis("securityKpis", [
+                { label: "Utilisateurs", value: d?.totalUsers ?? 0 },
+                { label: "Actifs", value: d?.activeUsers ?? 0 },
+                { label: "Verrouilles", value: d?.lockedUsers ?? 0 },
+                { label: "Admins actifs", value: d?.activeAdmins ?? 0 }
+            ]);
+            renderObject("securityDetails", d);
+        }
+
+        async function initDemoData() {
+            const d = await api("/api/demo-data/init", { method: "POST" });
+            setResponse("demoCenterResponse", d);
+        }
+
+        async function runDemoFlow() {
+            const d = await api("/api/demo-flow/run", { method: "POST" });
+            setResponse("demoCenterResponse", d);
+            setResponse("demoFlowResponse", d);
+        }
+
+        async function loadDemoReport() {
+            const d = await api("/api/demo-report/summary");
+            renderObject("demoReportContent", d);
+        }
+
+        async function loadProfile() {
+            const d = await api("/api/auth/me");
+            renderObject("profileContent", d);
+        }
+
+        async function loadMerchants() {
+            renderTable("merchantsContent", await api("/api/merchants"));
+        }
+
+        async function createMerchant() {
+            const body = {
+                name: val("mName"),
+                brandName: val("mBrand"),
+                rccm: val("mRccm"),
+                niu: val("mNiu"),
+                phone: val("mPhone"),
+                email: val("mEmail"),
+                city: val("mCity"),
+                address: val("mAddress")
+            };
+            await api("/api/merchants", { method: "POST", body });
+            loadMerchants();
+        }
+
+        async function loadProducts() {
+            renderTable("productsContent", await api("/api/products"));
+        }
+
+        async function createProduct() {
+            const merchantId = num("pMerchantId");
+            const body = {
+                sku: val("pSku"),
+                name: val("pName"),
+                ticketDesignation: val("pTicketDesignation"),
+                category: val("pCategory"),
+                brand: val("pBrand"),
+                price: num("pPrice"),
+                cashbackType: val("pCashbackType"),
+                cashbackValue: num("pCashbackValue"),
+                active: true
+            };
+            await api("/api/products?merchantId=" + merchantId, { method: "POST", body });
+            loadProducts();
+        }
+
+        async function loadCampaigns() {
+            renderTable("campaignsContent", await api("/api/campaigns"));
+        }
+
+        async function createCampaign() {
+            const merchantId = num("cMerchantId");
+            const body = {
+                name: val("cName"),
+                description: val("cDescription"),
+                startDate: val("cStart"),
+                endDate: val("cEnd"),
+                cashbackType: val("cCashbackType"),
+                cashbackValue: num("cCashbackValue"),
+                totalBudget: num("cBudget"),
+                dailyLimitPerClient: 2,
+                monthlyLimitPerClient: 10,
+                status: "ACTIVE"
+            };
+            await api("/api/campaigns?merchantId=" + merchantId, { method: "POST", body });
+            loadCampaigns();
+        }
+
+        async function loadTickets() {
+            renderTable("ticketsContent", await api("/api/tickets"));
+        }
+
+        async function simulateOcr() {
+            const body = {
+                merchantId: num("tMerchantId"),
+                campaignId: num("tCampaignId"),
+                userId: val("tUserId"),
+                ticketNumber: val("tNumber")
+            };
+            await api("/api/tickets/simulate-ocr", { method: "POST", body });
+            loadTickets();
+        }
+
+        async function loadClaims() {
+            renderTable("claimsContent", await api("/api/claims"));
+        }
+
+        async function updateClaimStatus() {
+            const id = num("claimId");
+            const status = val("claimStatus");
+            await api("/api/claims/" + id + "/status?status=" + status, { method: "PUT" });
+            loadClaims();
+        }
+
+        async function loadPayments() {
+            renderTable("paymentsContent", await api("/api/cashback/payments"));
+        }
+
+        async function runCashbackBatch() {
+            const d = await api("/api/cashback/batch/run", { method: "POST" });
+            alert("Batch execute.");
+            loadPayments();
+        }
+
+        async function loadFraudAlerts() {
+            renderTable("fraudContent", await api("/api/fraud/alerts"));
+        }
+
+        async function updateFraudStatus() {
+            const id = num("fraudId");
+            const status = val("fraudStatus");
+            await api("/api/fraud/alerts/" + id + "/status?status=" + status, { method: "PUT" });
+            loadFraudAlerts();
+        }
+
+        async function loadAuditLogs() {
+            renderTable("auditLogsContent", await api("/api/audit-logs"));
+        }
+
+        async function loadSettings() {
+            renderTable("settingsContent", await api("/api/settings"));
+        }
+
+        async function loadUsers() {
+            renderTable("usersContent", await api("/api/auth/users"));
+        }
+
+        async function createUser() {
+            const body = {
+                username: val("uUsername"),
+                fullName: val("uFullName"),
+                email: val("uEmail"),
+                password: val("uPassword"),
+                role: val("uRole")
+            };
+            await api("/api/auth/users", { method: "POST", body });
+            loadUsers();
+        }
+
+        async function updateUserRole() {
+            await api("/api/auth/users/" + num("uTargetId") + "/role?role=" + val("uTargetRole"), { method: "PUT" });
+            loadUsers();
+        }
+
+        async function resetUserPassword() {
+            const id = num("uTargetId");
+            const body = { newPassword: val("uResetPassword") };
+            await api("/api/auth/users/" + id + "/reset-password", { method: "PUT", body });
+            loadUsers();
+        }
+
+        async function unlockUser() {
+            await api("/api/auth/users/" + num("uTargetId") + "/unlock", { method: "PUT" });
+            loadUsers();
+        }
+
+        function openUrl(url) {
+            window.open(url, "_blank");
+        }
+
+        async function loadAll() {
+            await loadDashboard();
+            await loadBusinessDashboard();
+            await loadSecurityDashboard();
+        }
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            setupMenu();
+            await loadMe();
+            await loadDashboard();
+        });
+    </script>
+
+<script id="ticket2cash-dashboard-fields-fix">
+(function () {
+    function toNumber(value) {
+        if (value === null || value === undefined || value === "") return 0;
+        const n = Number(value);
+        return Number.isNaN(n) ? 0 : n;
+    }
+
+    function pickNumber(obj, keys) {
+        if (!obj) return 0;
+
+        for (const key of keys) {
+            if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                return toNumber(obj[key]);
+            }
+        }
+
+        return 0;
+    }
+
+    function formatFcfa(value) {
+        return toNumber(value).toLocaleString("fr-FR") + " FCFA";
+    }
+
+    window.loadDashboard = async function () {
+        const d = await api("/api/dashboard/summary");
+
+        const merchants = pickNumber(d, [
+            "commercantsPartenaires",
+            "commercants",
+            "totalMerchants",
+            "merchantsCount",
+            "merchantCount",
+            "merchants",
+            "nombreCommercants"
+        ]);
+
+        const products = pickNumber(d, [
+            "produits",
+            "totalProducts",
+            "productsCount",
+            "productCount",
+            "products",
+            "nombreProduits"
+        ]);
+
+        const claims = pickNumber(d, [
+            "claims",
+            "totalClaims",
+            "claimsCount",
+            "claimCount",
+            "nombreClaims"
+        ]);
+
+        const cashback = pickNumber(d, [
+            "cashbackPaye",
+            "cashbackPaid",
+            "totalCashbackPaid",
+            "totalPaidCashback",
+            "montantCashbackPaye",
+            "totalCashback"
+        ]);
+
+        renderKpis("dashboardKpis", [
+            { label: "Commercants", value: merchants },
+            { label: "Produits", value: products },
+            { label: "Claims", value: claims },
+            { label: "Cashback paye", value: formatFcfa(cashback) }
+        ]);
+
+        renderObject("dashboardTable", d);
+    };
+
+    window.loadBusinessDashboard = async function () {
+        const d = await api("/api/business-dashboard/summary");
+
+        const merchants = pickNumber(d, [
+            "totalMerchants",
+            "commercantsPartenaires",
+            "commercants",
+            "merchantsCount",
+            "merchants"
+        ]);
+
+        const claims = pickNumber(d, [
+            "totalClaims",
+            "claims",
+            "claimsCount"
+        ]);
+
+        const payments = pickNumber(d, [
+            "totalPayments",
+            "payments",
+            "paymentsCount",
+            "paiements"
+        ]);
+
+        const cashback = pickNumber(d, [
+            "totalCashbackPaid",
+            "cashbackPaye",
+            "cashbackPaid",
+            "montantCashbackPaye"
+        ]);
+
+        renderKpis("businessKpis", [
+            { label: "Commercants", value: merchants },
+            { label: "Claims", value: claims },
+            { label: "Paiements", value: payments },
+            { label: "Cashback paye", value: formatFcfa(cashback) }
+        ]);
+
+        renderObject("businessDetails", d);
+    };
+
+    document.addEventListener("DOMContentLoaded", function () {
+        setTimeout(function () {
+            const dashboard = document.getElementById("dashboard");
+            if (dashboard && dashboard.classList.contains("active")) {
+                loadDashboard();
+            }
+        }, 300);
+    });
+})();
+</script>
+
+</body>
+</html>

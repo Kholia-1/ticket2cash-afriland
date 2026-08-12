@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ticket2Cash — Afriland First Bank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* ============ DESIGN TOKENS ============ */
+:root{
+  --brand:#C1121F; --brand-600:#A50F1A; --brand-700:#8A0C15; --brand-tint:#FDECEE;
+  --font-sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --font-display:'Plus Jakarta Sans',var(--font-sans);
+  --font-mono:'JetBrains Mono',ui-monospace,monospace;
+  --r-sm:8px; --r-md:12px; --r-lg:16px;
+  --sidebar-w:266px; --topbar-h:64px;
+  --ok:#127A45; --ok-bg:#E6F4EC;
+  --warn:#B25E09; --warn-bg:#FBEFDD;
+  --info:#1553B8; --info-bg:#E7F0FE;
+  --danger:#B42318; --danger-bg:#FCE9E7;
+  --muted-badge:#5A6472; --muted-bg:#EEF1F5;
+}
+/* ---------- LIGHT: whole shell light ---------- */
+html[data-theme="light"]{
+  --bg:#F4F6FA; --bg-grad:radial-gradient(1100px 480px at 82% -12%, #fbe9ea 0%, transparent 62%);
+  --surface:#FFFFFF; --surface-2:#F7F9FC; --elevated:#FFFFFF;
+  --border:#E6EAF1; --border-strong:#D6DCE7;
+  --text:#101828; --text-2:#48566B; --muted:#8A94A6;
+  /* sidebar = light */
+  --side-bg:#FFFFFF; --side-text:#48566B; --side-strong:#101828; --side-muted:#98A2B3;
+  --side-hover:#F2F5FA; --side-border:#E6EAF1;
+  --logo-chip:#FFFFFF; --logo-border:#E6EAF1;
+  --logout-bg:#FDECEE; --logout-text:#B42318; --logout-border:#F6CDD1;
+  --input-bg:#FFFFFF;
+  --shadow-sm:0 1px 2px rgba(16,24,40,.05);
+  --shadow-md:0 4px 16px rgba(16,24,40,.08);
+  --shadow-lg:0 12px 40px rgba(16,24,40,.14);
+}
+/* ---------- DARK: whole shell dark ---------- */
+html[data-theme="dark"]{
+  --bg:#090C12; --bg-grad:radial-gradient(1100px 480px at 82% -12%, rgba(193,18,31,.15) 0%, transparent 62%);
+  --surface:#12161F; --surface-2:#161C27; --elevated:#161C27;
+  --border:#232B39; --border-strong:#2C3648;
+  --text:#E9EDF5; --text-2:#AEB7C6; --muted:#727D90;
+  /* sidebar = dark */
+  --side-bg:#0D121A; --side-text:#AEB7C6; --side-strong:#F1F4FA; --side-muted:#6B7688;
+  --side-hover:rgba(255,255,255,.05); --side-border:#1E2531;
+  --logo-chip:#FFFFFF; --logo-border:#2A3342;
+  --logout-bg:rgba(193,18,31,.16); --logout-text:#FF8F96; --logout-border:rgba(193,18,31,.28);
+  --input-bg:#0E1219;
+  --ok-bg:#0e2a1c; --warn-bg:#2c1f0d; --info-bg:#0f1f3a; --danger-bg:#2c1512; --muted-bg:#1a2130;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.3);
+  --shadow-md:0 4px 16px rgba(0,0,0,.4);
+  --shadow-lg:0 16px 46px rgba(0,0,0,.55);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--font-sans);background:var(--bg);background-image:var(--bg-grad);
+  background-attachment:fixed;color:var(--text);font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;transition:background-color .3s ease,color .3s ease;
+}
+/* global smooth theme transition */
+.sidebar,.topbar,.panel,.kpi,.table-wrap,.nav-item,.btn,input,select,.badge,thead th,tbody td,.logo-chip{
+  transition:background-color .3s ease,color .3s ease,border-color .3s ease,box-shadow .3s ease;
+}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select{font-family:inherit;font-size:14px}
+::selection{background:var(--brand-tint);color:var(--brand-700)}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:6px}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:20px;border:3px solid transparent;background-clip:padding-box}
+
+/* ============ LAYOUT ============ */
+.app{display:grid;grid-template-columns:var(--sidebar-w) 1fr;min-height:100vh}
+.sidebar{
+  background:var(--side-bg);color:var(--side-text);display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;z-index:60;border-right:1px solid var(--side-border);
+}
+.main{min-width:0;display:flex;flex-direction:column}
+
+/* ---- Brand / logo box (Afriland only) ---- */
+.brand-box{padding:16px 16px 12px}
+.logo-chip{
+  background:var(--logo-chip);border:1px solid var(--logo-border);border-radius:var(--r-md);
+  padding:14px 16px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm);min-height:64px
+}
+.logo-chip img{height:40px;object-fit:contain;max-width:180px}
+.logo-chip .fallback{font-family:var(--font-display);font-weight:800;color:var(--brand);font-size:15px;text-align:center;line-height:1.2}
+.logo-divider{height:1px;background:var(--side-border);margin:2px 16px 10px}
+
+/* ---- Sidebar search ---- */
+.side-search{padding:0 14px 12px;position:relative}
+.side-search svg{position:absolute;left:26px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--side-muted)}
+.side-search input{
+  width:100%;background:var(--side-hover);border:1px solid var(--side-border);color:var(--side-strong);
+  border-radius:10px;padding:9px 12px 9px 34px;font-size:13px
+}
+.side-search input::placeholder{color:var(--side-muted)}
+.side-search input:focus{border-color:var(--brand);outline:none;box-shadow:0 0 0 3px var(--brand-tint)}
+html[data-theme="dark"] .side-search input:focus{box-shadow:0 0 0 3px rgba(193,18,31,.14)}
+
+/* ---- Nav ---- */
+.nav{flex:1;overflow-y:auto;padding:4px 10px 10px}
+.nav::-webkit-scrollbar{width:6px}
+.nav::-webkit-scrollbar-thumb{background:var(--border-strong)}
+.nav-group{margin-top:14px}
+.nav-group h4{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--side-muted);font-weight:700;padding:0 12px 6px}
+.nav-item{
+  display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:10px;color:var(--side-text);
+  font-size:13.5px;font-weight:500;margin-bottom:1px;position:relative;cursor:pointer
+}
+.nav-item svg{width:18px;height:18px;flex:0 0 18px;opacity:.8}
+.nav-item:hover{background:var(--side-hover);color:var(--side-strong)}
+.nav-item.active{background:linear-gradient(90deg,var(--brand) 0%,var(--brand-600) 100%);color:#fff;box-shadow:0 6px 16px rgba(193,18,31,.32)}
+.nav-item.active svg{opacity:1}
+
+/* ---- Sidebar footer ---- */
+.side-footer{padding:12px 14px 16px;border-top:1px solid var(--side-border)}
+.side-footer .profile{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;cursor:pointer}
+.side-footer .profile:hover{background:var(--side-hover)}
+.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--brand),#f2545b);display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;flex:0 0 34px}
+.side-footer .who{min-width:0}
+.side-footer .who b{display:block;font-size:13px;color:var(--side-strong);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side-footer .who small{color:var(--side-muted);font-size:11px}
+.btn-logout{width:100%;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px;padding:9px;border-radius:10px;background:var(--logout-bg);color:var(--logout-text);font-size:13px;font-weight:600;border:1px solid var(--logout-border)}
+.btn-logout:hover{background:var(--brand);color:#fff;border-color:transparent}
+
+/* ============ TOPBAR ============ */
+.topbar{
+  height:var(--topbar-h);background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:16px;padding:0 20px;position:sticky;top:0;z-index:40
+}
+.hamburger{display:none;width:38px;height:38px;border-radius:10px;border:1px solid var(--border);align-items:center;justify-content:center;flex:0 0 38px;color:var(--text)}
+.hamburger:hover{background:var(--surface-2)}
+.tb-brand{font-family:var(--font-display);font-weight:800;font-size:17px;letter-spacing:-.02em;color:var(--text);white-space:nowrap}
+.tb-brand span{color:var(--brand)}
+.tb-role{font-size:12px;font-weight:600;color:var(--brand-700);background:var(--brand-tint);padding:3px 10px;border-radius:20px;white-space:nowrap}
+html[data-theme="dark"] .tb-role{background:rgba(193,18,31,.18);color:#ff9ba1}
+.tb-search{flex:1;max-width:440px;position:relative;min-width:0}
+.tb-search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:17px;height:17px;color:var(--muted)}
+.tb-search input{width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:11px;padding:10px 12px 10px 38px;color:var(--text)}
+.tb-search input::placeholder{color:var(--muted)}
+.tb-search input:focus{border-color:var(--brand);background:var(--surface);outline:none;box-shadow:0 0 0 4px var(--brand-tint)}
+html[data-theme="dark"] .tb-search input:focus{box-shadow:0 0 0 4px rgba(193,18,31,.16)}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.tb-date{font-size:11.5px;color:var(--text-2);text-align:right;line-height:1.25;white-space:nowrap}
+.tb-date b{display:block;color:var(--text);font-weight:600;text-transform:capitalize}
+.icon-btn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:var(--text-2);border:1px solid transparent;position:relative}
+.icon-btn:hover{background:var(--surface-2);color:var(--text);border-color:var(--border)}
+.icon-btn svg{width:19px;height:19px}
+.icon-btn .dot{position:absolute;top:8px;right:9px;width:7px;height:7px;background:var(--brand);border-radius:50%;border:2px solid var(--surface)}
+.lang-sel{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:8px 10px;color:var(--text);font-size:12.5px;font-weight:500}
+
+/* ============ CONTENT ============ */
+.content{padding:24px 28px 40px;flex:1}
+.page-head{margin-bottom:22px}
+.page-head h1{font-family:var(--font-display);font-size:26px;font-weight:800;letter-spacing:-.02em}
+.page-head p{color:var(--text-2);font-size:14px;margin-top:4px}
+.page-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:10px;font-size:13.5px;font-weight:600;border:1px solid transparent}
+.btn svg{width:16px;height:16px}
+.btn-primary{background:var(--brand);color:#fff;box-shadow:0 6px 16px rgba(193,18,31,.28)}
+.btn-primary:hover{background:var(--brand-600)}
+.btn-ghost{background:var(--surface);border-color:var(--border);color:var(--text)}
+.btn-ghost:hover{background:var(--surface-2);border-color:var(--border-strong)}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px;position:relative;overflow:hidden;box-shadow:var(--shadow-sm)}
+.kpi::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--brand),#f2545b)}
+.kpi:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:var(--border-strong);transition:transform .18s,box-shadow .18s}
+.kpi .kpi-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:10px}
+.kpi .kpi-icon{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:var(--brand-tint);color:var(--brand);flex:0 0 38px}
+html[data-theme="dark"] .kpi .kpi-icon{background:rgba(193,18,31,.16)}
+.kpi .kpi-icon svg{width:20px;height:20px}
+.kpi .kpi-label{font-size:12.5px;color:var(--text-2);font-weight:500}
+.kpi .kpi-val{font-family:var(--font-display);font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1.05;margin-top:6px}
+.kpi .kpi-sub{font-size:12px;color:var(--muted);margin-top:8px}
+
+.grid-2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:22px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-sm)}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border)}
+.panel-head h3{font-family:var(--font-display);font-size:15px;font-weight:700}
+.panel-head .link{font-size:12.5px;color:var(--brand);font-weight:600;cursor:pointer}
+.panel-body{padding:16px 18px}
+
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-sm)}
+.table-toolbar{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.table-toolbar .count-pill{font-size:12px;color:var(--text-2);background:var(--surface-2);border:1px solid var(--border);padding:4px 11px;border-radius:20px;font-weight:600}
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:640px}
+thead th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:12px 18px;background:var(--surface-2);border-bottom:1px solid var(--border);white-space:nowrap}
+tbody td{padding:13px 18px;border-bottom:1px solid var(--border);font-size:13.5px;color:var(--text);vertical-align:middle}
+tbody tr:hover{background:var(--surface-2)}
+tbody tr:last-child td{border-bottom:none}
+td .mono{font-family:var(--font-mono);font-size:12.5px;color:var(--text-2)}
+td .strong{font-weight:600}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.b-ok{color:var(--ok);background:var(--ok-bg)} .b-warn{color:var(--warn);background:var(--warn-bg)}
+.b-info{color:var(--info);background:var(--info-bg)} .b-danger{color:var(--danger);background:var(--danger-bg)}
+.b-muted{color:var(--muted-badge);background:var(--muted-bg)}
+
+.legend{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.legend .row{display:flex;align-items:center;gap:9px;font-size:13px}
+.legend .row .sw{width:10px;height:10px;border-radius:3px}
+.legend .row b{margin-left:auto;font-weight:700}
+
+.sk{background:linear-gradient(90deg,var(--surface-2) 25%,var(--border) 37%,var(--surface-2) 63%);background-size:400% 100%;animation:sh 1.3s infinite;border-radius:6px}
+@keyframes sh{0%{background-position:100% 0}100%{background-position:-100% 0}}
+.sk-line{height:12px;margin:8px 0}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.page{animation:fadeUp .3s ease both}
+.empty{padding:52px 24px;text-align:center;color:var(--muted)}
+.empty svg{width:44px;height:44px;margin-bottom:12px;opacity:.5}
+.empty h4{font-size:15px;color:var(--text);font-weight:700;margin-bottom:5px}
+.empty p{font-size:13px;max-width:340px;margin:0 auto}
+
+.profile-card{max-width:640px}
+.pf-row{display:flex;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+.pf-row:last-child{border:none}
+.pf-row .k{color:var(--text-2);font-size:13.5px}
+.pf-row .v{font-weight:600;font-family:var(--font-mono);font-size:13px}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(4,4,8,.5);z-index:55;backdrop-filter:blur(2px)}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--elevated);border:1px solid var(--border);box-shadow:var(--shadow-lg);border-radius:12px;padding:13px 16px;font-size:13.5px;font-weight:500;z-index:100;animation:fadeUp .25s;max-width:340px;color:var(--text)}
+.toast.err{border-left:3px solid var(--brand)} .toast.ok{border-left:3px solid var(--ok)}
+.tree-toggle{display:inline-flex;width:18px;height:18px;align-items:center;justify-content:center;margin-right:8px;transition:transform .15s;color:var(--muted);vertical-align:middle}
+.partner-row{cursor:pointer}
+.partner-row.open .tree-toggle{transform:rotate(90deg)}
+.partner-row:hover{background:var(--surface-2)}
+.child-row{display:none}
+.child-row.show{display:table-row}
+.child-row td:first-child{padding-left:46px;color:var(--text-2)}
+.cred-box{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.cred-box .k{font-size:12px;color:var(--muted);font-weight:600}
+.cred-box .v{font-family:var(--font-mono);font-weight:600;font-size:14px;word-break:break-all}
+
+/* ---- avatar image ---- */
+.avatar img,.avatar-lg img{width:100%;height:100%;object-fit:cover;border-radius:inherit}
+.avatar-lg{width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,var(--brand),#f2545b);display:grid;place-items:center;color:#fff;font-weight:800;font-size:30px;overflow:hidden;flex:0 0 84px;position:relative}
+.tb-avatar{width:38px;height:38px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,var(--brand),#f2545b);display:grid;place-items:center;color:#fff;font-weight:700;font-size:14px;cursor:pointer;border:2px solid var(--border)}
+/* ---- tabs ---- */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:22px;flex-wrap:wrap}
+.tab{padding:10px 16px;font-size:13.5px;font-weight:600;color:var(--text-2);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--brand);border-bottom-color:var(--brand)}
+/* ---- forms ---- */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.full{grid-column:1/-1}
+.field label{font-size:12.5px;font-weight:600;color:var(--text-2)}
+.field input,.field select,.field textarea{background:var(--input-bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);width:100%;font-size:13.5px}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--brand);outline:none;box-shadow:0 0 0 3px var(--brand-tint)}
+html[data-theme="dark"] .field input:focus,html[data-theme="dark"] .field select:focus{box-shadow:0 0 0 3px rgba(193,18,31,.16)}
+.field .hint{font-size:11.5px;color:var(--muted)}
+.info-banner{background:var(--info-bg);border:1px solid transparent;border-radius:12px;padding:12px 16px;font-size:13px;color:var(--text-2);margin-bottom:18px;display:flex;gap:10px;align-items:flex-start}
+.info-banner svg{width:18px;height:18px;color:var(--info);flex:0 0 18px;margin-top:1px}
+.info-banner b{color:var(--text)}
+/* ---- product toolbar ---- */
+.prod-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+.prod-toolbar .grow{flex:1;min-width:180px}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.seg button{padding:9px 13px;font-size:12.5px;font-weight:600;color:var(--text-2);background:var(--surface);border-right:1px solid var(--border)}
+.seg button:last-child{border-right:none}
+.seg button:hover{background:var(--surface-2);color:var(--text)}
+.row-actions{display:flex;gap:6px;justify-content:flex-end}
+.mini-btn{padding:6px 11px;font-size:12px;font-weight:600;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text)}
+.mini-btn:hover{background:var(--surface-2)}
+.mini-btn.danger{color:var(--danger);border-color:transparent;background:var(--danger-bg)}
+/* ---- modal ---- */
+.modal-back{position:fixed;inset:0;background:rgba(6,8,12,.55);z-index:90;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;backdrop-filter:blur(2px);animation:fadeUp .2s}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-lg);width:100%;max-width:560px;overflow:hidden}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.modal-head h3{font-family:var(--font-display);font-size:16px;font-weight:700}
+.modal-head .x{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;color:var(--muted)}
+.modal-head .x:hover{background:var(--surface-2);color:var(--text)}
+.modal-body{padding:20px}
+.modal-foot{display:flex;gap:10px;justify-content:flex-end;padding:16px 20px;border-top:1px solid var(--border);background:var(--surface-2)}
+@media(max-width:640px){.form-grid{grid-template-columns:1fr}}
+@media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.grid-2{grid-template-columns:1fr}}
+@media(max-width:1024px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:fixed;top:0;left:0;width:290px;transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1)}
+  body.nav-open .sidebar{transform:translateX(0)}
+  body.nav-open .overlay{display:block}
+  .hamburger{display:flex}
+}
+@media(max-width:720px){.content{padding:18px 16px 34px}.tb-search{display:none}.tb-date{display:none}.lang-sel{display:none}.page-head h1{font-size:22px}}
+@media(max-width:560px){.kpi-grid{grid-template-columns:1fr}.tb-role{display:none}}
+</style>
+</head>
+<body>
+<div class="overlay" onclick="closeNav()"></div>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand-box">
+      <div class="logo-chip">
+        <img src="/assets/logo-afriland.png" alt="Afriland First Bank"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+        <div class="fallback" style="display:none">Afriland<br>First Bank</div>
+      </div>
+    </div>
+    <div class="logo-divider"></div>
+    <div class="side-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="navSearch" oninput="filterNav(this.value)">
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="side-footer">
+      <div class="profile" onclick="go('account')">
+        <div class="avatar" id="sideAvatar">A</div>
+        <div class="who"><b id="sideName">Admin</b><small id="sideRole">ADMIN</small></div>
+      </div>
+      <button class="btn-logout" onclick="logout()">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+        <span id="logoutTxt">Déconnexion</span>
+      </button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="hamburger" onclick="openNav()" aria-label="Menu">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="tb-brand">Ticket<span>2</span>Cash</div>
+      <div class="tb-role" id="tbRole">Admin</div>
+      <div class="tb-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="globalSearch" oninput="tableSearch(this.value)">
+      </div>
+      <div class="tb-right">
+        <div class="tb-date"><b id="dateMain">—</b><span id="dateSub"></span></div>
+        <select class="lang-sel" id="lang" onchange="setLang(this.value)">
+          <option value="fr">Français</option>
+          <option value="en">English</option>
+        </select>
+        <button class="icon-btn" title="Notifications"><span class="dot"></span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        </button>
+        <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="Theme"></button>
+        <div class="tb-avatar" id="tbAvatar" onclick="go('account')" title="Compte">A</div>
+      </div>
+    </header>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<script>
+/* ============ STATE ============ */
+const API=""; let ME=null, CURRENT="dashboard", CACHE={};
+
+/* ============ FULL I18N ============ */
+const I18N={
+ fr:{
+  logout:"Déconnexion",refresh:"Actualiser",add:"Ajouter",view_all:"Voir tout →",
+  search_menu:"Rechercher un menu…",search_page:"Rechercher dans la page…",
+  connected:"Connecté",items:"élément(s)",total_lc:"au total",payments_lc:"paiements",claims_lc:"réclamations",
+  g_principal:"Principal",g_ops:"Opérations",g_sys:"Système",g_integration:"Intégration",
+  trends:"Tendances",webhooks:"Webhooks",integration:"Intégration",
+  prod_updated:"Produit mis à jour.",
+  tr_sub:"Analyses calculées à partir de vos données réelles.",
+  tr_cashback_time:"Cashback par mois",tr_claims_status:"Réclamations par statut",tr_top_cat:"Top catégories (produits)",tr_no_data:"Pas encore assez de données pour cette analyse.",
+  wh_sub:"Recevez les transactions POS en temps réel.",wh_url:"URL du webhook (POS → Ticket2Cash)",wh_payload:"Exemple de charge utile (POST JSON)",wh_recent:"Transactions reçues",wh_unmatched:"Transactions non rapprochées",wh_copy:"Copier",wh_copied:"Copié !",
+  wh_base:"URL publique de base",wh_base_hint:"Adresse joignable par le système externe (votre URL ngrok ou votre domaine). Laissez vide pour l'adresse locale — utilisable uniquement pour des tests sur ce PC.",
+  wh_base_ph:"https://votre-domaine.com ou https://xxxx.ngrok-free.app",wh_local:"local uniquement — non joignable de l'extérieur",wh_public:"URL publique enregistrée",
+  ig_sub:"Comment connecter un système externe à la plateforme.",ig_base:"URL de base de l'API",ig_auth:"Authentification",ig_auth_v:"Session (cookie) après connexion à /api/auth/login.",ig_endpoints:"Principaux endpoints",ig_test:"Tester la connexion",ig_ok:"Connexion OK",ig_ko:"Connexion impossible",
+  finance:"Finance & historique",finance_sub:"Cashback versé, paiements et transactions non rapprochées.",
+  fin_paid:"Cashback versé",fin_count:"Paiements",fin_unmatched:"Non rapprochées",
+  ocr:"Menu OCR AI",ocr_sub:"Testez l'extraction OCR d'un ticket (serveur Python requis).",
+  ocr_choose:"Choisir une image de ticket",ocr_analyze:"Analyser",ocr_result:"Résultat OCR",ocr_none:"Aucun résultat pour l'instant.",ocr_running:"Analyse en cours…",ocr_fields:"Champs extraits",ocr_raw:"Réponse brute",
+  pricing:"Instances & tarifs",pricing_sub:"Forfaits, tarifs et nombre d'instances incluses.",
+  ticketTemplate:"Modèle ticket",tt_sub2:"Modèles de lecture des tickets pour l'OCR.",
+  f_code:"Code",f_monthlyfee:"Frais mensuels",f_commission:"Commission (%)",f_instances:"Instances incluses",f_desc:"Description",f_active:"Actif",
+  tt_store:"Motif nom magasin",tt_total:"Mot-clé total",tt_date:"Format date",tt_sample:"Exemple de texte",
+  new_item:"Nouveau",saved_ok:"Enregistré.",deleted_ok:"Supprimé.",confirm_del2:"Supprimer cet élément ?",
+  subPartners:"Sous-partenaires",sub_sub:"Créez et gérez les enseignes situées dans votre établissement.",
+  new_subpartner:"Nouveau sous-partenaire",c_partner:"Partenaire",c_parent:"Partenaire parent",
+  merchant_create:"Nouveau commerçant",m_name:"Raison sociale",m_brand:"Nom commercial",m_city:"Ville",m_phone:"Téléphone",m_email:"Email",m_niu:"NIU",m_rccm:"RCCM",m_address:"Adresse",m_status:"Statut",m_parent:"Partenaire parent (optionnel)",none_opt:"— Aucun (partenaire principal) —",merchant_created:"Commerçant créé.",
+  cp_title:"Créer un partenaire",cp_org:"Établissement",cp_login:"Accès de connexion",cp_username:"Identifiant de connexion",cp_password:"Mot de passe",cp_generate:"Générer",cp_contact:"Nom du contact / gérant",
+  cp_created_title:"Partenaire créé",cp_created_msg:"Transmettez ces identifiants au partenaire pour qu'il accède à son espace personnel.",
+  cp_loginurl:"Lien de connexion",cp_msg_label:"Message prêt à envoyer",cp_copy_msg:"Copier le message",
+  pw_hint:"8 caractères minimum, avec au moins un chiffre.",
+  mrch_title:"Partenaires",mrch_sub:"Tous les partenaires et leurs sous-partenaires.",mrch_new:"Créer un partenaire",mrch_subcount:"sous-partenaire(s)",mrch_none:"Aucun partenaire pour l'instant. Cliquez sur « Créer un partenaire ».",
+  dashboard:"Tableau de bord",businessDashboard:"Dashboard métier",security:"Dashboard sécurité",
+  merchants:"Commerçants",products:"Produits",campaigns:"Campagnes",tickets:"Tickets",claims:"Réclamations",
+  payments:"Paiements",users:"Utilisateurs",fraud:"Alertes fraude",auditLogs:"Journaux",settings:"Paramètres",profile:"Mon profil",
+  dash_sub:"Vue d'ensemble de l'activité cashback en temps réel.",
+  kpi_cashback:"Cashback distribué",kpi_merchants:"Commerçants actifs",kpi_campaigns:"Campagnes actives",kpi_fraud:"Alertes fraude ouvertes",
+  pk_cashback:"Cashback reçu",pk_claims:"Réclamations",pk_products:"Produits",pk_campaigns:"Campagnes actives",
+  recent_claims:"Réclamations récentes",claim_dist:"Répartition des réclamations",
+  leg_submitted:"Soumises",leg_approved:"Approuvées",leg_paid:"Payées",leg_rejected:"Rejetées",
+  no_claims:"Aucune réclamation pour l'instant.",
+  merchants_sub:"Partenaires supermarchés et statut d'onboarding.",
+  products_sub:"Catalogue des produits éligibles au cashback.",
+  campaigns_sub:"Programmes de cashback, budgets et périodes.",
+  tickets_sub:"Reçus scannés et traités par l'OCR.",
+  claims_sub:"Demandes de cashback, du dépôt au paiement.",
+  payments_sub:"Versements de cashback traités.",
+  users_sub:"Comptes ayant accès à la plateforme.",
+  fraud_sub:"Détections de risque et doublons de tickets.",
+  auditLogs_sub:"Traçabilité des actions sensibles.",
+  sec_sub:"Connexions, comptes verrouillés et alertes de fraude.",
+  sec_failed:"Tentatives échouées",sec_locked:"Comptes verrouillés",sec_open:"Alertes ouvertes",sec_success:"Connexions réussies",
+  set_sub:"Configuration système et pool de cashback.",set_param:"Paramètre",set_value:"Valeur",
+  pf_sub:"Informations de l'utilisateur connecté.",pf_account:"Compte",pf_fullname:"Nom complet",
+  pf_username:"Identifiant",pf_role:"Rôle",pf_id:"ID",pf_merchant:"Commerçant lié",pf_changepw:"Changer le mot de passe",
+  empty:"Aucune donnée",empty_sub:"Les données apparaîtront ici dès qu'elles seront créées ou saisies.",
+  err_dash:"Chargement du tableau de bord impossible.",err_load:"Impossible de charger ces données.",
+  form_soon:"Le formulaire s'ouvre ici — branché sur",
+  c_name:"Nom",c_city:"Ville",c_phone:"Téléphone",c_niu:"NIU",c_status:"Statut",c_created:"Créé le",
+  c_sku:"SKU",c_product:"Produit",c_category:"Catégorie",c_price:"Prix",c_cbtype:"Type CB",c_active:"Actif",
+  c_campaign:"Campagne",c_type:"Type",c_value:"Valeur",c_budget:"Budget",c_end:"Fin",
+  c_ticketno:"N° ticket",c_store:"Magasin",c_amount:"Montant",c_date:"Date",c_risk:"Risque",
+  c_reference:"Référence",c_card:"Carte",c_ticket:"Ticket",c_cashback:"Cashback",c_submitted:"Soumis le",
+  c_payref:"Référence",c_beneficiary:"Bénéficiaire",c_currency:"Devise",c_processed:"Traité le",
+  c_username:"Identifiant",c_fullname:"Nom complet",c_email:"Email",c_role:"Rôle",c_locked:"État",c_lastlogin:"Dernière connexion",
+  c_alertref:"Référence",c_reason:"Motif",c_score:"Score",c_user:"Utilisateur",c_action:"Action",c_details:"Détails",c_timestamp:"Horodatage",
+  yes:"Oui",no:"Non",locked:"Verrouillé",active_word:"Actif",
+  transactions:"Transactions",transactions_sub:"Journal des transactions POS reçues.",
+  account:"Mon compte",account_sub:"Photo de profil, sécurité, utilisateurs et paramètres.",
+  tab_profile:"Profil",tab_security:"Sécurité",tab_users:"Utilisateurs",tab_settings:"Paramètres",
+  change_photo:"Changer la photo",remove_photo:"Retirer",photo_hint:"JPG ou PNG, enregistrée dans ce navigateur.",
+  chpw_title:"Changer le mot de passe",old_pw:"Mot de passe actuel",new_pw:"Nouveau mot de passe",confirm_pw:"Confirmer",
+  save:"Enregistrer",cancel:"Annuler",pw_mismatch:"Les mots de passe ne correspondent pas.",pw_ok:"Mot de passe modifié.",
+  adduser_title:"Ajouter un utilisateur",adduser_btn:"Nouvel utilisateur",adduser_hint:"Cette personne pourra se connecter à la même interface selon son rôle.",
+  f_username:"Identifiant",f_fullname:"Nom complet",f_email:"Email",f_password:"Mot de passe",f_role:"Rôle",f_merchant:"Commerçant",
+  user_created:"Utilisateur créé.",users_list:"Comptes existants",
+  set_saved:"Paramètre enregistré.",set_edit:"Modifier",
+  cat_products:"Catalogue produits",cat_sub:"Créer ou modifier un produit, ou importer en masse.",
+  new_product:"Nouveau produit",tpl_import:"Modèle import",mass_import:"Import masse",
+  f_sku:"SKU",f_name:"Nom du produit",f_category:"Catégorie",f_brand:"Marque",f_price:"Prix",f_group:"Clé groupe",
+  f_cbtype:"Type cashback",f_cbvalue:"Valeur cashback",f_designation:"Désignation ticket",f_synonyms:"Synonymes",
+  col_group:"Groupe",col_cashback:"Cashback",col_actions:"Actions",edit:"Modifier",del:"Supprimer",
+  kpi_prodfilter:"Produits (filtre)",kpi_merchant:"Commerçant",all_merchants:"Tous les commerçants",
+  search_fuzzy:"Recherche (serveur + floue)",cat_exact:"Catégorie (exacte)",
+  prod_created:"Produit créé.",prod_deleted:"Produit supprimé.",confirm_del:"Supprimer ce produit ?",
+  edit_no_backend:"La modification nécessite un endpoint de mise à jour côté serveur (à ajouter). Création et suppression fonctionnent.",
+  import_done:"Import terminé :",import_hdr:"colonnes attendues : sku,name,category,brand,price,groupKey,cashbackType,cashbackValue",
+  group_info:"Un groupe regroupe plusieurs produits via la même clé groupe. Renseignez cette clé pour rattacher les articles à une campagne « produit »."
+ },
+ en:{
+  logout:"Log out",refresh:"Refresh",add:"Add",view_all:"View all →",
+  search_menu:"Search menu…",search_page:"Search this page…",
+  connected:"Connected",items:"item(s)",total_lc:"total",payments_lc:"payments",claims_lc:"claims",
+  g_principal:"Main",g_ops:"Operations",g_sys:"System",g_integration:"Integration",
+  trends:"Trends",webhooks:"Webhooks",integration:"Integration",
+  prod_updated:"Product updated.",
+  tr_sub:"Analytics computed from your real data.",
+  tr_cashback_time:"Cashback by month",tr_claims_status:"Claims by status",tr_top_cat:"Top categories (products)",tr_no_data:"Not enough data yet for this analysis.",
+  wh_sub:"Receive POS transactions in real time.",wh_url:"Webhook URL (POS → Ticket2Cash)",wh_payload:"Sample payload (POST JSON)",wh_recent:"Received transactions",wh_unmatched:"Unmatched transactions",wh_copy:"Copy",wh_copied:"Copied!",
+  wh_base:"Public base URL",wh_base_hint:"Address reachable by the external system (your ngrok URL or your domain). Leave empty to use the local address — only usable for tests on this PC.",
+  wh_base_ph:"https://your-domain.com or https://xxxx.ngrok-free.app",wh_local:"local only — not reachable from outside",wh_public:"Public URL saved",
+  ig_sub:"How to connect an external system to the platform.",ig_base:"API base URL",ig_auth:"Authentication",ig_auth_v:"Session (cookie) after signing in at /api/auth/login.",ig_endpoints:"Key endpoints",ig_test:"Test connection",ig_ok:"Connection OK",ig_ko:"Connection failed",
+  finance:"Finance & history",finance_sub:"Cashback paid, payments and unmatched transactions.",
+  fin_paid:"Cashback paid",fin_count:"Payments",fin_unmatched:"Unmatched",
+  ocr:"OCR AI menu",ocr_sub:"Test OCR extraction on a receipt (Python server required).",
+  ocr_choose:"Choose a receipt image",ocr_analyze:"Analyze",ocr_result:"OCR result",ocr_none:"No result yet.",ocr_running:"Analyzing…",ocr_fields:"Extracted fields",ocr_raw:"Raw response",
+  pricing:"Instances & pricing",pricing_sub:"Plans, tariffs and included instances.",
+  ticketTemplate:"Ticket template",tt_sub2:"Receipt-reading templates for OCR.",
+  f_code:"Code",f_monthlyfee:"Monthly fee",f_commission:"Commission (%)",f_instances:"Included instances",f_desc:"Description",f_active:"Active",
+  tt_store:"Store name pattern",tt_total:"Total keyword",tt_date:"Date format",tt_sample:"Sample text",
+  new_item:"New",saved_ok:"Saved.",deleted_ok:"Deleted.",confirm_del2:"Delete this item?",
+  subPartners:"Sub-partners",sub_sub:"Create and manage the shops located inside your venue.",
+  new_subpartner:"New sub-partner",c_partner:"Partner",c_parent:"Parent partner",
+  merchant_create:"New merchant",m_name:"Legal name",m_brand:"Brand name",m_city:"City",m_phone:"Phone",m_email:"Email",m_niu:"Tax ID (NIU)",m_rccm:"Reg. no. (RCCM)",m_address:"Address",m_status:"Status",m_parent:"Parent partner (optional)",none_opt:"— None (top-level partner) —",merchant_created:"Merchant created.",
+  cp_title:"Create a partner",cp_org:"Organization",cp_login:"Login access",cp_username:"Login username",cp_password:"Password",cp_generate:"Generate",cp_contact:"Contact / manager name",
+  cp_created_title:"Partner created",cp_created_msg:"Share these credentials with the partner so they can access their own space.",
+  cp_loginurl:"Login link",cp_msg_label:"Ready-to-send message",cp_copy_msg:"Copy message",
+  pw_hint:"At least 8 characters, including one digit.",
+  mrch_title:"Partners",mrch_sub:"All partners and their sub-partners.",mrch_new:"Create a partner",mrch_subcount:"sub-partner(s)",mrch_none:"No partners yet. Click \u201cCreate a partner\u201d.",
+  dashboard:"Dashboard",businessDashboard:"Business dashboard",security:"Security dashboard",
+  merchants:"Merchants",products:"Products",campaigns:"Campaigns",tickets:"Tickets",claims:"Claims",
+  payments:"Payments",users:"Users",fraud:"Fraud alerts",auditLogs:"Audit logs",settings:"Settings",profile:"My profile",
+  dash_sub:"Real-time overview of cashback activity.",
+  kpi_cashback:"Cashback distributed",kpi_merchants:"Active merchants",kpi_campaigns:"Active campaigns",kpi_fraud:"Open fraud alerts",
+  pk_cashback:"Cashback received",pk_claims:"Claims",pk_products:"Products",pk_campaigns:"Active campaigns",
+  recent_claims:"Recent claims",claim_dist:"Claims breakdown",
+  leg_submitted:"Submitted",leg_approved:"Approved",leg_paid:"Paid",leg_rejected:"Rejected",
+  no_claims:"No claims yet.",
+  merchants_sub:"Partner supermarkets and onboarding status.",
+  products_sub:"Catalog of cashback-eligible products.",
+  campaigns_sub:"Cashback programs, budgets and periods.",
+  tickets_sub:"Receipts scanned and processed by OCR.",
+  claims_sub:"Cashback requests, from submission to payment.",
+  payments_sub:"Processed cashback payouts.",
+  users_sub:"Accounts with access to the platform.",
+  fraud_sub:"Risk detections and duplicate receipts.",
+  auditLogs_sub:"Audit trail of sensitive actions.",
+  sec_sub:"Logins, locked accounts and fraud alerts.",
+  sec_failed:"Failed attempts",sec_locked:"Locked accounts",sec_open:"Open alerts",sec_success:"Successful logins",
+  set_sub:"System configuration and cashback pool.",set_param:"Setting",set_value:"Value",
+  pf_sub:"Details of the signed-in user.",pf_account:"Account",pf_fullname:"Full name",
+  pf_username:"Username",pf_role:"Role",pf_id:"ID",pf_merchant:"Linked merchant",pf_changepw:"Change password",
+  empty:"No data",empty_sub:"Data will appear here as soon as it is created or captured.",
+  err_dash:"Could not load the dashboard.",err_load:"Could not load this data.",
+  form_soon:"The form opens here — wired to",
+  c_name:"Name",c_city:"City",c_phone:"Phone",c_niu:"NIU",c_status:"Status",c_created:"Created",
+  c_sku:"SKU",c_product:"Product",c_category:"Category",c_price:"Price",c_cbtype:"CB type",c_active:"Active",
+  c_campaign:"Campaign",c_type:"Type",c_value:"Value",c_budget:"Budget",c_end:"End",
+  c_ticketno:"Ticket #",c_store:"Store",c_amount:"Amount",c_date:"Date",c_risk:"Risk",
+  c_reference:"Reference",c_card:"Card",c_ticket:"Ticket",c_cashback:"Cashback",c_submitted:"Submitted",
+  c_payref:"Reference",c_beneficiary:"Beneficiary",c_currency:"Currency",c_processed:"Processed",
+  c_username:"Username",c_fullname:"Full name",c_email:"Email",c_role:"Role",c_locked:"State",c_lastlogin:"Last login",
+  c_alertref:"Reference",c_reason:"Reason",c_score:"Score",c_user:"User",c_action:"Action",c_details:"Details",c_timestamp:"Timestamp",
+  yes:"Yes",no:"No",locked:"Locked",active_word:"Active",
+  transactions:"Transactions",transactions_sub:"Log of incoming POS transactions.",
+  account:"My account",account_sub:"Profile picture, security, users and settings.",
+  tab_profile:"Profile",tab_security:"Security",tab_users:"Users",tab_settings:"Settings",
+  change_photo:"Change photo",remove_photo:"Remove",photo_hint:"JPG or PNG, saved in this browser.",
+  chpw_title:"Change password",old_pw:"Current password",new_pw:"New password",confirm_pw:"Confirm",
+  save:"Save",cancel:"Cancel",pw_mismatch:"Passwords do not match.",pw_ok:"Password changed.",
+  adduser_title:"Add a user",adduser_btn:"New user",adduser_hint:"This person will be able to sign in to the same interface based on their role.",
+  f_username:"Username",f_fullname:"Full name",f_email:"Email",f_password:"Password",f_role:"Role",f_merchant:"Merchant",
+  user_created:"User created.",users_list:"Existing accounts",
+  set_saved:"Setting saved.",set_edit:"Edit",
+  cat_products:"Product catalog",cat_sub:"Create or edit a product, or bulk import.",
+  new_product:"New product",tpl_import:"Import template",mass_import:"Bulk import",
+  f_sku:"SKU",f_name:"Product name",f_category:"Category",f_brand:"Brand",f_price:"Price",f_group:"Group key",
+  f_cbtype:"Cashback type",f_cbvalue:"Cashback value",f_designation:"Ticket designation",f_synonyms:"Synonyms",
+  col_group:"Group",col_cashback:"Cashback",col_actions:"Actions",edit:"Edit",del:"Delete",
+  kpi_prodfilter:"Products (filter)",kpi_merchant:"Merchant",all_merchants:"All merchants",
+  search_fuzzy:"Search (server + fuzzy)",cat_exact:"Category (exact)",
+  prod_created:"Product created.",prod_deleted:"Product deleted.",confirm_del:"Delete this product?",
+  edit_no_backend:"Editing needs a server-side update endpoint (to be added). Create and delete work.",
+  import_done:"Import complete:",import_hdr:"expected columns: sku,name,category,brand,price,groupKey,cashbackType,cashbackValue",
+  group_info:"A group links several products via the same group key. Set this key to attach items to a product campaign."
+ }
+};
+const ST_LABEL={
+ fr:{ACTIVE:"Actif",PENDING:"En attente",VALIDATED:"Validé",SUSPENDED:"Suspendu",REJECTED:"Rejeté",
+     SUBMITTED:"Soumis",APPROVED:"Approuvé",PAID:"Payé",SUCCESS:"Réussi",FAILED:"Échoué",
+     DRAFT:"Brouillon",PAUSED:"En pause",EXPIRED:"Expiré",CLOSED:"Clôturé",
+     OPEN:"Ouvert",UNDER_REVIEW:"En revue",RESOLVED:"Résolu",OCR_PENDING:"OCR en attente",OCR_PROCESSED:"OCR traité",
+     ADMIN:"Admin",OPERATEUR:"Opérateur",LECTEUR:"Lecteur",PARTNER:"Partenaire"},
+ en:{ACTIVE:"Active",PENDING:"Pending",VALIDATED:"Validated",SUSPENDED:"Suspended",REJECTED:"Rejected",
+     SUBMITTED:"Submitted",APPROVED:"Approved",PAID:"Paid",SUCCESS:"Success",FAILED:"Failed",
+     DRAFT:"Draft",PAUSED:"Paused",EXPIRED:"Expired",CLOSED:"Closed",
+     OPEN:"Open",UNDER_REVIEW:"Under review",RESOLVED:"Resolved",OCR_PENDING:"OCR pending",OCR_PROCESSED:"OCR processed",
+     ADMIN:"Admin",OPERATEUR:"Operator",LECTEUR:"Reader",PARTNER:"Partner"}
+};
+let LANG=localStorage.getItem("t2c_lang")||"fr";
+function t(k){return (I18N[LANG]&&I18N[LANG][k])||I18N.fr[k]||k;}
+function stLabel(s){const u=String(s||"").toUpperCase();return (ST_LABEL[LANG]&&ST_LABEL[LANG][u])||s||"—";}
+
+/* ============ ICONS ============ */
+const IC={
+ dashboard:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+ businessDashboard:'<path d="M3 3v18h18"/><path d="m7 14 3-4 3 3 4-6"/>',
+ security:'<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/>',
+ merchants:'<path d="M3 9h18l-1.5-5H4.5L3 9Z"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/>',
+ products:'<path d="m21 8-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/>',
+ campaigns:'<path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1Z"/><path d="M15 8a5 5 0 0 1 0 8"/>',
+ tickets:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/>',
+ claims:'<path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/>',
+ payments:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/>',
+ users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M17 8.5a3 3 0 0 1 0 5"/><path d="M22 20a5.5 5.5 0 0 0-4-5"/>',
+ fraud:'<path d="M12 2 3 7v5c0 5 3.8 8.5 9 10 5.2-1.5 9-5 9-10V7l-9-5Z"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
+ auditLogs:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/>',
+ settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.77.65 1.65 1.65 0 0 0-1 1.51V22a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8 20.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15a1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 8 4.6h.05a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v.05a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>',
+ profile:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+ trends:'<path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-4 4"/>',
+ webhooks:'<path d="M18 16.98a4 4 0 1 0-3.5-6.53"/><path d="M6 17a4 4 0 1 0 4-7"/><path d="M12 19h6"/><circle cx="18" cy="19" r="2"/><circle cx="6" cy="6" r="2"/>',
+ integration:'<path d="M9 3v6M15 3v6M4 9h16v3a8 8 0 0 1-16 0Z"/><path d="M12 20v2"/>',
+ finance:'<path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/>',
+ ocr:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h4M7 12h6M7 16h3"/><circle cx="17" cy="15" r="2.5"/>',
+ pricing:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 15h3M15 15h1"/>',
+ ticketTemplate:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/>',
+ subPartners:'<path d="M3 21V7l6-4 6 4v14"/><path d="M15 21V11l6 4v6"/><path d="M7 9h.01M7 13h.01M11 9h.01M11 13h.01"/>'
+};
+
+/* ============ NAV MODEL ============ */
+const NAV={
+ ADMIN:[{group:"g_principal",items:["dashboard","businessDashboard","security","trends"]},
+        {group:"g_ops",items:["merchants","products","campaigns","tickets","transactions","claims","payments","finance"]},
+        {group:"g_integration",items:["integration","webhooks","ocr","ticketTemplate","pricing"]},
+        {group:"g_sys",items:["users","fraud","auditLogs"]}],
+ PARTNER:[{group:"g_principal",items:["dashboard"]},
+          {group:"g_ops",items:["subPartners","products","claims","payments"]}],
+ DEFAULT:[{group:"g_principal",items:["dashboard"]},{group:"g_ops",items:["claims","payments"]}]
+};
+
+/* ============ BOOT ============ */
+document.documentElement.setAttribute("data-theme",localStorage.getItem("t2c_theme")||"light");
+document.getElementById("lang").value=LANG;
+async function boot(){
+  updateDate(); updateThemeIcon();
+  try{
+    const me=await api("/api/auth/me");
+    if(!me||!me.authenticated){location.href="/login.html";return;}
+    ME=me; renderChrome();
+    go((location.hash||"#dashboard").slice(1),true);
+  }catch(e){location.href="/login.html";}
+}
+function renderChrome(){
+  const role=ME.role||"DEFAULT", name=ME.fullName||ME.username||"Utilisateur";
+  document.getElementById("sideName").textContent=name;
+  document.getElementById("sideRole").textContent=stLabel(role);
+  document.getElementById("sideAvatar").textContent=(name[0]||"A").toUpperCase();
+  document.getElementById("tbAvatar").textContent=(name[0]||"A").toUpperCase();
+  document.getElementById("tbRole").textContent=stLabel(role);
+  applyAvatar(getAvatar());
+  buildNav(role); applyI18n();
+}
+function buildNav(role){
+  const model=NAV[role]||NAV.DEFAULT;
+  document.getElementById("nav").innerHTML=model.map(g=>`
+    <div class="nav-group" data-group>
+      <h4>${t(g.group)}</h4>
+      ${g.items.map(id=>`<a class="nav-item" data-nav="${id}" data-label="${t(id)}" onclick="go('${id}')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[id]||IC.dashboard}</svg>
+        <span>${t(id)}</span></a>`).join("")}
+    </div>`).join("");
+  document.querySelectorAll(".nav-item").forEach(n=>n.classList.toggle("active",n.dataset.nav===CURRENT));
+}
+
+/* ============ ROUTER ============ */
+const ROUTES={
+ dashboard:renderDashboard,businessDashboard:renderDashboard,security:renderSecurity,
+ merchants:renderMerchants,products:renderProducts,campaigns:()=>renderTable("campaigns"),
+ tickets:()=>renderTable("tickets"),transactions:()=>renderTable("transactions"),claims:()=>renderTable("claims"),payments:()=>renderTable("payments"),
+ users:()=>renderTable("users"),fraud:()=>renderTable("fraud"),auditLogs:()=>renderTable("auditLogs"),
+ settings:()=>renderAccount("settings"),profile:()=>renderAccount("profile"),account:renderAccount,
+ trends:renderTrends,webhooks:renderWebhooks,integration:renderIntegration,
+ finance:renderFinance,ocr:renderOcr,pricing:()=>renderCrud("pricing"),ticketTemplate:()=>renderCrud("ticketTemplate"),
+ subPartners:renderSubPartners
+};
+function go(id,silent){
+  if(!ROUTES[id])id="dashboard";
+  CURRENT=id; if(!silent)location.hash=id;
+  document.querySelectorAll(".nav-item").forEach(n=>n.classList.toggle("active",n.dataset.nav===id));
+  document.getElementById("globalSearch").value=""; closeNav(); window.scrollTo(0,0);
+  ROUTES[id]();
+}
+
+/* ============ API + FORMAT ============ */
+async function api(path,opts={}){
+  const res=await fetch(API+path,Object.assign({credentials:"same-origin",headers:{"Content-Type":"application/json"}},opts));
+  if(res.status===401){location.href="/login.html";throw new Error("unauth");}
+  const txt=await res.text();
+  if(!res.ok)throw new Error(txt||res.status);
+  try{return txt?JSON.parse(txt):null;}catch(_){return txt;}
+}
+const nf=new Intl.NumberFormat("fr-FR");
+function money(v){if(v==null||v==="")return "—";return nf.format(Math.round(Number(v)))+" FCFA";}
+function num(v){return v==null?"0":nf.format(Number(v));}
+function dt(v){if(!v)return "—";const d=new Date(v);if(isNaN(d))return v;return d.toLocaleDateString(LANG==="fr"?"fr-FR":"en-US",{day:"2-digit",month:"short",year:"numeric"});}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function badge(status){
+  const s=String(status||"").toUpperCase();
+  const map={ACTIVE:"b-ok",VALIDATED:"b-ok",SUCCESS:"b-ok",PAID:"b-ok",APPROVED:"b-ok",OCR_PROCESSED:"b-ok",RESOLVED:"b-ok",
+    PENDING:"b-warn",OCR_PENDING:"b-warn",PAUSED:"b-warn",UNDER_REVIEW:"b-warn",SUBMITTED:"b-info",
+    DRAFT:"b-muted",EXPIRED:"b-muted",CLOSED:"b-muted",OPEN:"b-danger",REJECTED:"b-danger",FAILED:"b-danger",SUSPENDED:"b-danger",
+    ADMIN:"b-info",PARTNER:"b-ok",OPERATEUR:"b-warn",LECTEUR:"b-muted"};
+  return `<span class="badge ${map[s]||"b-muted"}">${esc(stLabel(status))}</span>`;
+}
+function head(title,sub,actions){return `<div class="page-head"><h1>${esc(title)}</h1>${sub?`<p>${esc(sub)}</p>`:""}${actions?`<div class="page-actions">${actions}</div>`:""}</div>`;}
+function refreshBtn(){return `<button class="btn btn-ghost" onclick="go('${CURRENT}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>${t("refresh")}</button>`;}
+
+/* ============ DASHBOARD ============ */
+async function renderDashboard(){
+  const c=document.getElementById("content");
+  c.innerHTML=`<div class="page">${head(t("dashboard"),t("dash_sub"),refreshBtn())}
+    <div class="kpi-grid" id="kpis">${kpiSkeletons(4)}</div>
+    <div class="grid-2">
+      <div class="panel"><div class="panel-head"><h3>${t("recent_claims")}</h3><span class="link" onclick="go('claims')">${t("view_all")}</span></div><div class="panel-body" id="recentClaims">${skLines(4)}</div></div>
+      <div class="panel"><div class="panel-head"><h3>${t("claim_dist")}</h3></div><div class="panel-body" id="claimChart">${skLines(4)}</div></div>
+    </div></div>`;
+  try{
+    const isPartner=ME.role==="PARTNER";
+    await loadMerchants();
+    const s=await api(isPartner?"/api/partner/dashboard":"/api/business-dashboard/summary");
+    const K=isPartner?[
+      {icon:"payments",label:t("pk_cashback"),val:money(s.totalCashbackPaid||s.totalCashback||0),sub:""},
+      {icon:"claims",label:t("pk_claims"),val:num(s.totalClaims||0),sub:`${num(s.approvedClaims||0)} ${t("leg_approved").toLowerCase()}`},
+      {icon:"products",label:t("pk_products"),val:num(s.totalProducts||0),sub:""},
+      {icon:"campaigns",label:t("pk_campaigns"),val:num(s.activeCampaigns||0),sub:""}
+    ]:[
+      {icon:"payments",label:t("kpi_cashback"),val:money(s.totalCashbackPaid),sub:`${num(s.totalPayments)} ${t("payments_lc")}`},
+      {icon:"merchants",label:t("kpi_merchants"),val:num(s.activeMerchants),sub:`${num(s.totalMerchants)} ${t("total_lc")}`},
+      {icon:"campaigns",label:t("kpi_campaigns"),val:num(s.activeCampaigns),sub:`${num(s.totalCampaigns)} ${t("total_lc")}`},
+      {icon:"fraud",label:t("kpi_fraud"),val:num(s.openFraudAlerts),sub:`${num(s.totalFraudAlerts)} ${t("total_lc")}`}
+    ];
+    document.getElementById("kpis").innerHTML=K.map(kpiCard).join(""); animateCounters();
+    const claims=s.recentClaims||await api("/api/claims").catch(()=>[]);
+    renderRecentClaims(claims);
+    const dist=[{k:t("leg_submitted"),v:s.submittedClaims||0,c:"#1553B8"},{k:t("leg_approved"),v:s.approvedClaims||0,c:"#127A45"},
+      {k:t("leg_paid"),v:s.paidClaims||0,c:"#0E9F6E"},{k:t("leg_rejected"),v:s.rejectedClaims||0,c:"#B42318"}];
+    document.getElementById("claimChart").innerHTML=donut(dist);
+  }catch(e){toast(t("err_dash"),"err");console.error(e);}
+}
+function kpiCard(k){return `<div class="kpi"><div class="kpi-top">
+  <div><div class="kpi-label">${esc(k.label)}</div><div class="kpi-val" data-count="${(''+k.val).replace(/[^\d]/g,'')}" data-suffix="${(''+k.val).replace(/[\d\s.,]/g,'').trim()}">${esc(k.val)}</div></div>
+  <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">${IC[k.icon]}</svg></div>
+  </div>${k.sub?`<div class="kpi-sub">${esc(k.sub)}</div>`:""}</div>`;}
+function renderRecentClaims(claims){
+  const el=document.getElementById("recentClaims");if(!el)return;
+  if(!claims||!claims.length){el.innerHTML=emptyMini(t("no_claims"));return;}
+  el.innerHTML=`<div class="table-scroll"><table style="min-width:auto"><tbody>${claims.slice(0,6).map(c=>`<tr>
+    <td>${c.merchantId!=null?merchantChain(c.merchantId):`<span class="mono">${esc(c.claimReference||("#"+c.id))}</span>`}</td>
+    <td class="strong">${money(c.cashbackAmount)}</td><td>${badge(c.status)}</td>
+    <td style="color:var(--muted);font-size:12px">${dt(c.submittedAt)}</td></tr>`).join("")}</tbody></table></div>`;
+}
+function donut(data){
+  const total=data.reduce((a,b)=>a+b.v,0)||1;let acc=0;const R=52,C=2*Math.PI*R;
+  const segs=data.map(d=>{const frac=d.v/total,dash=frac*C,seg=`<circle r="${R}" cx="70" cy="70" fill="none" stroke="${d.c}" stroke-width="18" stroke-dasharray="${dash} ${C-dash}" stroke-dashoffset="${-acc*C}" transform="rotate(-90 70 70)"/>`;acc+=frac;return seg;}).join("");
+  return `<div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap"><svg width="140" height="140" viewBox="0 0 140 140" style="flex:0 0 140px">
+    <circle r="${R}" cx="70" cy="70" fill="none" stroke="var(--border)" stroke-width="18"/>${segs}
+    <text x="70" y="66" text-anchor="middle" font-size="26" font-weight="800" fill="var(--text)" font-family="Plus Jakarta Sans">${total}</text>
+    <text x="70" y="84" text-anchor="middle" font-size="10" fill="var(--muted)">${t("claims_lc")}</text></svg>
+    <div class="legend" style="flex:1;min-width:160px">${data.map(d=>`<div class="row"><span class="sw" style="background:${d.c}"></span>${d.k}<b>${d.v}</b></div>`).join("")}</div></div>`;
+}
+
+/* ============ TABLES ============ */
+const TABLES={
+ merchants:{ep:"/api/merchants",title:"merchants",sub:"merchants_sub",cols:[["name","c_name","strong"],["parentMerchantId","c_parent","parentname"],["city","c_city"],["phone","c_phone","mono"],["status","c_status","badge"],["createdAt","c_created","date"]]},
+ products:{ep:"/api/products",title:"products",sub:"products_sub",cols:[["sku","c_sku","mono"],["name","c_product","strong"],["category","c_category"],["price","c_price","money"],["cashbackType","c_cbtype"],["active","c_active","bool"]]},
+ campaigns:{ep:"/api/campaigns",title:"campaigns",sub:"campaigns_sub",cols:[["name","c_campaign","strong"],["cashbackType","c_type"],["cashbackValue","c_value","numval"],["totalBudget","c_budget","money"],["endDate","c_end","date"],["status","c_status","badge"]]},
+ tickets:{ep:"/api/tickets",title:"tickets",sub:"tickets_sub",cols:[["ticketNumber","c_ticketno","mono"],["storeName","c_store","strong"],["totalAmount","c_amount","money"],["ticketDateTime","c_date","date"],["fraudScore","c_risk","risk"],["status","c_status","badge"]]},
+ claims:{ep:"/api/claims",title:"claims",sub:"claims_sub",cols:[["claimReference","c_reference","mono"],["merchantId","c_partner","chain"],["maskedCard","c_card","mono"],["cashbackAmount","c_cashback","money"],["status","c_status","badge"],["submittedAt","c_submitted","date"]]},
+ payments:{ep:"/api/cashback/payments",title:"payments",sub:"payments_sub",cols:[["paymentReference","c_payref","mono"],["userId","c_beneficiary","mono"],["amount","c_amount","money"],["currency","c_currency"],["status","c_status","badge"],["processedAt","c_processed","date"]]},
+ users:{ep:"/api/auth/users",title:"users",sub:"users_sub",cols:[["username","c_username","strong"],["fullName","c_fullname"],["email","c_email","mono"],["role","c_role","badge"],["accountLocked","c_locked","lock"],["lastLoginAt","c_lastlogin","date"]]},
+ fraud:{ep:"/api/fraud/alerts",title:"fraud",sub:"fraud_sub",cols:[["alertReference","c_alertref","mono"],["reason","c_reason","strong"],["riskScore","c_score","risk"],["userId","c_user","mono"],["status","c_status","badge"],["createdAt","c_created","date"]]},
+ auditLogs:{ep:"/api/audit-logs",title:"auditLogs",sub:"auditLogs_sub",cols:[["action","c_action","strong"],["username","c_username","mono"],["details","c_details"],["createdAt","c_timestamp","date"]]},
+ transactions:{ep:"/api/webhook/transactions",title:"transactions",sub:"transactions_sub",cols:[["clientReference","c_reference","mono"],["cardNumber","c_card","mono"],["amount","c_amount","money"],["merchantName","c_store","strong"],["status","c_status","badge"],["createdAt","c_created","date"]]}
+};
+async function renderTable(key){
+  const cfg=TABLES[key],c=document.getElementById("content");
+  const needsMap=cfg.cols.some(col=>col[2]==="chain"||col[2]==="parentname");
+  if(needsMap||key==="merchants")await loadMerchants();
+  const canAdd=["merchants","products","campaigns","users"].includes(key)&&ME.role!=="PARTNER";
+  const addClick = key==="merchants" ? "merchantModal()" : `toast(t('form_soon')+' ${cfg.ep}','ok')`;
+  const actions=(canAdd?`<button class="btn btn-primary" onclick="${addClick}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${t("add")}</button>`:"")+refreshBtn();
+  c.innerHTML=`<div class="page">${head(t(cfg.title),t(cfg.sub),actions)}
+    <div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="cp">—</span></div>
+    <div class="table-scroll"><table><thead><tr>${cfg.cols.map(col=>`<th>${t(col[1])}</th>`).join("")}</tr></thead>
+    <tbody id="tbody">${rowSkeleton(cfg.cols.length,6)}</tbody></table></div></div></div>`;
+  try{
+    let rows=await api(cfg.ep);
+    if(!Array.isArray(rows))rows=rows&&rows.content?rows.content:[];
+    CACHE[key]=rows; paintRows(key,rows);
+  }catch(e){document.getElementById("tbody").innerHTML=`<tr><td colspan="${cfg.cols.length}">${emptyMini(t("err_load"))}</td></tr>`;document.getElementById("cp").textContent="0";}
+}
+function cell(row,col){
+  const [field,,type]=col;let v=row[field];
+  switch(type){
+    case "strong":return `<span class="strong">${esc(v||"—")}</span>`;
+    case "mono":return `<span class="mono">${esc(v||"—")}</span>`;
+    case "money":return money(v);
+    case "date":return `<span style="color:var(--text-2)">${dt(v)}</span>`;
+    case "badge":return badge(v);
+    case "bool":return v?`<span class="badge b-ok">${t("yes")}</span>`:`<span class="badge b-muted">${t("no")}</span>`;
+    case "lock":return v?`<span class="badge b-danger">${t("locked")}</span>`:`<span class="badge b-ok">${t("active_word")}</span>`;
+    case "numval":return `<span class="strong">${esc(v??"—")}${row.cashbackType==="PERCENTAGE"?" %":""}</span>`;
+    case "risk":{const n=Number(v)||0,cl=n>=70?"b-danger":n>=40?"b-warn":"b-ok";return `<span class="badge ${cl}">${n}</span>`;}
+    case "chain":return merchantChain(v);
+    case "parentname":return v!=null&&MMAP[v]?`<span class="badge b-info">${esc(MMAP[v].name)}</span>`:`<span style="color:var(--muted)">—</span>`;
+    default:return esc(v==null?"—":v);
+  }
+}
+function paintRows(key,rows){
+  const cfg=TABLES[key],tb=document.getElementById("tbody"),cp=document.getElementById("cp");if(!tb)return;
+  cp.textContent=rows.length+" "+t("items");
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="${cfg.cols.length}">${emptyFull()}</td></tr>`;return;}
+  tb.innerHTML=rows.map(r=>`<tr>${cfg.cols.map(col=>`<td>${cell(r,col)}</td>`).join("")}</tr>`).join("");
+}
+
+/* ============ SECURITY / SETTINGS / PROFILE ============ */
+async function renderSecurity(){
+  const c=document.getElementById("content");
+  c.innerHTML=`<div class="page">${head(t("security"),t("sec_sub"),refreshBtn())}<div class="kpi-grid" id="kpis">${kpiSkeletons(4)}</div></div>`;
+  try{
+    const s=await api("/api/security-dashboard/summary");
+    const K=[{icon:"users",label:t("sec_failed"),val:num(s.failedLoginAttempts||s.totalFailedLogins||0),sub:""},
+      {icon:"security",label:t("sec_locked"),val:num(s.lockedAccounts||0),sub:""},
+      {icon:"fraud",label:t("sec_open"),val:num(s.openFraudAlerts||0),sub:`${num(s.totalFraudAlerts||0)} ${t("total_lc")}`},
+      {icon:"claims",label:t("sec_success"),val:num(s.successfulLogins||0),sub:""}];
+    document.getElementById("kpis").innerHTML=K.map(kpiCard).join("");animateCounters();
+  }catch(e){document.getElementById("kpis").innerHTML=emptyMini(t("err_load"));}
+}
+async function renderSettings(){
+  const c=document.getElementById("content");
+  c.innerHTML=`<div class="page">${head(t("settings"),t("set_sub"),refreshBtn())}
+    <div class="table-wrap"><div class="table-scroll"><table><thead><tr><th>${t("set_param")}</th><th>${t("set_value")}</th></tr></thead><tbody id="stb">${rowSkeleton(2,5)}</tbody></table></div></div></div>`;
+  try{
+    let s=await api("/api/settings");
+    let rows=Array.isArray(s)?s:Object.entries(s||{}).map(([k,v])=>({key:k,value:v}));
+    const tb=document.getElementById("stb");
+    tb.innerHTML=rows.length?rows.map(r=>`<tr><td class="strong">${esc(r.key||r.name)}</td><td><span class="mono">${esc(r.value)}</span></td></tr>`).join(""):`<tr><td colspan="2">${emptyFull()}</td></tr>`;
+  }catch(e){document.getElementById("stb").innerHTML=`<tr><td colspan="2">${emptyMini(t("err_load"))}</td></tr>`;}
+}
+function renderProfile(){
+  const c=document.getElementById("content");
+  c.innerHTML=`<div class="page">${head(t("profile"),t("pf_sub"))}
+    <div class="panel profile-card"><div class="panel-head"><h3>${t("pf_account")}</h3><span class="badge b-ok">${t("connected")}</span></div>
+    <div class="panel-body">
+      <div class="pf-row"><span class="k">${t("pf_fullname")}</span><span class="v">${esc(ME.fullName||"—")}</span></div>
+      <div class="pf-row"><span class="k">${t("pf_username")}</span><span class="v">${esc(ME.username)}</span></div>
+      <div class="pf-row"><span class="k">${t("pf_role")}</span><span class="v">${esc(stLabel(ME.role))}</span></div>
+      <div class="pf-row"><span class="k">${t("pf_id")}</span><span class="v">${esc(ME.id)}</span></div>
+      <div class="pf-row"><span class="k">${t("pf_merchant")}</span><span class="v">${ME.merchantId!=null?esc(ME.merchantId):"—"}</span></div>
+      <div class="page-actions" style="margin-top:18px">
+        <button class="btn btn-ghost" onclick="toast(t('form_soon')+' /api/auth/change-password','ok')">${t("pf_changepw")}</button>
+        <button class="btn btn-primary" onclick="logout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>${t("logout")}</button>
+      </div></div></div></div>`;
+}
+
+/* ============ AVATAR (stored locally per user) ============ */
+function avKey(){return "t2c_av_"+(ME&&ME.username||"anon");}
+function getAvatar(){try{return localStorage.getItem(avKey());}catch(_){return null;}}
+function setAvatar(d){try{d?localStorage.setItem(avKey(),d):localStorage.removeItem(avKey());}catch(_){ }applyAvatar(d);}
+function applyAvatar(d){
+  const letter=((ME&&(ME.fullName||ME.username)||"A")[0]||"A").toUpperCase();
+  const html=d?`<img src="${d}" alt="">`:letter;
+  ["sideAvatar","tbAvatar"].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=html;});
+  const big=document.getElementById("acctBigAvatar");if(big)big.innerHTML=d?`<img src="${d}" alt="">`:letter;
+}
+
+/* ============ MODAL ============ */
+function openModal(title,bodyHTML,footerHTML){
+  closeModal();
+  const b=document.createElement("div");b.className="modal-back";b.id="modalBack";
+  b.onclick=e=>{if(e.target===b)closeModal();};
+  b.innerHTML=`<div class="modal"><div class="modal-head"><h3>${esc(title)}</h3><button class="x" onclick="closeModal()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div><div class="modal-body">${bodyHTML}</div>${footerHTML?`<div class="modal-foot">${footerHTML}</div>`:""}</div>`;
+  document.body.appendChild(b);
+}
+function closeModal(){const m=document.getElementById("modalBack");if(m)m.remove();}
+function val(id){const e=document.getElementById(id);return e?e.value.trim():"";}
+
+/* ============ ACCOUNT (profile pic, security, users, settings) ============ */
+function renderAccount(tab){
+  tab=tab||"profile";
+  const isAdmin=ME.role==="ADMIN";
+  const tabs=[["profile","tab_profile"],["security","tab_security"]];
+  if(isAdmin){tabs.push(["users","tab_users"],["settings","tab_settings"]);}
+  if(tab==="settings"&&!isAdmin)tab="profile";
+  if(tab==="users"&&!isAdmin)tab="profile";
+  document.getElementById("content").innerHTML=`<div class="page">${head(t("account"),t("account_sub"))}
+    <div class="tabs">${tabs.map(([k,l])=>`<div class="tab ${k===tab?"active":""}" onclick="renderAccount('${k}')">${t(l)}</div>`).join("")}</div>
+    <div id="acctBody"></div></div>`;
+  ({profile:acctProfile,security:acctSecurity,users:acctUsers,settings:acctSettings}[tab]||acctProfile)();
+}
+function acctProfile(){
+  const roleL=stLabel(ME.role),av=getAvatar();
+  document.getElementById("acctBody").innerHTML=`<div class="panel profile-card"><div class="panel-body">
+    <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+      <div class="avatar-lg" id="acctBigAvatar">${av?`<img src="${av}" alt="">`:esc((ME.fullName||ME.username||"A")[0].toUpperCase())}</div>
+      <div>
+        <div style="font-weight:700;font-size:17px">${esc(ME.fullName||ME.username)}</div>
+        <div style="color:var(--text-2);font-size:13px;margin-bottom:10px">${esc(roleL)}</div>
+        <label class="btn btn-primary" style="cursor:pointer">${t("change_photo")}
+          <input type="file" accept="image/*" style="display:none" onchange="onPhoto(event)">
+        </label>
+        ${av?`<button class="btn btn-ghost" onclick="setAvatar(null);renderAccount('profile')" style="margin-left:8px">${t("remove_photo")}</button>`:""}
+        <div class="hint" style="margin-top:8px;color:var(--muted);font-size:11.5px">${t("photo_hint")}</div>
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <div class="pf-row"><span class="k">${t("pf_username")}</span><span class="v">${esc(ME.username)}</span></div>
+      <div class="pf-row"><span class="k">${t("pf_role")}</span><span class="v">${esc(roleL)}</span></div>
+      <div class="pf-row"><span class="k">${t("pf_id")}</span><span class="v">${esc(ME.id)}</span></div>
+      <div class="pf-row"><span class="k">${t("pf_merchant")}</span><span class="v">${ME.merchantId!=null?esc(ME.merchantId):"—"}</span></div>
+    </div></div></div>`;
+}
+function onPhoto(e){
+  const f=e.target.files&&e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=()=>{setAvatar(r.result);renderAccount("profile");};r.readAsDataURL(f);
+}
+function acctSecurity(){
+  document.getElementById("acctBody").innerHTML=`<div class="panel profile-card"><div class="panel-head"><h3>${t("chpw_title")}</h3></div>
+    <div class="panel-body"><div class="form-grid">
+      <div class="field full"><label>${t("old_pw")}</label><input type="password" id="oldPw"></div>
+      <div class="field"><label>${t("new_pw")}</label><input type="password" id="newPw"></div>
+      <div class="field"><label>${t("confirm_pw")}</label><input type="password" id="confPw"></div>
+    </div><div class="page-actions"><button class="btn btn-primary" onclick="submitChangePassword()">${t("save")}</button></div></div></div>`;
+}
+async function submitChangePassword(){
+  const o=val("oldPw"),n=val("newPw"),c=val("confPw");
+  if(!o||!n){toast(t("old_pw")+" / "+t("new_pw"),"err");return;}
+  if(n!==c){toast(t("pw_mismatch"),"err");return;}
+  try{await api("/api/auth/change-password",{method:"PUT",body:JSON.stringify({oldPassword:o,newPassword:n})});
+    toast(t("pw_ok"),"ok");["oldPw","newPw","confPw"].forEach(i=>document.getElementById(i).value="");
+  }catch(e){toast(String(e.message||e).slice(0,120),"err");}
+}
+async function acctUsers(){
+  document.getElementById("acctBody").innerHTML=`<div class="page-actions" style="margin:0 0 16px">
+      <button class="btn btn-primary" onclick="addUserModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${t("adduser_btn")}</button></div>
+    <div class="info-banner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><div>${t("adduser_hint")}</div></div>
+    <div class="table-wrap"><div class="table-toolbar"><span class="count-pill">${t("users_list")}</span></div>
+    <div class="table-scroll"><table><thead><tr><th>${t("c_username")}</th><th>${t("c_fullname")}</th><th>${t("c_role")}</th><th>${t("c_email")}</th></tr></thead>
+    <tbody id="uBody">${rowSkeleton(4,4)}</tbody></table></div></div>`;
+  try{let u=await api("/api/auth/users");if(!Array.isArray(u))u=[];
+    document.getElementById("uBody").innerHTML=u.length?u.map(x=>`<tr><td class="strong">${esc(x.username)}</td><td>${esc(x.fullName||"—")}</td><td>${badge(x.role)}</td><td><span class="mono">${esc(x.email||"—")}</span></td></tr>`).join(""):`<tr><td colspan="4">${emptyMini(t("empty"))}</td></tr>`;
+  }catch(e){document.getElementById("uBody").innerHTML=`<tr><td colspan="4">${emptyMini(t("err_load"))}</td></tr>`;}
+}
+async function addUserModal(){
+  await loadMerchants();
+  const roles=["ADMIN","OPERATEUR","LECTEUR","PARTNER"];
+  openModal(t("adduser_title"),`<div class="form-grid">
+    <div class="field"><label>${t("f_username")}</label><input id="nu_username"></div>
+    <div class="field"><label>${t("f_fullname")}</label><input id="nu_fullname"></div>
+    <div class="field"><label>${t("f_email")}</label><input id="nu_email" type="email"></div>
+    <div class="field"><label>${t("f_password")}</label><input id="nu_password" type="text"></div>
+    <div class="field"><label>${t("f_role")}</label><select id="nu_role" onchange="toggleMerchantField()">${roles.map(r=>`<option value="${r}">${stLabel(r)}</option>`).join("")}</select></div>
+    <div class="field" id="nu_merchant_wrap" style="display:none"><label>${t("f_merchant")}</label><select id="nu_merchant">${MERCH.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join("")}</select></div>
+    </div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">${t("cancel")}</button><button class="btn btn-primary" onclick="submitAddUser()">${t("save")}</button>`);
+}
+function toggleMerchantField(){const r=val("nu_role");document.getElementById("nu_merchant_wrap").style.display=r==="PARTNER"?"flex":"none";}
+async function submitAddUser(){
+  const body={username:val("nu_username"),fullName:val("nu_fullname"),email:val("nu_email"),password:val("nu_password"),role:val("nu_role")};
+  if(!body.username||!body.password){toast(t("f_username")+" / "+t("f_password"),"err");return;}
+  try{
+    const res=await api("/api/auth/users",{method:"POST",body:JSON.stringify(body)});
+    if(body.role==="PARTNER"){const mid=val("nu_merchant");const newId=res&&(res.id||res.userId);
+      if(mid&&newId){try{await api(`/api/auth/users/${newId}/merchant?merchantId=${mid}`,{method:"PUT"});}catch(_){}}}
+    toast(t("user_created"),"ok");closeModal();acctUsers();
+  }catch(e){toast(String(e.message||e).slice(0,140),"err");}
+}
+async function acctSettings(){
+  document.getElementById("acctBody").innerHTML=`<div class="table-wrap"><div class="table-toolbar"><span class="count-pill">${t("settings")}</span></div>
+    <div class="table-scroll"><table><thead><tr><th>${t("set_param")}</th><th>${t("set_value")}</th><th>${t("c_details")}</th><th></th></tr></thead>
+    <tbody id="setBody">${rowSkeleton(4,5)}</tbody></table></div></div>`;
+  try{let s=await api("/api/settings");if(!Array.isArray(s))s=[];
+    document.getElementById("setBody").innerHTML=s.length?s.map(x=>`<tr>
+      <td class="strong">${esc(x.settingKey)}</td><td><span class="mono">${esc(x.settingValue)}</span></td>
+      <td style="color:var(--text-2);font-size:12.5px">${esc(x.description||"—")}</td>
+      <td class="row-actions"><button class="mini-btn" onclick="editSetting('${esc(x.settingKey)}','${esc(String(x.settingValue).replace(/'/g,""))}')">${t("set_edit")}</button></td></tr>`).join(""):`<tr><td colspan="4">${emptyMini(t("empty"))}</td></tr>`;
+  }catch(e){document.getElementById("setBody").innerHTML=`<tr><td colspan="4">${emptyMini(t("err_load"))}</td></tr>`;}
+}
+function editSetting(key,cur){
+  openModal(key,`<div class="field full"><label>${t("set_value")}</label><input id="set_val" value="${esc(cur)}"></div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">${t("cancel")}</button><button class="btn btn-primary" onclick="saveSetting('${esc(key)}')">${t("save")}</button>`);
+}
+async function saveSetting(key){
+  const v=val("set_val");
+  try{await api(`/api/settings/${encodeURIComponent(key)}?value=${encodeURIComponent(v)}`,{method:"PUT"});
+    toast(t("set_saved"),"ok");closeModal();acctSettings();
+  }catch(e){toast(String(e.message||e).slice(0,120),"err");}
+}
+
+/* ============ MERCHANTS CACHE ============ */
+let MERCH=[],MMAP={};
+async function loadMerchants(){if(MERCH.length)return MERCH;try{let m=await api("/api/merchants");MERCH=Array.isArray(m)?m:[];}catch(_){MERCH=[];}MMAP={};MERCH.forEach(x=>MMAP[x.id]={name:x.name||x.brandName||("#"+x.id),parent:x.parentMerchantId});return MERCH;}
+function merchantChain(id){
+  const c=MMAP[id];if(!c)return "—";
+  if(c.parent!=null&&MMAP[c.parent])return `<div style="line-height:1.35"><span class="strong">${esc(MMAP[c.parent].name)}</span><div style="font-size:12px;color:var(--text-2)">↳ ${esc(c.name)}</div></div>`;
+  return `<span class="strong">${esc(c.name)}</span>`;
+}
+
+/* ============ RICH PRODUCTS CATALOG ============ */
+let PROD_STATE={merchant:"",q:"",cat:""};
+async function renderProducts(){
+  await loadMerchants();
+  const canManage=ME.role!=="LECTEUR";
+  document.getElementById("content").innerHTML=`<div class="page">${head(t("cat_products"),t("cat_sub"))}
+    <div class="info-banner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><div>${t("group_info")}</div></div>
+    <div class="prod-toolbar">
+      <div class="grow tb-search" style="position:relative;max-width:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="p_q" placeholder="${t("search_fuzzy")}" oninput="PROD_STATE.q=this.value;paintProducts()"></div>
+      <select class="lang-sel" id="p_merchant" onchange="PROD_STATE.merchant=this.value;paintProducts()" style="min-width:190px">
+        <option value="">${t("all_merchants")}</option>${MERCH.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join("")}</select>
+      <input class="field" id="p_cat" placeholder="${t("cat_exact")}" oninput="PROD_STATE.cat=this.value;paintProducts()" style="max-width:170px;padding:9px 12px;background:var(--input-bg);border:1px solid var(--border);border-radius:10px;color:var(--text)">
+      ${canManage?`<button class="btn btn-primary" onclick="productModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${t("new_product")}</button>`:""}
+      <button class="btn btn-ghost" onclick="downloadTemplate()">${t("tpl_import")}</button>
+      ${canManage?`<label class="btn btn-ghost" style="cursor:pointer">${t("mass_import")}<input type="file" accept=".csv" style="display:none" onchange="importMass(event)"></label>`:""}
+      <div class="seg"><button onclick="exportProducts('csv')">CSV</button><button onclick="exportProducts('xls')">Excel</button><button onclick="window.print()">PDF</button></div>
+    </div>
+    <div class="kpi-grid" style="grid-template-columns:repeat(2,minmax(0,320px))">
+      <div class="kpi"><div class="kpi-label">${t("kpi_prodfilter")}</div><div class="kpi-val" id="p_count">—</div></div>
+      <div class="kpi"><div class="kpi-label">${t("kpi_merchant")}</div><div class="kpi-val" id="p_merch_name" style="font-size:19px">—</div></div>
+    </div>
+    <div class="table-wrap"><div class="table-scroll"><table><thead><tr>
+      <th>${t("f_sku")}</th><th>${t("f_name")}</th><th>${t("f_category")}</th><th>${t("f_brand")}</th><th>${t("f_price")}</th><th>${t("col_group")}</th><th>${t("col_cashback")}</th><th style="text-align:right">${t("col_actions")}</th>
+    </tr></thead><tbody id="pBody">${rowSkeleton(8,6)}</tbody></table></div></div></div>`;
+  document.getElementById("p_q").value=PROD_STATE.q;document.getElementById("p_cat").value=PROD_STATE.cat;document.getElementById("p_merchant").value=PROD_STATE.merchant;
+  try{let rows=await api("/api/products");window.__products=Array.isArray(rows)?rows:[];}catch(e){window.__products=[];}
+  paintProducts();
+}
+function filteredProducts(){
+  const q=PROD_STATE.q.toLowerCase(),cat=PROD_STATE.cat.toLowerCase(),mid=PROD_STATE.merchant;
+  return (window.__products||[]).filter(p=>{
+    if(mid&&String(p.merchant&&p.merchant.id)!==String(mid))return false;
+    if(cat&&String(p.category||"").toLowerCase()!==cat)return false;
+    if(q){const hay=[p.sku,p.name,p.brand,p.category,p.groupKey].join(" ").toLowerCase();if(!hay.includes(q))return false;}
+    return true;
+  });
+}
+function paintProducts(){
+  const rows=filteredProducts(),tb=document.getElementById("pBody");if(!tb)return;
+  document.getElementById("p_count").textContent=rows.length;
+  const m=MERCH.find(x=>String(x.id)===String(PROD_STATE.merchant));
+  document.getElementById("p_merch_name").textContent=m?m.name:t("all_merchants");
+  const canManage=ME.role!=="LECTEUR";
+  tb.innerHTML=rows.length?rows.map(p=>`<tr>
+    <td><span class="mono">${esc(p.sku||"—")}</span></td><td class="strong">${esc(p.name||"—")}</td>
+    <td>${esc(p.category||"—")}</td><td>${esc(p.brand||"—")}</td><td>${money(p.price)}</td>
+    <td>${p.groupKey?`<span class="mono">${esc(p.groupKey)}</span>`:"—"}</td>
+    <td>${p.cashbackType&&p.cashbackType!=="NONE"?`<span class="badge b-info">${esc(p.cashbackType==="PERCENTAGE"?"%":"FIX")} · ${esc(p.cashbackValue??"")}</span>`:"—"}</td>
+    <td class="row-actions">${canManage?`<button class="mini-btn" onclick="productModal(${p.id})">${t("edit")}</button><button class="mini-btn danger" onclick="deleteProduct(${p.id})">${t("del")}</button>`:"—"}</td>
+  </tr>`).join(""):`<tr><td colspan="8">${emptyFull()}</td></tr>`;
+}
+function productModal(id){
+  const p=id?(window.__products||[]).find(x=>x.id===id):null;
+  const cbtypes=["NONE","PERCENTAGE","FIXED_AMOUNT"];
+  openModal(id?t("edit"):t("new_product"),`<div class="form-grid">
+    <div class="field"><label>${t("f_merchant")}</label><select id="pf_merchant">${MERCH.map(m=>`<option value="${m.id}" ${p&&p.merchant&&p.merchant.id===m.id?"selected":""}>${esc(m.name)}</option>`).join("")}</select></div>
+    <div class="field"><label>${t("f_sku")}</label><input id="pf_sku" value="${esc(p?p.sku:"")}"></div>
+    <div class="field"><label>${t("f_name")}</label><input id="pf_name" value="${esc(p?p.name:"")}"></div>
+    <div class="field"><label>${t("f_category")}</label><input id="pf_category" value="${esc(p?p.category:"")}"></div>
+    <div class="field"><label>${t("f_brand")}</label><input id="pf_brand" value="${esc(p?p.brand:"")}"></div>
+    <div class="field"><label>${t("f_price")}</label><input id="pf_price" type="number" value="${esc(p?p.price:"")}"></div>
+    <div class="field"><label>${t("f_group")}</label><input id="pf_group" value="${esc(p?p.groupKey:"")}"></div>
+    <div class="field"><label>${t("f_cbtype")}</label><select id="pf_cbtype">${cbtypes.map(c=>`<option value="${c}" ${p&&p.cashbackType===c?"selected":""}>${c}</option>`).join("")}</select></div>
+    <div class="field"><label>${t("f_cbvalue")}</label><input id="pf_cbvalue" type="number" value="${esc(p?p.cashbackValue:"")}"></div>
+    <div class="field full"><label>${t("f_designation")}</label><input id="pf_desig" value="${esc(p?p.ticketDesignation:"")}"></div>
+    <div class="field full"><label>${t("f_synonyms")}</label><input id="pf_syn" value="${esc(p?p.synonyms:"")}"></div>
+  </div>`,`<button class="btn btn-ghost" onclick="closeModal()">${t("cancel")}</button><button class="btn btn-primary" onclick="submitProduct(${id||0})">${t("save")}</button>`);
+}
+function productBody(){return {merchantId:Number(val("pf_merchant")),sku:val("pf_sku"),name:val("pf_name"),category:val("pf_category"),brand:val("pf_brand"),price:val("pf_price")?Number(val("pf_price")):null,groupKey:val("pf_group"),cashbackType:val("pf_cbtype"),cashbackValue:val("pf_cbvalue")?Number(val("pf_cbvalue")):0,ticketDesignation:val("pf_desig"),synonyms:val("pf_syn")};}
+async function submitProduct(id){
+  const body=productBody();
+  if(!body.merchantId||!body.sku||!body.name){toast(t("f_sku")+" / "+t("f_name"),"err");return;}
+  try{
+    if(id){await api(`/api/products/${id}`,{method:"PUT",body:JSON.stringify(body)});toast(t("prod_updated"),"ok");}
+    else{await api("/api/products",{method:"POST",body:JSON.stringify(body)});toast(t("prod_created"),"ok");}
+    closeModal();renderProducts();
+  }catch(e){toast(String(e.message||e).slice(0,140),"err");}
+}
+async function deleteProduct(id){
+  if(!confirm(t("confirm_del")))return;
+  try{await api(`/api/products/${id}`,{method:"DELETE"});toast(t("prod_deleted"),"ok");
+    window.__products=(window.__products||[]).filter(p=>p.id!==id);paintProducts();
+  }catch(e){toast(String(e.message||e).slice(0,120),"err");}
+}
+/* import / export */
+const PCOLS=["sku","name","category","brand","price","groupKey","cashbackType","cashbackValue"];
+function downloadCSV(name,text){const b=new Blob([text],{type:"text/csv;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;a.click();}
+function downloadTemplate(){downloadCSV("modele_produits.csv",PCOLS.join(",")+"\n");}
+function exportProducts(fmt){
+  const rows=filteredProducts();
+  if(fmt==="csv"){const csv=[PCOLS.join(",")].concat(rows.map(p=>PCOLS.map(c=>`"${String(c==="cashbackType"?(p.cashbackType||""):p[c]??"").replace(/"/g,'""')}"`).join(","))).join("\n");downloadCSV("produits.csv",csv);}
+  else{const html=`<table border="1"><tr>${PCOLS.map(c=>`<th>${c}</th>`).join("")}</tr>${rows.map(p=>`<tr>${PCOLS.map(c=>`<td>${esc(p[c]??"")}</td>`).join("")}</tr>`).join("")}</table>`;const b=new Blob([html],{type:"application/vnd.ms-excel"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="produits.xls";a.click();}
+}
+async function importMass(e){
+  const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
+  const mid=PROD_STATE.merchant||(MERCH[0]&&MERCH[0].id);
+  if(!mid){toast(t("kpi_merchant"),"err");return;}
+  const text=await f.text();const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  const hdr=lines.shift().split(",").map(h=>h.trim());
+  let ok=0,fail=0;
+  for(const line of lines){const cells=line.split(",");const row={};hdr.forEach((h,i)=>row[h]=(cells[i]||"").trim());
+    try{await api("/api/products",{method:"POST",body:JSON.stringify({merchantId:Number(mid),sku:row.sku,name:row.name,category:row.category,brand:row.brand,price:row.price?Number(row.price):null,groupKey:row.groupKey,cashbackType:row.cashbackType||"NONE",cashbackValue:row.cashbackValue?Number(row.cashbackValue):0})});ok++;}catch(_){fail++;}}
+  toast(`${t("import_done")} ${ok} ✓ / ${fail} ✗`,"ok");renderProducts();
+}
+
+/* ============ TENDANCES (analytics from real data) ============ */
+function barChart(data,unit){
+  const max=Math.max(1,...data.map(d=>d.v));
+  return `<div style="display:flex;align-items:flex-end;gap:12px;height:180px;padding-top:10px">${data.map(d=>{
+    const h=Math.round((d.v/max)*150);
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0">
+      <div style="font-size:11px;font-weight:700;color:var(--text-2)">${unit==="money"?money(d.v):num(d.v)}</div>
+      <div style="width:100%;max-width:46px;height:${h}px;background:linear-gradient(180deg,var(--brand),#f2545b);border-radius:8px 8px 3px 3px"></div>
+      <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">${esc(d.k)}</div>
+    </div>`;}).join("")}</div>`;
+}
+async function renderTrends(){
+  const c=document.getElementById("content");
+  c.innerHTML=`<div class="page">${head(t("trends"),t("tr_sub"),refreshBtn())}
+    <div class="grid-2">
+      <div class="panel"><div class="panel-head"><h3>${t("tr_cashback_time")}</h3></div><div class="panel-body" id="trCash">${skLines(4)}</div></div>
+      <div class="panel"><div class="panel-head"><h3>${t("tr_claims_status")}</h3></div><div class="panel-body" id="trClaims">${skLines(4)}</div></div>
+    </div>
+    <div class="panel"><div class="panel-head"><h3>${t("tr_top_cat")}</h3></div><div class="panel-body" id="trCat">${skLines(4)}</div></div></div>`;
+  try{
+    const [pays,claims,prods]=await Promise.all([
+      api("/api/cashback/payments").catch(()=>[]),
+      api("/api/claims").catch(()=>[]),
+      api("/api/products").catch(()=>[])
+    ]);
+    // cashback by month
+    const byM={};(Array.isArray(pays)?pays:[]).forEach(p=>{const d=p.processedAt||p.createdAt;if(!d)return;const key=new Date(d).toLocaleDateString(LANG==="fr"?"fr-FR":"en-US",{month:"short",year:"2-digit"});byM[key]=(byM[key]||0)+Number(p.amount||0);});
+    const mData=Object.entries(byM).slice(-6).map(([k,v])=>({k,v}));
+    document.getElementById("trCash").innerHTML=mData.length?barChart(mData,"money"):emptyMini(t("tr_no_data"));
+    // claims by status
+    const byS={};(Array.isArray(claims)?claims:[]).forEach(c2=>{const s=stLabel(c2.status);byS[s]=(byS[s]||0)+1;});
+    const cols=["#1553B8","#127A45","#0E9F6E","#B42318","#B25E09"];
+    const sData=Object.entries(byS).map(([k,v],i)=>({k,v,c:cols[i%cols.length]}));
+    document.getElementById("trClaims").innerHTML=sData.length?donut(sData):emptyMini(t("tr_no_data"));
+    // top product categories
+    const byC={};(Array.isArray(prods)?prods:[]).forEach(p=>{const k=p.category||"—";byC[k]=(byC[k]||0)+1;});
+    const cData=Object.entries(byC).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([k,v])=>({k,v}));
+    document.getElementById("trCat").innerHTML=cData.length?barChart(cData,"num"):emptyMini(t("tr_no_data"));
+  }catch(e){toast(t("err_load"),"err");}
+}
+
+/* ============ WEBHOOKS ============ */
+function getWebhookBase(){try{return localStorage.getItem("t2c_webhook_base")||"";}catch(_){return "";}}
+function effectiveBase(){return getWebhookBase()||location.origin;}
+function isLocalBase(b){return /localhost|127\.0\.0\.1|0\.0\.0\.0/.test(b);}
+function saveWebhookBase(){
+  let v=(val("whBaseInput")||"").trim().replace(/\/+$/,"");
+  try{v?localStorage.setItem("t2c_webhook_base",v):localStorage.removeItem("t2c_webhook_base");}catch(_){}
+  toast(t("saved_ok"),"ok");renderWebhooks();
+}
+async function renderWebhooks(){
+  const c=document.getElementById("content");
+  const saved=getWebhookBase();
+  const base=effectiveBase();
+  const local=isLocalBase(base)||!saved;
+  const url=base+"/api/webhook/transaction";
+  const payload=JSON.stringify({transactionRef:"TX-0001",cardNumber:"4111111111111234",maskedCard:"4XXX XXXX XXXX 1234",merchantName:"Orange Cameroun",amount:15000,currency:"FCFA",transactionDate:"2026-07-08T10:30:00"},null,2);
+  c.innerHTML=`<div class="page">${head(t("webhooks"),t("wh_sub"),refreshBtn())}
+    <div class="panel" style="margin-bottom:16px"><div class="panel-body">
+      <div class="field full"><label>${t("wh_base")}</label>
+        <div style="display:flex;gap:8px"><input id="whBaseInput" placeholder="${t("wh_base_ph")}" value="${esc(saved)}"><button class="btn btn-primary" onclick="saveWebhookBase()">${t("save")}</button></div>
+        <div class="hint">${t("wh_base_hint")}</div></div>
+    </div></div>
+    <div class="panel" style="margin-bottom:16px"><div class="panel-body">
+      <div class="field full"><label>${t("wh_url")} ${local?`<span class="badge b-warn" style="margin-left:6px">${t("wh_local")}</span>`:`<span class="badge b-ok" style="margin-left:6px">${t("wh_public")}</span>`}</label>
+        <div style="display:flex;gap:8px"><input readonly value="${esc(url)}" id="whUrl"><button class="btn btn-ghost" onclick="copyVal('whUrl')">${t("wh_copy")}</button></div></div>
+      <div class="field full" style="margin-top:14px"><label>${t("wh_payload")}</label>
+        <textarea readonly rows="9" style="font-family:var(--font-mono);font-size:12.5px">${esc(payload)}</textarea></div>
+    </div></div>
+    <div class="grid-2">
+      <div class="panel"><div class="panel-head"><h3>${t("wh_recent")}</h3></div><div class="panel-body" id="whRecent">${skLines(4)}</div></div>
+      <div class="panel"><div class="panel-head"><h3>${t("wh_unmatched")}</h3></div><div class="panel-body" id="whUnmatched">${skLines(4)}</div></div>
+    </div></div>`;
+  try{const r=await api("/api/webhook/transactions").catch(()=>[]);document.getElementById("whRecent").innerHTML=miniTxTable(Array.isArray(r)?r:[]);}catch(e){document.getElementById("whRecent").innerHTML=emptyMini(t("err_load"));}
+  try{const u=await api("/api/webhook/transactions/unmatched").catch(()=>[]);document.getElementById("whUnmatched").innerHTML=miniTxTable(Array.isArray(u)?u:[]);}catch(e){document.getElementById("whUnmatched").innerHTML=emptyMini(t("err_load"));}
+}
+function miniTxTable(rows){
+  if(!rows.length)return emptyMini(t("empty"));
+  return `<div class="table-scroll"><table style="min-width:auto"><tbody>${rows.slice(0,8).map(x=>`<tr>
+    <td><span class="mono">${esc(x.clientReference||x.ticketNumber||("#"+x.id))}</span></td>
+    <td class="strong">${money(x.amount)}</td><td>${x.status?badge(x.status):""}</td>
+    <td style="color:var(--muted);font-size:12px">${dt(x.createdAt)}</td></tr>`).join("")}</tbody></table></div>`;
+}
+function copyVal(id){const el=document.getElementById(id);el.select();try{navigator.clipboard.writeText(el.value);}catch(_){document.execCommand("copy");}toast(t("wh_copied"),"ok");}
+
+/* ============ INTÉGRATION ============ */
+async function renderIntegration(){
+  const c=document.getElementById("content");
+  const base=effectiveBase();
+  const eps=[["POST","/api/auth/login","Connexion (session)"],["GET","/api/merchants","Commerçants"],["GET","/api/products","Catalogue produits"],["POST","/api/products","Créer un produit"],["GET","/api/campaigns","Campagnes"],["GET","/api/claims","Réclamations"],["GET","/api/cashback/payments","Paiements cashback"],["POST","/api/webhook/transaction","Webhook transaction POS"],["POST","/api/mobile/ocr","OCR ticket (mobile)"]];
+  c.innerHTML=`<div class="page">${head(t("integration"),t("ig_sub"),`<button class="btn btn-primary" onclick="testConn()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>${t("ig_test")}</button>`)}
+    <div class="panel" style="margin-bottom:16px"><div class="panel-body">
+      <div class="pf-row"><span class="k">${t("ig_base")}</span><span class="v">${esc(base)}</span></div>
+      <div class="pf-row"><span class="k">${t("ig_auth")}</span><span class="v" style="font-family:var(--font-sans);font-weight:500;color:var(--text-2)">${t("ig_auth_v")}</span></div>
+    </div></div>
+    <div class="table-wrap"><div class="table-toolbar"><span class="count-pill">${t("ig_endpoints")}</span><span id="connState"></span></div>
+    <div class="table-scroll"><table><thead><tr><th>Méthode</th><th>Endpoint</th><th>${t("c_details")}</th></tr></thead>
+    <tbody>${eps.map(([m,p,d])=>`<tr><td><span class="badge ${m==="GET"?"b-info":"b-ok"}">${m}</span></td><td><span class="mono">${esc(p)}</span></td><td style="color:var(--text-2)">${esc(d)}</td></tr>`).join("")}</tbody></table></div></div></div>`;
+}
+async function testConn(){
+  const el=document.getElementById("connState");if(el)el.innerHTML='<span class="badge b-muted">…</span>';
+  try{await api("/api/health");if(el)el.innerHTML=`<span class="badge b-ok">${t("ig_ok")}</span>`;toast(t("ig_ok"),"ok");}
+  catch(e){if(el)el.innerHTML=`<span class="badge b-danger">${t("ig_ko")}</span>`;toast(t("ig_ko"),"err");}
+}
+
+/* ============ FINANCE & HISTORIQUE ============ */
+async function renderFinance(){
+  const c=document.getElementById("content");
+  c.innerHTML=`<div class="page">${head(t("finance"),t("finance_sub"),refreshBtn())}
+    <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)" id="finKpis">${kpiSkeletons(3)}</div>
+    <div class="grid-2">
+      <div class="panel"><div class="panel-head"><h3>${t("payments")}</h3><span class="link" onclick="go('payments')">${t("view_all")}</span></div><div class="panel-body" id="finPay">${skLines(4)}</div></div>
+      <div class="panel"><div class="panel-head"><h3>${t("wh_unmatched")}</h3></div><div class="panel-body" id="finUn">${skLines(4)}</div></div>
+    </div></div>`;
+  try{
+    const [pays,un]=await Promise.all([api("/api/cashback/payments").catch(()=>[]),api("/api/webhook/transactions/unmatched").catch(()=>[])]);
+    const P=Array.isArray(pays)?pays:[],U=Array.isArray(un)?un:[];
+    const total=P.reduce((a,p)=>a+Number(p.amount||0),0);
+    document.getElementById("finKpis").innerHTML=[
+      {icon:"payments",label:t("fin_paid"),val:money(total),sub:""},
+      {icon:"finance",label:t("fin_count"),val:num(P.length),sub:""},
+      {icon:"fraud",label:t("fin_unmatched"),val:num(U.length),sub:""}
+    ].map(kpiCard).join("");animateCounters();
+    document.getElementById("finPay").innerHTML=P.length?`<div class="table-scroll"><table style="min-width:auto"><tbody>${P.slice(0,7).map(p=>`<tr><td><span class="mono">${esc(p.paymentReference||("#"+p.id))}</span></td><td class="strong">${money(p.amount)}</td><td>${badge(p.status)}</td><td style="color:var(--muted);font-size:12px">${dt(p.processedAt||p.createdAt)}</td></tr>`).join("")}</tbody></table></div>`:emptyMini(t("empty"));
+    document.getElementById("finUn").innerHTML=miniTxTable(U);
+  }catch(e){toast(t("err_load"),"err");}
+}
+
+/* ============ MENU OCR AI ============ */
+function renderOcr(){
+  const c=document.getElementById("content");
+  c.innerHTML=`<div class="page">${head(t("ocr"),t("ocr_sub"))}
+    <div class="panel" style="margin-bottom:16px"><div class="panel-body">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <label class="btn btn-ghost" style="cursor:pointer">${t("ocr_choose")}<input type="file" accept="image/*" id="ocrFile" style="display:none" onchange="ocrPreview(event)"></label>
+        <button class="btn btn-primary" id="ocrGo" onclick="runOcr()" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4"/></svg>${t("ocr_analyze")}</button>
+        <span id="ocrName" style="color:var(--muted);font-size:12.5px"></span>
+      </div>
+      <div id="ocrPrev" style="margin-top:14px"></div>
+    </div></div>
+    <div class="panel"><div class="panel-head"><h3>${t("ocr_result")}</h3></div><div class="panel-body" id="ocrOut">${emptyMini(t("ocr_none"))}</div></div></div>`;
+}
+let OCR_IMG=null;
+function ocrPreview(e){
+  const f=e.target.files&&e.target.files[0];if(!f)return;
+  document.getElementById("ocrName").textContent=f.name;
+  const r=new FileReader();r.onload=()=>{OCR_IMG=r.result;document.getElementById("ocrGo").disabled=false;
+    document.getElementById("ocrPrev").innerHTML=`<img src="${r.result}" style="max-height:220px;border-radius:10px;border:1px solid var(--border)">`;};
+  r.readAsDataURL(f);
+}
+async function runOcr(){
+  if(!OCR_IMG)return;
+  const out=document.getElementById("ocrOut");out.innerHTML=`<div class="empty" style="padding:24px"><div class="sk sk-line" style="width:200px;margin:0 auto"></div><p style="margin-top:10px">${t("ocr_running")}</p></div>`;
+  const b64=OCR_IMG.includes(",")?OCR_IMG.split(",")[1]:OCR_IMG;
+  try{
+    const res=await api("/api/mobile/ocr",{method:"POST",body:JSON.stringify({image:b64})});
+    const fields=Object.entries(res||{}).filter(([k,v])=>typeof v!=="object").slice(0,12);
+    out.innerHTML=`${fields.length?`<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">${t("ocr_fields")}</div>${fields.map(([k,v])=>`<div class="pf-row"><span class="k">${esc(k)}</span><span class="v" style="font-family:var(--font-sans);font-weight:600;max-width:60%;text-align:right">${esc(String(v))}</span></div>`).join("")}</div>`:""}
+      <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">${t("ocr_raw")}</div>
+      <textarea readonly rows="10" style="width:100%;font-family:var(--font-mono);font-size:12px;background:var(--input-bg);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--text)">${esc(JSON.stringify(res,null,2))}</textarea>`;
+  }catch(e){out.innerHTML=emptyMini(String(e.message||e).slice(0,200));}
+}
+
+/* ============ GENERIC CRUD (pricing / ticket templates) ============ */
+const CRUD={
+ pricing:{ep:"/api/pricing-plans",title:"pricing",sub:"pricing_sub",add:true,
+   cols:[["name","c_name","strong"],["code","f_code","mono"],["monthlyFee","f_monthlyfee","money"],["commissionRate","f_commission","pct"],["includedInstances","f_instances"],["active","f_active","bool"]],
+   fields:[["name","c_name","text"],["code","f_code","text"],["monthlyFee","f_monthlyfee","number"],["commissionRate","f_commission","number"],["includedInstances","f_instances","number"],["description","f_desc","text"],["active","f_active","bool"]]},
+ ticketTemplate:{ep:"/api/ticket-templates",title:"ticketTemplate",sub:"tt_sub2",add:true,
+   cols:[["name","c_name","strong"],["storeNamePattern","tt_store"],["totalKeyword","tt_total","mono"],["dateFormat","tt_date","mono"],["active","f_active","bool"]],
+   fields:[["name","c_name","text"],["merchantId","f_merchant","merchant"],["storeNamePattern","tt_store","text"],["totalKeyword","tt_total","text"],["dateFormat","tt_date","text"],["sampleText","tt_sample","textarea"],["active","f_active","bool"]]}
+};
+async function renderCrud(key){
+  const cfg=CRUD[key];await loadMerchants();
+  const canManage=ME.role==="ADMIN";
+  document.getElementById("content").innerHTML=`<div class="page">${head(t(cfg.title),t(cfg.sub),(canManage?`<button class="btn btn-primary" onclick="crudModal('${key}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${t("new_item")}</button>`:"")+refreshBtn())}
+    <div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="cCp">—</span></div>
+    <div class="table-scroll"><table><thead><tr>${cfg.cols.map(c=>`<th>${t(c[1])}</th>`).join("")}${canManage?`<th style="text-align:right">${t("col_actions")}</th>`:""}</tr></thead>
+    <tbody id="cBody">${rowSkeleton(cfg.cols.length+1,5)}</tbody></table></div></div></div>`;
+  try{let rows=await api(cfg.ep);if(!Array.isArray(rows))rows=[];window.__crud=window.__crud||{};window.__crud[key]=rows;paintCrud(key);}
+  catch(e){document.getElementById("cBody").innerHTML=`<tr><td colspan="${cfg.cols.length+1}">${emptyMini(t("err_load"))}</td></tr>`;}
+}
+function crudCell(row,col){
+  const [f,,type]=col;let v=row[f];
+  switch(type){case "strong":return `<span class="strong">${esc(v||"—")}</span>`;case "mono":return v?`<span class="mono">${esc(v)}</span>`:"—";
+    case "money":return money(v);case "pct":return v!=null?esc(v)+" %":"—";
+    case "bool":return v?`<span class="badge b-ok">${t("yes")}</span>`:`<span class="badge b-muted">${t("no")}</span>`;
+    default:return esc(v==null||v===""?"—":v);}
+}
+function paintCrud(key){
+  const cfg=CRUD[key],rows=(window.__crud&&window.__crud[key])||[],tb=document.getElementById("cBody"),cp=document.getElementById("cCp");if(!tb)return;
+  const canManage=ME.role==="ADMIN";cp.textContent=rows.length+" "+t("items");
+  const span=cfg.cols.length+(canManage?1:0);
+  tb.innerHTML=rows.length?rows.map(r=>`<tr>${cfg.cols.map(col=>`<td>${crudCell(r,col)}</td>`).join("")}${canManage?`<td class="row-actions"><button class="mini-btn" onclick="crudModal('${key}',${r.id})">${t("edit")}</button><button class="mini-btn danger" onclick="crudDelete('${key}',${r.id})">${t("del")}</button></td>`:""}</tr>`).join(""):`<tr><td colspan="${span}">${emptyFull()}</td></tr>`;
+}
+function crudModal(key,id){
+  const cfg=CRUD[key],row=id?((window.__crud&&window.__crud[key])||[]).find(x=>x.id===id):null;
+  const body=`<div class="form-grid">${cfg.fields.map(fd=>{
+    const [f,lbl,type]=fd,cur=row?row[f]:"";
+    if(type==="bool")return `<div class="field"><label>${t(lbl)}</label><select id="cf_${f}"><option value="true" ${cur!==false?"selected":""}>${t("yes")}</option><option value="false" ${cur===false?"selected":""}>${t("no")}</option></select></div>`;
+    if(type==="merchant")return `<div class="field"><label>${t(lbl)}</label><select id="cf_${f}"><option value="">—</option>${MERCH.map(m=>`<option value="${m.id}" ${row&&row[f]===m.id?"selected":""}>${esc(m.name)}</option>`).join("")}</select></div>`;
+    if(type==="textarea")return `<div class="field full"><label>${t(lbl)}</label><textarea id="cf_${f}" rows="3">${esc(cur||"")}</textarea></div>`;
+    return `<div class="field"><label>${t(lbl)}</label><input id="cf_${f}" type="${type==="number"?"number":"text"}" value="${esc(cur==null?"":cur)}"></div>`;
+  }).join("")}</div>`;
+  openModal(id?t("edit"):t("new_item"),body,`<button class="btn btn-ghost" onclick="closeModal()">${t("cancel")}</button><button class="btn btn-primary" onclick="crudSubmit('${key}',${id||0})">${t("save")}</button>`);
+}
+async function crudSubmit(key,id){
+  const cfg=CRUD[key],body={};
+  cfg.fields.forEach(fd=>{const [f,,type]=fd,el=document.getElementById("cf_"+f);if(!el)return;let v=el.value;
+    if(type==="number")v=v===""?null:Number(v);else if(type==="bool")v=(v==="true");else if(type==="merchant")v=v===""?null:Number(v);
+    body[f]=v;});
+  if(!body.name){toast(t("f_name"),"err");return;}
+  try{
+    if(id)await api(`${cfg.ep}/${id}`,{method:"PUT",body:JSON.stringify(body)});
+    else await api(cfg.ep,{method:"POST",body:JSON.stringify(body)});
+    toast(t("saved_ok"),"ok");closeModal();renderCrud(key);
+  }catch(e){toast(String(e.message||e).slice(0,140),"err");}
+}
+async function crudDelete(key,id){
+  if(!confirm(t("confirm_del2")))return;const cfg=CRUD[key];
+  try{await api(`${cfg.ep}/${id}`,{method:"DELETE"});toast(t("deleted_ok"),"ok");
+    window.__crud[key]=(window.__crud[key]||[]).filter(x=>x.id!==id);paintCrud(key);
+  }catch(e){toast(String(e.message||e).slice(0,120),"err");}
+}
+
+/* ============ MERCHANT FORM (admin) + SUB-PARTNERS (partner) ============ */
+const MSTATUS=["KYC_PENDING","KYC_VALIDATED","ACTIVE","SUSPENDED","REJECTED"];
+function merchantFormFields(m,opts){
+  opts=opts||{};
+  const parentField = opts.hideParent ? "" : `<div class="field"><label>${t("m_parent")}</label><select id="mf_parent"><option value="">${t("none_opt")}</option>${MERCH.filter(x=>x.parentMerchantId==null&&(!m||x.id!==m.id)).map(x=>`<option value="${x.id}" ${m&&m.parentMerchantId===x.id?"selected":""}>${esc(x.name||x.brandName)}</option>`).join("")}</select></div>`;
+  return `<div class="form-grid">
+    <div class="field"><label>${t("m_name")}</label><input id="mf_name" value="${esc(m?m.name:"")}"></div>
+    <div class="field"><label>${t("m_brand")}</label><input id="mf_brand" value="${esc(m?m.brandName:"")}"></div>
+    <div class="field"><label>${t("m_city")}</label><input id="mf_city" value="${esc(m?m.city:"")}"></div>
+    <div class="field"><label>${t("m_phone")}</label><input id="mf_phone" value="${esc(m?m.phone:"")}"></div>
+    <div class="field"><label>${t("m_email")}</label><input id="mf_email" value="${esc(m?m.email:"")}"></div>
+    <div class="field"><label>${t("m_niu")}</label><input id="mf_niu" value="${esc(m?m.niu:"")}"></div>
+    <div class="field"><label>${t("m_rccm")}</label><input id="mf_rccm" value="${esc(m?m.rccm:"")}"></div>
+    <div class="field"><label>${t("m_status")}</label><select id="mf_status">${MSTATUS.map(s=>`<option value="${s}" ${m&&m.status===s?"selected":""}>${esc(stLabel(s))}</option>`).join("")}</select></div>
+    <div class="field full"><label>${t("m_address")}</label><input id="mf_address" value="${esc(m?m.address:"")}"></div>
+    ${parentField}
+  </div>`;
+}
+function merchantBody(){
+  return {name:val("mf_name"),brandName:val("mf_brand"),city:val("mf_city"),phone:val("mf_phone"),email:val("mf_email"),niu:val("mf_niu"),rccm:val("mf_rccm"),address:val("mf_address"),status:val("mf_status")};
+}
+async function merchantModal(){
+  await loadMerchants();
+  openModal(t("merchant_create"),merchantFormFields(null,{}),
+    `<button class="btn btn-ghost" onclick="closeModal()">${t("cancel")}</button><button class="btn btn-primary" onclick="submitMerchant()">${t("save")}</button>`);
+}
+async function submitMerchant(){
+  const body=merchantBody();
+  if(!body.name){toast(t("m_name"),"err");return;}
+  const parent=val("mf_parent");if(parent)body.parentMerchantId=Number(parent);
+  try{await api("/api/merchants",{method:"POST",body:JSON.stringify(body)});
+    toast(t("merchant_created"),"ok");closeModal();MERCH=[];go("merchants");
+  }catch(e){toast(String(e.message||e).slice(0,140),"err");}
+}
+
+/* ---- Admin: create a top-level PARTNER (org + login) ---- */
+function genPassword(){
+  const U="ABCDEFGHJKLMNPQRSTUVWXYZ",L="abcdefghijkmnpqrstuvwxyz",D="23456789",A=U+L+D;
+  let p=[U[Math.floor(Math.random()*U.length)],L[Math.floor(Math.random()*L.length)],D[Math.floor(Math.random()*D.length)]];
+  for(let i=0;i<7;i++)p.push(A[Math.floor(Math.random()*A.length)]);
+  return p.sort(()=>Math.random()-0.5).join("");
+}
+function fillGenPw(){const el=document.getElementById("cp_password");if(el)el.value=genPassword();}
+async function createPartnerModal(){
+  openModal(t("cp_title"),
+    `<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">${t("cp_org")}</div>
+     <div class="form-grid">
+       <div class="field"><label>${t("m_name")}</label><input id="mf_name"></div>
+       <div class="field"><label>${t("m_brand")}</label><input id="mf_brand"></div>
+       <div class="field"><label>${t("m_city")}</label><input id="mf_city"></div>
+       <div class="field"><label>${t("m_phone")}</label><input id="mf_phone"></div>
+       <div class="field"><label>${t("m_email")}</label><input id="mf_email"></div>
+       <div class="field"><label>${t("m_status")}</label><select id="mf_status">${MSTATUS.map(s=>`<option value="${s}" ${s==="ACTIVE"?"selected":""}>${esc(stLabel(s))}</option>`).join("")}</select></div>
+     </div>
+     <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:18px 0 10px">${t("cp_login")}</div>
+     <div class="form-grid">
+       <div class="field"><label>${t("cp_contact")}</label><input id="cp_fullname"></div>
+       <div class="field"><label>${t("cp_username")}</label><input id="cp_username" placeholder="ex: santalucia"></div>
+       <div class="field full"><label>${t("cp_password")}</label>
+         <div style="display:flex;gap:8px"><input id="cp_password" type="text"><button type="button" class="btn btn-ghost" onclick="fillGenPw()">${t("cp_generate")}</button></div>
+         <div class="hint">${t("pw_hint")}</div></div>
+     </div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">${t("cancel")}</button><button class="btn btn-primary" onclick="submitCreatePartner()">${t("save")}</button>`);
+}
+async function submitCreatePartner(){
+  const name=val("mf_name"),username=val("cp_username"),password=val("cp_password");
+  if(!name){toast(t("m_name"),"err");return;}
+  if(!username){toast(t("cp_username"),"err");return;}
+  if(!password||password.length<8||!/[0-9]/.test(password)){toast(t("pw_hint"),"err");return;}
+  const mbody={name:name,brandName:val("mf_brand"),city:val("mf_city"),phone:val("mf_phone"),email:val("mf_email"),status:val("mf_status")};
+  try{
+    const m=await api("/api/merchants",{method:"POST",body:JSON.stringify(mbody)});
+    const mid=m&&m.id;
+    const u=await api("/api/auth/users",{method:"POST",body:JSON.stringify({username:username,fullName:val("cp_fullname")||name,email:val("mf_email"),password:password,role:"PARTNER"})});
+    const uid=u&&(u.id||u.userId);
+    if(uid&&mid){try{await api(`/api/auth/users/${uid}/merchant?merchantId=${mid}`,{method:"PUT"});}catch(_){}}
+    MERCH=[];
+    showPartnerCredentials(name,username,password);
+  }catch(e){toast(String(e.message||e).slice(0,180),"err");}
+}
+function showPartnerCredentials(name,username,password){
+  const url=effectiveBase()+"/login.html";
+  const msg=`${LANG==="fr"?"Bonjour, votre espace partenaire Ticket2Cash":"Hello, your Ticket2Cash partner space"} (${name}) ${LANG==="fr"?"est prêt.":"is ready."}\n${t("cp_loginurl")}: ${url}\n${t("cp_username")}: ${username}\n${t("cp_password")}: ${password}`;
+  openModal(t("cp_created_title"),
+    `<p style="color:var(--text-2);margin-bottom:16px">${t("cp_created_msg")}</p>
+     <div class="cred-box"><span class="k">${t("cp_username")}</span><span class="v" id="cr_user">${esc(username)}</span></div>
+     <div class="cred-box"><span class="k">${t("cp_password")}</span><span class="v" id="cr_pw">${esc(password)}</span></div>
+     <div class="cred-box"><span class="k">${t("cp_loginurl")}</span><span class="v" id="cr_url">${esc(url)}</span></div>
+     <div class="field full" style="margin-top:6px"><label>${t("cp_msg_label")}</label><textarea id="cr_msg" readonly rows="5" style="font-size:12.5px">${esc(msg)}</textarea></div>`,
+    `<button class="btn btn-ghost" onclick="closeModal();go('merchants')">${t("cancel")}</button><button class="btn btn-primary" onclick="copyVal('cr_msg')">${t("cp_copy_msg")}</button>`);
+}
+
+/* ---- Admin: partner hierarchy (partners + sub-partners) ---- */
+async function renderMerchants(){
+  await loadMerchants();
+  const c=document.getElementById("content");
+  const canAdd=ME.role==="ADMIN";
+  c.innerHTML=`<div class="page">${head(t("mrch_title"),t("mrch_sub"),(canAdd?`<button class="btn btn-primary" onclick="createPartnerModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${t("mrch_new")}</button>`:"")+refreshBtn())}
+    <div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="mCp">—</span></div>
+    <div class="table-scroll"><table><thead><tr><th>${t("c_partner")}</th><th>${t("m_city")}</th><th>${t("m_phone")}</th><th>${t("m_status")}</th><th>${t("c_created")}</th></tr></thead>
+    <tbody id="mBody"></tbody></table></div></div></div>`;
+  const tops=MERCH.filter(m=>m.parentMerchantId==null);
+  const tb=document.getElementById("mBody");
+  document.getElementById("mCp").textContent=MERCH.length+" "+t("items");
+  if(!tops.length){tb.innerHTML=`<tr><td colspan="5">${emptyMini(t("mrch_none"))}</td></tr>`;return;}
+  let html="";
+  tops.forEach(p=>{
+    const kids=MERCH.filter(x=>x.parentMerchantId===p.id);
+    const chevron=kids.length?`<span class="tree-toggle"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg></span>`:`<span class="tree-toggle"></span>`;
+    html+=`<tr class="partner-row" ${kids.length?`onclick="toggleTree(${p.id})" data-pid="${p.id}"`:""}>
+      <td>${chevron}<span class="strong">${esc(p.name||p.brandName)}</span>${kids.length?` <span class="badge b-info" style="margin-left:6px">${kids.length} ${t("mrch_subcount")}</span>`:""}</td>
+      <td>${esc(p.city||"—")}</td><td><span class="mono">${esc(p.phone||"—")}</span></td><td>${badge(p.status)}</td><td style="color:var(--text-2)">${dt(p.createdAt)}</td></tr>`;
+    kids.forEach(k=>{
+      html+=`<tr class="child-row" data-parent="${p.id}">
+        <td><span style="color:var(--muted)">↳</span> ${esc(k.name||k.brandName)}</td>
+        <td>${esc(k.city||"—")}</td><td><span class="mono">${esc(k.phone||"—")}</span></td><td>${badge(k.status)}</td><td style="color:var(--text-2)">${dt(k.createdAt)}</td></tr>`;
+    });
+  });
+  tb.innerHTML=html;
+}
+function toggleTree(pid){
+  const row=document.querySelector(`.partner-row[data-pid="${pid}"]`);if(row)row.classList.toggle("open");
+  document.querySelectorAll(`.child-row[data-parent="${pid}"]`).forEach(r=>r.classList.toggle("show"));
+}
+
+/* ---- Partner: manage own sub-partners ---- */
+async function merchantModal(){
+  await loadMerchants();
+  openModal(t("merchant_create"),merchantFormFields(null,{}),
+    `<button class="btn btn-ghost" onclick="closeModal()">${t("cancel")}</button><button class="btn btn-primary" onclick="submitMerchant()">${t("save")}</button>`);
+}
+async function renderSubPartners(){
+  const c=document.getElementById("content");
+  c.innerHTML=`<div class="page">${head(t("subPartners"),t("sub_sub"),`<button class="btn btn-primary" onclick="subPartnerModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${t("new_subpartner")}</button>`+refreshBtn())}
+    <div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="spCp">—</span></div>
+    <div class="table-scroll"><table><thead><tr><th>${t("m_name")}</th><th>${t("m_city")}</th><th>${t("m_phone")}</th><th>${t("m_status")}</th><th>${t("c_created")}</th></tr></thead>
+    <tbody id="spBody">${rowSkeleton(5,5)}</tbody></table></div></div></div>`;
+  try{let rows=await api("/api/partner/sub-merchants");if(!Array.isArray(rows))rows=[];
+    document.getElementById("spCp").textContent=rows.length+" "+t("items");
+    document.getElementById("spBody").innerHTML=rows.length?rows.map(m=>`<tr><td class="strong">${esc(m.name||m.brandName)}</td><td>${esc(m.city||"—")}</td><td><span class="mono">${esc(m.phone||"—")}</span></td><td>${badge(m.status)}</td><td style="color:var(--text-2)">${dt(m.createdAt)}</td></tr>`).join(""):`<tr><td colspan="5">${emptyFull()}</td></tr>`;
+  }catch(e){document.getElementById("spBody").innerHTML=`<tr><td colspan="5">${emptyMini(t("err_load"))}</td></tr>`;}
+}
+function subPartnerModal(){
+  openModal(t("new_subpartner"),merchantFormFields(null,{hideParent:true}),
+    `<button class="btn btn-ghost" onclick="closeModal()">${t("cancel")}</button><button class="btn btn-primary" onclick="submitSubPartner()">${t("save")}</button>`);
+}
+async function submitSubPartner(){
+  const body=merchantBody();
+  if(!body.name){toast(t("m_name"),"err");return;}
+  try{await api("/api/partner/sub-merchants",{method:"POST",body:JSON.stringify(body)});
+    toast(t("merchant_created"),"ok");closeModal();renderSubPartners();
+  }catch(e){toast(String(e.message||e).slice(0,140),"err");}
+}
+
+/* ============ SKELETON / EMPTY ============ */
+function kpiSkeletons(n){return Array(n).fill(`<div class="kpi"><div class="sk sk-line" style="width:60%"></div><div class="sk" style="height:30px;width:50%;margin:10px 0"></div><div class="sk sk-line" style="width:40%"></div></div>`).join("");}
+function skLines(n){return Array(n).fill('<div class="sk sk-line"></div>').join("");}
+function rowSkeleton(cols,rows){return Array(rows).fill(`<tr>${Array(cols).fill('<td><div class="sk sk-line"></div></td>').join("")}</tr>`).join("");}
+function emptyFull(){return `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v16"/></svg><h4>${t("empty")}</h4><p>${t("empty_sub")}</p></div>`;}
+function emptyMini(msg){return `<div class="empty" style="padding:30px 10px"><p>${esc(msg)}</p></div>`;}
+
+/* ============ INTERACTIONS ============ */
+function animateCounters(){
+  document.querySelectorAll("[data-count]").forEach(el=>{
+    const target=Number(el.dataset.count);if(!target)return;
+    const suf=el.dataset.suffix||"",dur=800,t0=performance.now();
+    function step(now){const p=Math.min((now-t0)/dur,1),ease=1-Math.pow(1-p,3),val=Math.round(target*ease);el.textContent=nf.format(val)+(suf?(" "+suf):"");if(p<1)requestAnimationFrame(step);}
+    el.textContent="0"+(suf?(" "+suf):"");requestAnimationFrame(step);
+  });
+}
+function tableSearch(q){q=q.trim().toLowerCase();const tb=document.getElementById("tbody");if(!tb)return;tb.querySelectorAll("tr").forEach(tr=>{tr.style.display=tr.textContent.toLowerCase().includes(q)?"":"none";});}
+function filterNav(q){q=q.trim().toLowerCase();document.querySelectorAll(".nav-item").forEach(n=>{n.style.display=n.dataset.label.toLowerCase().includes(q)?"":"none";});document.querySelectorAll("[data-group]").forEach(g=>{const any=[...g.querySelectorAll(".nav-item")].some(n=>n.style.display!=="none");g.style.display=any?"":"none";});}
+function toggleTheme(){const cur=document.documentElement.getAttribute("data-theme"),next=cur==="dark"?"light":"dark";document.documentElement.setAttribute("data-theme",next);localStorage.setItem("t2c_theme",next);updateThemeIcon();}
+function updateThemeIcon(){const dark=document.documentElement.getAttribute("data-theme")==="dark";document.getElementById("themeBtn").innerHTML=dark?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>';}
+function setLang(l){LANG=l;localStorage.setItem("t2c_lang",l);document.documentElement.lang=l;applyI18n();buildNav(ME.role||"DEFAULT");go(CURRENT,true);}
+function applyI18n(){
+  document.getElementById("logoutTxt").textContent=t("logout");
+  document.getElementById("navSearch").placeholder=t("search_menu");
+  document.getElementById("globalSearch").placeholder=t("search_page");
+  if(ME){document.getElementById("sideRole").textContent=stLabel(ME.role);document.getElementById("tbRole").textContent=stLabel(ME.role);}
+  updateDate();
+}
+function updateDate(){const d=new Date();document.getElementById("dateMain").textContent=d.toLocaleDateString(LANG==="fr"?"fr-FR":"en-US",{weekday:"long",day:"numeric",month:"long"});document.getElementById("dateSub").textContent=d.getFullYear();}
+function openNav(){document.body.classList.add("nav-open");}
+function closeNav(){document.body.classList.remove("nav-open");}
+async function logout(){try{await api("/api/auth/logout",{method:"POST"});}catch(e){}location.href="/login.html";}
+function toast(msg,type){const el=document.createElement("div");el.className="toast "+(type||"");el.textContent=msg;document.body.appendChild(el);setTimeout(()=>{el.style.opacity="0";el.style.transition="opacity .3s";setTimeout(()=>el.remove(),300);},3200);}
+window.addEventListener("hashchange",()=>{const id=location.hash.slice(1);if(id&&id!==CURRENT)go(id,true);});
+boot();
+</script>
+</body>
+</html>

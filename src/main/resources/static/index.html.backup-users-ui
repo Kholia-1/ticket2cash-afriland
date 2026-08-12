@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket2Cash</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            color: #1f2937;
+        }
+
+        .sidebar {
+            width: 270px;
+            background: #0f172a;
+            color: white;
+            padding: 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+        }
+
+        .sidebar h1 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+        }
+
+        .sidebar p {
+            color: #cbd5e1;
+            font-size: 13px;
+            margin-bottom: 25px;
+        }
+
+        .menu button {
+            width: 100%;
+            display: block;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 8px;
+            background: #1e293b;
+            color: white;
+            text-align: left;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .menu button:hover {
+            background: #334155;
+        }
+
+        .content {
+            margin-left: 270px;
+            padding: 25px;
+        }
+
+        .topbar, .section, .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+
+        .topbar {
+            padding: 18px;
+            margin-bottom: 20px;
+        }
+
+        .topbar h2 {
+            margin: 0;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            padding: 18px;
+        }
+
+        .card .label {
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .card .value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        .section {
+            display: none;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: bold;
+            color: #334155;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 4px;
+            margin-bottom: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+        }
+
+        .btn {
+            padding: 11px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-right: 6px;
+            margin-bottom: 8px;
+        }
+
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-success { background: #16a34a; color: white; }
+        .btn-dark { background: #111827; color: white; }
+
+        .response-box {
+            background: #0f172a;
+            color: #e5e7eb;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            white-space: pre-wrap;
+            font-size: 13px;
+            max-height: 300px;
+            overflow: auto;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            min-width: 900px;
+        }
+
+        th {
+            background: #f1f5f9;
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .status {
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .status-success { background: #dcfce7; color: #166534; }
+        .status-warning { background: #fef3c7; color: #92400e; }
+        .status-danger { background: #fee2e2; color: #991b1b; }
+        .status-info { background: #dbeafe; color: #1d4ed8; }
+
+        @media (max-width: 900px) {
+            .sidebar {
+                position: relative;
+                width: 100%;
+            }
+
+            .content {
+                margin-left: 0;
+            }
+
+            .cards, .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+            .role-hidden {
+            display: none !important;
+        }
+
+        .role-notice {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+</style>
+</head>
+
+<body>
+
+<aside class="sidebar">
+    <h1>Ticket2Cash</h1>
+    <p>Cashback Supermarches - Prototype DEI</p>
+
+    <div class="menu">
+        <button onclick="showSection('dashboard')">Tableau de bord</button>
+        <button onclick="showSection('ocr')">Simulation OCR</button>
+        <button onclick="showSection('merchants')">Commercants</button>
+        <button onclick="showSection('products')">Produits</button>
+        <button onclick="showSection('campaigns')">Campagnes</button>
+        <button onclick="showSection('tickets')">Tickets</button>
+        <button onclick="showSection('claims')">Claims</button>
+        <button onclick="showSection('payments')">Paiements cashback</button>
+        <button onclick="showSection('fraud')">Alertes fraude</button>
+        <button onclick="showSection('audit')">Logs transactions</button>
+        <button onclick="showSection('settings')">Parametres</button>
+        <button onclick="showSection('exports')">Exports CSV</button>
+    </div>
+</aside>
+
+<main class="content">
+
+    <div class="topbar">
+        <h2 id="page-title">Tableau de bord</h2>
+        <p>Interface web de supervision du prototype Ticket2Cash.</p>
+    </div>
+
+    <div class="cards" id="dashboard-cards"></div>
+
+    <section id="dashboard" class="section active">
+        <h3>Resume global</h3>
+        <button class="btn btn-primary" onclick="loadDashboard()">Actualiser dashboard</button>
+        <button class="btn btn-dark" onclick="refreshAll()">Actualiser tout</button>
+        <div id="dashboard-table"></div>
+    </section>
+
+    <section id="ocr" class="section">
+        <h3>Simulation OCR ticket</h3>
+
+        <div class="form-grid">
+            <div>
+                <label>Merchant ID</label>
+                <input id="ocrMerchantId" type="number" value="1">
+            </div>
+            <div>
+                <label>Campaign ID</label>
+                <input id="ocrCampaignId" type="number" value="1">
+            </div>
+            <div>
+                <label>User ID</label>
+                <input id="ocrUserId" type="text" value="demo_user_1">
+            </div>
+            <div>
+                <label>Numero ticket</label>
+                <input id="ocrTicketNumber" type="text" value="TICKET-400">
+            </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="simulateOcr()">Lancer OCR simule</button>
+        <div class="response-box" id="ocrResponse">Aucune simulation lancee.</div>
+    </section>
+
+    <section id="merchants" class="section">
+        <h3>Commercants partenaires</h3>
+
+        <div class="form-grid">
+            <div>
+                <label>Nom legal</label>
+                <input id="merchantName" type="text" value="Carrefour Market Yaounde">
+            </div>
+            <div>
+                <label>Nom commercial</label>
+                <input id="merchantBrandName" type="text" value="Carrefour Market">
+            </div>
+            <div>
+                <label>RCCM</label>
+                <input id="merchantRccm" type="text" value="RC/YAO/2026/B/002">
+            </div>
+            <div>
+                <label>NIU</label>
+                <input id="merchantNiu" type="text" value="M098765432101B">
+            </div>
+            <div>
+                <label>Telephone</label>
+                <input id="merchantPhone" type="text" value="+237677000000">
+            </div>
+            <div>
+                <label>Email</label>
+                <input id="merchantEmail" type="text" value="contact@carrefourmarket.cm">
+            </div>
+            <div>
+                <label>Ville</label>
+                <input id="merchantCity" type="text" value="Yaounde">
+            </div>
+            <div>
+                <label>Adresse</label>
+                <input id="merchantAddress" type="text" value="Bastos">
+            </div>
+            <div>
+                <label>Statut</label>
+                <select id="merchantStatus">
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="KYC_PENDING">KYC_PENDING</option>
+                    <option value="KYC_VALIDATED">KYC_VALIDATED</option>
+                    <option value="SUSPENDED">SUSPENDED</option>
+                    <option value="REJECTED">REJECTED</option>
+                </select>
+            </div>
+        </div>
+
+
+        <hr>
+
+        <h4>Changer statut commercant</h4>
+
+        <div class="form-grid">
+            <div>
+                <label>ID commercant</label>
+                <input id="merchantIdToUpdate" type="number" placeholder="Exemple : 1">
+            </div>
+
+            <div>
+                <label>Nouveau statut</label>
+                <select id="merchantNewStatus">
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="KYC_PENDING">KYC_PENDING</option>
+                    <option value="KYC_VALIDATED">KYC_VALIDATED</option>
+                    <option value="SUSPENDED">SUSPENDED</option>
+                    <option value="REJECTED">REJECTED</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="btn btn-dark" onclick="updateMerchantStatus()">Changer statut commercant</button>
+        <button class="btn btn-success" onclick="createMerchant()">Creer commercant</button>
+        <button class="btn btn-primary" onclick="loadMerchants()">Actualiser</button>
+
+        <div class="response-box" id="merchantResponse">Aucun commercant cree depuis l interface.</div>
+        <div id="merchants-table"></div>
+    </section>
+
+    <section id="products" class="section">
+        <h3>Catalogue produits</h3>
+
+        <div class="form-grid">
+            <div>
+                <label>Merchant ID</label>
+                <input id="productMerchantId" type="number" value="1">
+            </div>
+            <div>
+                <label>SKU</label>
+                <input id="productSku" type="text" value="RIZ-001">
+            </div>
+            <div>
+                <label>Nom produit</label>
+                <input id="productName" type="text" value="Riz parfume 5KG">
+            </div>
+            <div>
+                <label>Designation ticket</label>
+                <input id="productTicketDesignation" type="text" value="RIZ PARF 5KG">
+            </div>
+            <div>
+                <label>Categorie</label>
+                <input id="productCategory" type="text" value="Alimentaire">
+            </div>
+            <div>
+                <label>Marque</label>
+                <input id="productBrand" type="text" value="Super Rice">
+            </div>
+            <div>
+                <label>Prix</label>
+                <input id="productPrice" type="number" value="8500">
+            </div>
+            <div>
+                <label>Type cashback</label>
+                <select id="productCashbackType">
+                    <option value="PERCENTAGE">PERCENTAGE</option>
+                    <option value="FIXED_AMOUNT">FIXED_AMOUNT</option>
+                    <option value="NONE">NONE</option>
+                </select>
+            </div>
+            <div>
+                <label>Valeur cashback</label>
+                <input id="productCashbackValue" type="number" value="5">
+            </div>
+        </div>
+
+        <button class="btn btn-success" onclick="createProduct()">Creer produit</button>
+        <button class="btn btn-primary" onclick="loadProducts()">Actualiser</button>
+
+        <div class="response-box" id="productResponse">Aucun produit cree depuis l interface.</div>
+        <div id="products-table"></div>
+    </section>
+    <section id="campaigns" class="section">
+        <h3>Campagnes cashback</h3>
+
+        <div class="form-grid">
+            <div>
+                <label>Merchant ID</label>
+                <input id="campaignMerchantId" type="number" value="1">
+            </div>
+
+            <div>
+                <label>Nom campagne</label>
+                <input id="campaignName" type="text" value="Cashback alimentaire 5%">
+            </div>
+
+            <div>
+                <label>Description</label>
+                <input id="campaignDescription" type="text" value="Campagne cashback sur produits alimentaires">
+            </div>
+
+            <div>
+                <label>Date debut</label>
+                <input id="campaignStartDate" type="date" value="2026-06-01">
+            </div>
+
+            <div>
+                <label>Date fin</label>
+                <input id="campaignEndDate" type="date" value="2026-12-31">
+            </div>
+
+            <div>
+                <label>Type cashback</label>
+                <select id="campaignCashbackType">
+                    <option value="PERCENTAGE">PERCENTAGE</option>
+                    <option value="FIXED_AMOUNT">FIXED_AMOUNT</option>
+                    <option value="NONE">NONE</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Valeur cashback</label>
+                <input id="campaignCashbackValue" type="number" value="5">
+            </div>
+
+            <div>
+                <label>Limite jour/client</label>
+                <input id="campaignDailyLimit" type="number" value="5000">
+            </div>
+
+            <div>
+                <label>Limite mois/client</label>
+                <input id="campaignMonthlyLimit" type="number" value="50000">
+            </div>
+
+            <div>
+                <label>Budget total</label>
+                <input id="campaignTotalBudget" type="number" value="2000000">
+            </div>
+
+            <div>
+                <label>Statut</label>
+                <select id="campaignStatus">
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="DRAFT">DRAFT</option>
+                    <option value="PAUSED">PAUSED</option>
+                    <option value="EXPIRED">EXPIRED</option>
+                    <option value="CLOSED">CLOSED</option>
+                </select>
+            </div>
+        </div>
+
+
+        <hr>
+
+        <h4>Changer statut campagne</h4>
+
+        <div class="form-grid">
+            <div>
+                <label>ID campagne</label>
+                <input id="campaignIdToUpdate" type="number" placeholder="Exemple : 1">
+            </div>
+
+            <div>
+                <label>Nouveau statut</label>
+                <select id="campaignNewStatus">
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="DRAFT">DRAFT</option>
+                    <option value="PAUSED">PAUSED</option>
+                    <option value="EXPIRED">EXPIRED</option>
+                    <option value="CLOSED">CLOSED</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="btn btn-dark" onclick="updateCampaignStatus()">Changer statut campagne</button>
+        <button class="btn btn-success" onclick="createCampaign()">Creer campagne</button>
+        <button class="btn btn-primary" onclick="loadCampaigns()">Actualiser</button>
+
+        <div class="response-box" id="campaignResponse">Aucune campagne creee depuis l interface.</div>
+        <div id="campaigns-table"></div>
+    </section>
+
+    <section id="tickets" class="section">
+        <h3>Tickets OCR</h3>
+        <button class="btn btn-primary" onclick="loadTickets()">Actualiser</button>
+        <div id="tickets-table"></div>
+    </section>
+
+    <section id="claims" class="section">
+        <h3>Claims cashback</h3>
+
+        <div class="form-grid">
+            <div>
+                <label>ID claim</label>
+                <input id="claimIdToApprove" type="number" placeholder="Exemple : 1">
+            </div>
+        </div>
+
+        <button class="btn btn-success" onclick="approveClaim()">Approuver claim</button>
+        <button class="btn btn-primary" onclick="loadClaims()">Actualiser</button>
+        <div id="claims-table"></div>
+    </section>
+
+    <section id="payments" class="section">
+        <h3>Paiements cashback</h3>
+
+        <button class="btn btn-success" onclick="runCashbackBatch()">Lancer batch J+1</button>
+        <button class="btn btn-primary" onclick="loadPayments()">Actualiser</button>
+
+        <div class="response-box" id="batchResponse">Batch non lance.</div>
+        <div id="payments-table"></div>
+    </section>
+
+    <section id="fraud" class="section">
+        <h3>Alertes fraude</h3>
+        <button class="btn btn-primary" onclick="loadFraudAlerts()">Actualiser</button>
+        <div id="fraud-table"></div>
+    </section>
+
+
+    <section id="audit" class="section">
+        <h3>Logs transactions</h3>
+
+        <button class="btn btn-success" onclick="createTestAuditLog()">Creer log test</button>
+        <button class="btn btn-primary" onclick="loadAuditLogs()">Actualiser</button>
+
+        <div class="response-box" id="auditResponse">Aucun log test cree depuis l interface.</div>
+        <div id="audit-table"></div>
+    </section>
+
+    <section id="settings" class="section">
+        <h3>Parametres systeme</h3>
+
+        <div class="form-grid">
+            <div>
+                <label>Montant ticket simule</label>
+                <input id="settingTicketAmount" type="number" value="44500">
+            </div>
+
+            <div>
+                <label>Devise</label>
+                <input id="settingCurrency" type="text" value="FCFA">
+            </div>
+
+            <div>
+                <label>Score fraude normal</label>
+                <input id="settingNormalScore" type="number" value="20">
+            </div>
+
+            <div>
+                <label>Score fraude doublon</label>
+                <input id="settingDuplicateScore" type="number" value="95">
+            </div>
+
+            <div>
+                <label>Anti-fraude active</label>
+                <select id="settingAntiFraud">
+                    <option value="true">true</option>
+                    <option value="false">false</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Acteur par defaut</label>
+                <input id="settingActor" type="text" value="ADMIN_DEMO">
+            </div>
+        </div>
+
+        <button class="btn btn-success" onclick="saveSettings()">Enregistrer parametres</button>
+        <button class="btn btn-primary" onclick="loadSettings()">Actualiser</button>
+
+        <div class="response-box" id="settingsResponse">Aucune modification.</div>
+        <div id="settings-table"></div>
+    </section>
+
+    <section id="exports" class="section">
+        <h3>Exports CSV</h3>
+
+        <p>Telecharger les donnees principales du prototype Ticket2Cash au format CSV.</p>
+
+        <button class="btn btn-primary" onclick="downloadCsv('/api/exports/claims-csv')">Exporter Claims</button>
+        <button class="btn btn-primary" onclick="downloadCsv('/api/exports/payments-csv')">Exporter Paiements</button>
+        <button class="btn btn-primary" onclick="downloadCsv('/api/exports/fraud-alerts-csv')">Exporter Fraude</button>
+        <button class="btn btn-primary" onclick="downloadCsv('/api/exports/audit-logs-csv')">Exporter Logs</button>
+
+        <div class="response-box" id="exportsResponse">Aucun export lance.</div>
+    </section>
+</main>
+
+<script>
+    const API = "";
+
+    function showSection(sectionId) {
+        document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+        document.getElementById(sectionId).classList.add("active");
+
+        const titles = {
+            dashboard: "Tableau de bord",
+            ocr: "Simulation OCR",
+            merchants: "Commercants",
+            products: "Produits",
+            campaigns: "Campagnes",
+            tickets: "Tickets",
+            claims: "Claims",
+            payments: "Paiements cashback",
+            fraud: "Alertes fraude",
+            audit: "Logs transactions",
+            settings: "Parametres",
+            exports: "Exports CSV"
+        };
+
+        document.getElementById("page-title").innerText = titles[sectionId];
+
+        if (sectionId === "dashboard") loadDashboard();
+        if (sectionId === "merchants") loadMerchants();
+        if (sectionId === "products") loadProducts();
+        if (sectionId === "campaigns") loadCampaigns();
+        if (sectionId === "tickets") loadTickets();
+        if (sectionId === "claims") loadClaims();
+        if (sectionId === "payments") loadPayments();
+        if (sectionId === "fraud") loadFraudAlerts();
+        if (sectionId === "audit") loadAuditLogs();
+        if (sectionId === "settings") loadSettings();
+    }
+
+
+    let CURRENT_USER = null;
+
+    async function checkAuthentication() {
+        try {
+            const response = await fetch(`${API}/api/auth/me`);
+            const text = await response.text();
+            const me = text ? JSON.parse(text) : { authenticated: false };
+
+            if (!me.authenticated) {
+                window.location.href = "/login.html";
+                return;
+            }
+
+            CURRENT_USER = me;
+            renderAuthBar(me);
+            applyRoleRules(me.role);
+
+            await loadDashboard();
+
+        } catch (error) {
+            window.location.href = "/login.html";
+        }
+    }
+
+    function renderAuthBar(user) {
+        if (document.getElementById("authBar")) {
+            document.getElementById("authUserInfo").innerText =
+                user.fullName + " | " + user.username + " | " + user.role;
+            return;
+        }
+
+        const bar = document.createElement("div");
+        bar.className = "topbar";
+        bar.id = "authBar";
+
+        bar.innerHTML = `
+            <h3>Session utilisateur</h3>
+            <p id="authUserInfo">${user.fullName} | ${user.username} | ${user.role}</p>
+            <button class="btn btn-dark" onclick="logout()">Deconnexion</button>
+        `;
+
+        const main = document.querySelector("main.content");
+        const cards = document.querySelector(".cards");
+
+        main.insertBefore(bar, cards);
+    }
+
+    async function logout() {
+        try {
+            await fetch(`${API}/api/auth/logout`, { method: "POST" });
+        } catch (error) {
+        }
+
+        window.location.href = "/login.html";
+    }
+
+    function hideButtonByOnclick(onclickValue) {
+        document.querySelectorAll(`button[onclick="${onclickValue}"]`).forEach(btn => {
+            btn.classList.add("role-hidden");
+        });
+    }
+
+    function showButtonByOnclick(onclickValue) {
+        document.querySelectorAll(`button[onclick="${onclickValue}"]`).forEach(btn => {
+            btn.classList.remove("role-hidden");
+        });
+    }
+
+    function hideMenuBySection(sectionName) {
+        document.querySelectorAll(`button[onclick="showSection('${sectionName}')"]`).forEach(btn => {
+            btn.classList.add("role-hidden");
+        });
+    }
+
+    function showRoleNotice(message) {
+        let notice = document.getElementById("roleNotice");
+
+        if (!notice) {
+            notice = document.createElement("div");
+            notice.id = "roleNotice";
+            notice.className = "role-notice";
+
+            const topbar = document.querySelector(".topbar");
+            topbar.parentNode.insertBefore(notice, topbar.nextSibling);
+        }
+
+        notice.innerText = message;
+    }
+
+    function applyRoleRules(role) {
+        const adminOnlyActions = [
+            "createMerchant()",
+            "updateMerchantStatus()",
+            "createProduct()",
+            "createCampaign()",
+            "updateCampaignStatus()",
+            "saveSettings()",
+            "createTestAuditLog()"
+        ];
+
+        const operatorActions = [
+            "simulateOcr()",
+            "approveClaim()",
+            "runCashbackBatch()"
+        ];
+
+        adminOnlyActions.forEach(action => showButtonByOnclick(action));
+        operatorActions.forEach(action => showButtonByOnclick(action));
+
+        document.querySelectorAll(".role-hidden").forEach(el => {
+            el.classList.remove("role-hidden");
+        });
+
+        if (role === "ADMIN") {
+            showRoleNotice("Role ADMIN : acces complet a toutes les fonctionnalites.");
+            return;
+        }
+
+        if (role === "OPERATEUR") {
+            adminOnlyActions.forEach(action => hideButtonByOnclick(action));
+            showRoleNotice("Role OPERATEUR : operations metier autorisees, creation et parametres reserves a ADMIN.");
+            return;
+        }
+
+        if (role === "LECTEUR") {
+            adminOnlyActions.forEach(action => hideButtonByOnclick(action));
+            operatorActions.forEach(action => hideButtonByOnclick(action));
+            showRoleNotice("Role LECTEUR : consultation uniquement. Les actions de creation, modification et paiement sont masquees.");
+            return;
+        }
+    }
+    async function requestJson(url, options = {}) {
+        const response = await fetch(url, options);
+        const text = await response.text();
+
+        let data;
+        try {
+            data = text ? JSON.parse(text) : {};
+        } catch (e) {
+            data = text;
+        }
+
+        if (!response.ok) {
+            throw data;
+        }
+
+        return data;
+    }
+
+    function formatValue(value) {
+        if (value === null || value === undefined) return "";
+        if (typeof value === "object") return JSON.stringify(value);
+        return value;
+    }
+
+    function formatStatus(value) {
+        if (!value) return "";
+
+        let css = "status-info";
+
+        if (["SUCCESS", "PAID", "ACTIVE", "APPROVED", "RESOLVED"].includes(value)) css = "status-success";
+        if (["SUBMITTED", "PENDING", "OPEN", "OCR_PENDING", "DRAFT"].includes(value)) css = "status-warning";
+        if (["REJECTED", "FAILED", "PAYMENT_FAILED", "SUSPENDED"].includes(value)) css = "status-danger";
+
+        return `<span class="status ${css}">${value}</span>`;
+    }
+
+    function renderTable(containerId, rows) {
+        const container = document.getElementById(containerId);
+
+        if (!rows || rows.length === 0) {
+            container.innerHTML = "<p>Aucune donnee disponible.</p>";
+            return;
+        }
+
+        if (!Array.isArray(rows)) rows = [rows];
+
+        const columns = Object.keys(rows[0]);
+
+        let html = '<div class="table-wrapper"><table><thead><tr>';
+
+        columns.forEach(col => html += `<th>${col}</th>`);
+
+        html += "</tr></thead><tbody>";
+
+        rows.forEach(row => {
+            html += "<tr>";
+            columns.forEach(col => {
+                const value = row[col];
+                if (col.toLowerCase().includes("status")) {
+                    html += `<td>${formatStatus(value)}</td>`;
+                } else {
+                    html += `<td>${formatValue(value)}</td>`;
+                }
+            });
+            html += "</tr>";
+        });
+
+        html += "</tbody></table></div>";
+        container.innerHTML = html;
+    }
+
+    function renderDashboardCards(summary) {
+        const cards = [
+            ["Commercants", summary.commercantsPartenaires || 0],
+            ["Produits", summary.produitsCatalogues || 0],
+            ["Claims", summary.claimsSoumis || 0],
+            ["Cashback paye", `${summary.cashbackTotalPaye || 0} ${summary.devise || "FCFA"}`]
+        ];
+
+        let html = "";
+
+        cards.forEach(card => {
+            html += `
+                <div class="card">
+                    <div class="label">${card[0]}</div>
+                    <div class="value">${card[1]}</div>
+                </div>
+            `;
+        });
+
+        document.getElementById("dashboard-cards").innerHTML = html;
+    }
+
+    async function loadDashboard() {
+        const data = await requestJson(`${API}/api/dashboard/summary`);
+        renderDashboardCards(data);
+
+        const rows = Object.keys(data).map(key => ({
+            indicateur: key,
+            valeur: data[key]
+        }));
+
+        renderTable("dashboard-table", rows);
+    }
+
+    async function loadMerchants() {
+        const data = await requestJson(`${API}/api/merchants`);
+        renderTable("merchants-table", data);
+    }
+
+    async function createMerchant() {
+        const body = {
+            name: document.getElementById("merchantName").value,
+            brandName: document.getElementById("merchantBrandName").value,
+            rccm: document.getElementById("merchantRccm").value,
+            niu: document.getElementById("merchantNiu").value,
+            phone: document.getElementById("merchantPhone").value,
+            email: document.getElementById("merchantEmail").value,
+            city: document.getElementById("merchantCity").value,
+            address: document.getElementById("merchantAddress").value,
+            status: document.getElementById("merchantStatus").value
+        };
+
+        try {
+            const data = await requestJson(`${API}/api/merchants`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+
+            document.getElementById("merchantResponse").innerText = JSON.stringify(data, null, 2);
+            await loadMerchants();
+            await loadDashboard();
+
+        } catch (error) {
+            document.getElementById("merchantResponse").innerText = JSON.stringify(error, null, 2);
+        }
+    }
+
+
+    async function updateMerchantStatus() {
+        const merchantId = document.getElementById("merchantIdToUpdate").value;
+        const status = document.getElementById("merchantNewStatus").value;
+
+        if (!merchantId) {
+            alert("Entre ID du commercant.");
+            return;
+        }
+
+        try {
+            const data = await requestJson(`${API}/api/merchants/${merchantId}/status?status=${status}`, {
+                method: "PUT"
+            });
+
+            document.getElementById("merchantResponse").innerText = JSON.stringify(data, null, 2);
+
+            await loadMerchants();
+            await loadDashboard();
+
+        } catch (error) {
+            document.getElementById("merchantResponse").innerText = JSON.stringify(error, null, 2);
+        }
+    }
+    async function loadProducts() {
+        const data = await requestJson(`${API}/api/products`);
+        renderTable("products-table", data);
+    }
+
+    async function createProduct() {
+        const body = {
+            merchantId: Number(document.getElementById("productMerchantId").value),
+            sku: document.getElementById("productSku").value,
+            name: document.getElementById("productName").value,
+            ticketDesignation: document.getElementById("productTicketDesignation").value,
+            synonyms: document.getElementById("productTicketDesignation").value,
+            category: document.getElementById("productCategory").value,
+            brand: document.getElementById("productBrand").value,
+            price: Number(document.getElementById("productPrice").value),
+            groupKey: document.getElementById("productCategory").value,
+            cashbackType: document.getElementById("productCashbackType").value,
+            cashbackValue: Number(document.getElementById("productCashbackValue").value),
+            active: true
+        };
+
+        try {
+            const data = await requestJson(`${API}/api/products`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+
+            document.getElementById("productResponse").innerText = JSON.stringify(data, null, 2);
+            await loadProducts();
+            await loadDashboard();
+
+        } catch (error) {
+            document.getElementById("productResponse").innerText = JSON.stringify(error, null, 2);
+        }
+    }
+
+    async function loadCampaigns() {
+        const data = await requestJson(`${API}/api/campaigns`);
+        renderTable("campaigns-table", data);
+    }
+
+
+    async function createCampaign() {
+        const body = {
+            merchantId: Number(document.getElementById("campaignMerchantId").value),
+            name: document.getElementById("campaignName").value,
+            description: document.getElementById("campaignDescription").value,
+            startDate: document.getElementById("campaignStartDate").value,
+            endDate: document.getElementById("campaignEndDate").value,
+            cashbackType: document.getElementById("campaignCashbackType").value,
+            cashbackValue: Number(document.getElementById("campaignCashbackValue").value),
+            dailyLimitPerClient: Number(document.getElementById("campaignDailyLimit").value),
+            monthlyLimitPerClient: Number(document.getElementById("campaignMonthlyLimit").value),
+            totalBudget: Number(document.getElementById("campaignTotalBudget").value),
+            status: document.getElementById("campaignStatus").value
+        };
+
+        try {
+            const data = await requestJson(`${API}/api/campaigns`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+
+            document.getElementById("campaignResponse").innerText = JSON.stringify(data, null, 2);
+
+            await loadCampaigns();
+            await loadDashboard();
+
+        } catch (error) {
+            document.getElementById("campaignResponse").innerText = JSON.stringify(error, null, 2);
+        }
+    }
+
+    async function updateCampaignStatus() {
+        const campaignId = document.getElementById("campaignIdToUpdate").value;
+        const status = document.getElementById("campaignNewStatus").value;
+
+        if (!campaignId) {
+            alert("Entre ID de la campagne.");
+            return;
+        }
+
+        try {
+            const data = await requestJson(`${API}/api/campaigns/${campaignId}/status?status=${status}`, {
+                method: "PUT"
+            });
+
+            document.getElementById("campaignResponse").innerText = JSON.stringify(data, null, 2);
+
+            await loadCampaigns();
+            await loadDashboard();
+
+        } catch (error) {
+            document.getElementById("campaignResponse").innerText = JSON.stringify(error, null, 2);
+        }
+    }
+    async function loadTickets() {
+        const data = await requestJson(`${API}/api/tickets`);
+        renderTable("tickets-table", data);
+    }
+
+    async function loadClaims() {
+        const data = await requestJson(`${API}/api/claims`);
+        renderTable("claims-table", data);
+    }
+
+    async function loadPayments() {
+        const data = await requestJson(`${API}/api/cashback/payments`);
+        renderTable("payments-table", data);
+    }
+
+    async function loadFraudAlerts() {
+        const data = await requestJson(`${API}/api/fraud/alerts`);
+        renderTable("fraud-table", data);
+    }
+
+    async function simulateOcr() {
+        const body = {
+            merchantId: Number(document.getElementById("ocrMerchantId").value),
+            campaignId: Number(document.getElementById("ocrCampaignId").value),
+            userId: document.getElementById("ocrUserId").value,
+            ticketNumber: document.getElementById("ocrTicketNumber").value
+        };
+
+        try {
+            const data = await requestJson(`${API}/api/tickets/simulate-ocr`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+
+            document.getElementById("ocrResponse").innerText = JSON.stringify(data, null, 2);
+            await loadTickets();
+            await loadClaims();
+            await loadFraudAlerts();
+            await loadDashboard();
+
+        } catch (error) {
+            document.getElementById("ocrResponse").innerText = JSON.stringify(error, null, 2);
+            await loadFraudAlerts();
+        }
+    }
+
+    async function approveClaim() {
+        const claimId = document.getElementById("claimIdToApprove").value;
+
+        if (!claimId) {
+            alert("Entre ID du claim.");
+            return;
+        }
+
+        try {
+            await requestJson(`${API}/api/claims/${claimId}/status?status=APPROVED`, {
+                method: "PUT"
+            });
+
+            alert("Claim approuve.");
+            await loadClaims();
+            await loadDashboard();
+
+        } catch (error) {
+            alert("Erreur : " + JSON.stringify(error));
+        }
+    }
+
+    async function runCashbackBatch() {
+        try {
+            const data = await requestJson(`${API}/api/cashback/batch/run`, {
+                method: "POST"
+            });
+
+            document.getElementById("batchResponse").innerText = JSON.stringify(data, null, 2);
+
+            await loadClaims();
+            await loadPayments();
+            await loadDashboard();
+
+        } catch (error) {
+            document.getElementById("batchResponse").innerText = JSON.stringify(error, null, 2);
+        }
+    }
+
+
+    async function loadAuditLogs() {
+        const data = await requestJson(`${API}/api/audit-logs`);
+        renderTable("audit-table", data);
+    }
+
+    async function createTestAuditLog() {
+        try {
+            const data = await requestJson(`${API}/api/audit-logs/test`, {
+                method: "POST"
+            });
+
+            document.getElementById("auditResponse").innerText = JSON.stringify(data, null, 2);
+
+            await loadAuditLogs();
+
+        } catch (error) {
+            document.getElementById("auditResponse").innerText = JSON.stringify(error, null, 2);
+        }
+    }
+
+    async function loadSettings() {
+        const data = await requestJson(`${API}/api/settings`);
+        renderTable("settings-table", data);
+
+        data.forEach(item => {
+            if (item.settingKey === "TICKET_SIMULATED_AMOUNT") {
+                document.getElementById("settingTicketAmount").value = item.settingValue;
+            }
+
+            if (item.settingKey === "DEFAULT_CURRENCY") {
+                document.getElementById("settingCurrency").value = item.settingValue;
+            }
+
+            if (item.settingKey === "FRAUD_NORMAL_SCORE") {
+                document.getElementById("settingNormalScore").value = item.settingValue;
+            }
+
+            if (item.settingKey === "FRAUD_DUPLICATE_SCORE") {
+                document.getElementById("settingDuplicateScore").value = item.settingValue;
+            }
+
+            if (item.settingKey === "ANTI_FRAUD_ENABLED") {
+                document.getElementById("settingAntiFraud").value = item.settingValue;
+            }
+
+            if (item.settingKey === "DEFAULT_ACTOR") {
+                document.getElementById("settingActor").value = item.settingValue;
+            }
+        });
+    }
+
+    async function updateSettingValue(key, value) {
+        return await requestJson(`${API}/api/settings/${key}?value=${encodeURIComponent(value)}`, {
+            method: "PUT"
+        });
+    }
+
+    async function saveSettings() {
+        try {
+            const results = [];
+
+            results.push(await updateSettingValue("TICKET_SIMULATED_AMOUNT", document.getElementById("settingTicketAmount").value));
+            results.push(await updateSettingValue("DEFAULT_CURRENCY", document.getElementById("settingCurrency").value));
+            results.push(await updateSettingValue("FRAUD_NORMAL_SCORE", document.getElementById("settingNormalScore").value));
+            results.push(await updateSettingValue("FRAUD_DUPLICATE_SCORE", document.getElementById("settingDuplicateScore").value));
+            results.push(await updateSettingValue("ANTI_FRAUD_ENABLED", document.getElementById("settingAntiFraud").value));
+            results.push(await updateSettingValue("DEFAULT_ACTOR", document.getElementById("settingActor").value));
+
+            document.getElementById("settingsResponse").innerText = JSON.stringify(results, null, 2);
+
+            await loadSettings();
+            await loadDashboard();
+
+        } catch (error) {
+            document.getElementById("settingsResponse").innerText = JSON.stringify(error, null, 2);
+        }
+    }
+
+    function downloadCsv(url) {
+        document.getElementById("exportsResponse").innerText = "Export lance : " + url;
+        window.location.href = url;
+    }
+    async function refreshAll() {
+        await loadDashboard();
+        await loadMerchants();
+        await loadProducts();
+        await loadCampaigns();
+        await loadTickets();
+        await loadClaims();
+        await loadPayments();
+        await loadFraudAlerts();
+    }
+
+    checkAuthentication();
+</script>
+
+</body>
+</html>

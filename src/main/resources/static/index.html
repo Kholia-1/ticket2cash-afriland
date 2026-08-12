@@ -1419,7 +1419,7 @@ function transactionImportPanel(){
     <div class="panel-head"><div><h3>Importer des transactions cartes</h3><p style="margin:4px 0 0;color:var(--muted);font-size:12px">Importez les transactions prépayées Afriland au format CSV.</p></div></div>
     <div class="panel-body">
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <input type="file" id="transactionCsvFile" accept=".csv,text/csv" style="flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text);font-size:14px">
+        <input type="file" id="transactionsCsvFile" accept=".csv" style="flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text);font-size:14px">
         <button class="btn btn-primary" id="transactionCsvBtn" onclick="importTransactionsCsv()">Importer transactions CSV</button>
       </div>
       <div style="margin-top:10px;color:var(--muted);font-size:12px;line-height:1.5">
@@ -1428,11 +1428,20 @@ function transactionImportPanel(){
       </div>
       <div id="transactionImportSummary" style="display:none;margin-top:14px"></div>
     </div>
-  </div>`;
+  </div>`.replace("Importer des transactions cartes","Import CSV transactions cartes prépayées");
 }
 
+const _transactionImportPanelBase=transactionImportPanel;
+transactionImportPanel=function(){
+  const title="Import CSV transactions cartes "+String.fromCharCode(0xE9)+"pay"+String.fromCharCode(0xE9)+"es";
+  const help="Importez une liste de transactions cartes pr"+String.fromCharCode(0xE9)+"pay"+String.fromCharCode(0xE9)+"es Afriland. Le syst"+String.fromCharCode(0xE8)+"me d"+String.fromCharCode(0xE9)+"tecte les doublons, traite le cashback et retourne un r"+String.fromCharCode(0xE9)+"sum"+String.fromCharCode(0xE9)+" d'import.";
+  return _transactionImportPanelBase()
+    .replace(/Importer des transactions cartes/,title)
+    .replace(/Importez les transactions[^<]*format CSV\./,help);
+};
+
 async function importTransactionsCsv(){
-  const input=document.getElementById("transactionCsvFile");
+  const input=document.getElementById("transactionsCsvFile");
   const summary=document.getElementById("transactionImportSummary");
   const button=document.getElementById("transactionCsvBtn");
   if(!input||!input.files||!input.files[0]){toast("Sélectionnez un fichier CSV.","err");return;}

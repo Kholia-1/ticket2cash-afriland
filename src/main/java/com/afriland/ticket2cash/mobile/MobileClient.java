@@ -25,6 +25,8 @@ public class MobileClient {
     private Boolean active;
     private LocalDateTime createdAt;
     private LocalDateTime lastLoginAt;
+    private Integer failedPinAttempts = 0;
+    private Boolean accountLocked = false;
 
     public MobileClient() {}
 
@@ -47,6 +49,8 @@ public class MobileClient {
     public Boolean getActive() { return active; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getLastLoginAt() { return lastLoginAt; }
+    public Integer getFailedPinAttempts() { return failedPinAttempts; }
+    public Boolean getAccountLocked() { return accountLocked; }
 
     public void setId(Long id) { this.id = id; }
     public void setPhone(String phone) { this.phone = phone; }
@@ -59,4 +63,6 @@ public class MobileClient {
     public void setActive(Boolean active) { this.active = active; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public void setLastLoginAt(LocalDateTime lastLoginAt) { this.lastLoginAt = lastLoginAt; }
+    public void setFailedPinAttempts(Integer failedPinAttempts) { this.failedPinAttempts = failedPinAttempts; }
+    public void setAccountLocked(Boolean accountLocked) { this.accountLocked = accountLocked; }
 }

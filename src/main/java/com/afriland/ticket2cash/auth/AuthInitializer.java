@@ -16,27 +16,29 @@ public class AuthInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        // Admin account
-        authService.createInitialUserIfMissing(
+        String adminPassword = System.getenv("TICKET2CASH_ADMIN_PASSWORD");
+        if (adminPassword != null && !adminPassword.isBlank()) {
+            authService.createInitialUserIfMissing(
                 "admin",
                 "Administrateur Ticket2Cash",
                 "admin@afrilandfirstbank.com",
-                "admin123",
+                adminPassword,
                 UserRole.ADMIN
-        );
+            );
+        }
 
         // Partner accounts — linked to merchants by merchantId
         // merchantId 1 = Santa Lucia Yaounde (created by DataInitializer)
-        createPartnerIfMissing(
+        String partnerPassword = System.getenv("TICKET2CASH_PARTNER_PASSWORD");
+        if (partnerPassword != null && !partnerPassword.isBlank()) {
+            createPartnerIfMissing(
                 "santalucia",
                 "Gerant Santa Lucia",
                 "santalucia@ticket2cash.local",
-                "partner123",
+                partnerPassword,
                 1L
-        );
-
-        // You can add more partner accounts here:
-        // createPartnerIfMissing("dovv", "Gerant Dovv", "dovv@ticket2cash.local", "partner123", 2L);
+            );
+        }
     }
 
     private void createPartnerIfMissing(String username, String fullName,
@@ -49,7 +51,6 @@ public class AuthInitializer implements CommandLineRunner {
                 user.setMerchantId(merchantId);
                 userRepository.save(user);
             });
-            System.out.println("[AUTH] Partner account created: " + username + " -> merchantId=" + merchantId);
         }
     }
 }

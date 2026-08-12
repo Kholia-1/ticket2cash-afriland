@@ -4,6 +4,9 @@ import com.afriland.ticket2cash.audit.AuditLogService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
@@ -63,14 +66,19 @@ public class ClaimController {
     // ---------------------------------------------------------------- READ
 
     @GetMapping
-    public List<Claim> getAllClaims(HttpServletRequest http) {
+    public Object getAllClaims(@RequestParam(defaultValue = "0") int page,
+                               @RequestParam(defaultValue = "50") int size,
+                               HttpServletRequest http) {
         if (isPartner(http)) {
             Long me = currentMerchantId(http);
             if (me == null) return Collections.emptyList();
             return claimRepository.findByMerchantId(me);
         }
         // ADMIN / OPERATEUR / LECTEUR see everything
-        return claimRepository.findAll();
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 200);
+        return claimRepository.findAllByOrderBySubmittedAtDesc(
+                PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "submittedAt")));
     }
 
     @GetMapping("/merchant/{merchantId}")

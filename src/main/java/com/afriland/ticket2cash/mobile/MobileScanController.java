@@ -23,14 +23,16 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
 @RequestMapping("/api/mobile")
-@CrossOrigin(origins = "*")
 public class MobileScanController {
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final TicketRepository ticketRepository;
     private final ClaimRepository claimRepository;
@@ -263,9 +265,8 @@ public class MobileScanController {
 
     private String randomRef() {
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        Random r = new Random();
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 8; i++) sb.append(chars.charAt(r.nextInt(chars.length())));
+        for (int i = 0; i < 8; i++) sb.append(chars.charAt(SECURE_RANDOM.nextInt(chars.length())));
         return sb.toString();
     }
 

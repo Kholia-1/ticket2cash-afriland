@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/mobile")
-@CrossOrigin(origins = "*")
 public class MobileCashbackController {
 
     private final ClaimRepository claimRepository;
@@ -52,13 +51,29 @@ public class MobileCashbackController {
 
         String phone = clientOpt.get().getPhone();
 
-        List<Claim> claims = claimRepository.findAll().stream()
-            .filter(c -> phone.equals(c.getUserId()))
-            .sorted(Comparator.comparing(Claim::getSubmittedAt, Comparator.nullsLast(Comparator.reverseOrder())))
-            .collect(Collectors.toList());
+        List<Claim> claims = claimRepository.findByUserIdOrderBySubmittedAtDesc(phone);
+
+        Map<Long, Merchant> merchants = merchantRepository.findAllById(claims.stream()
+                .map(Claim::getMerchantId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet()))
+                .stream()
+                .collect(Collectors.toMap(Merchant::getId, m -> m));
+        Map<Long, Campaign> campaigns = campaignRepository.findAllById(claims.stream()
+                .map(Claim::getCampaignId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet()))
+                .stream()
+                .collect(Collectors.toMap(Campaign::getId, c -> c));
+        Map<Long, Ticket> tickets = ticketRepository.findAllById(claims.stream()
+                .map(Claim::getTicketId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet()))
+                .stream()
+                .collect(Collectors.toMap(Ticket::getId, t -> t));
 
         List<Map<String, Object>> result = claims.stream()
-            .map(c -> claimToMap(c))
+            .map(c -> claimToMap(c, merchants, campaigns, tickets))
             .collect(Collectors.toList());
 
         return ResponseEntity.ok(result);
@@ -154,6 +169,19 @@ public class MobileCashbackController {
     }
 
     private Map<String, Object> claimToMap(Claim c) {
+        Map<Long, Merchant> merchants = c.getMerchantId() == null ? Collections.emptyMap()
+                : merchantRepository.findById(c.getMerchantId()).map(m -> Map.of(m.getId(), m)).orElse(Collections.emptyMap());
+        Map<Long, Campaign> campaigns = c.getCampaignId() == null ? Collections.emptyMap()
+                : campaignRepository.findById(c.getCampaignId()).map(camp -> Map.of(camp.getId(), camp)).orElse(Collections.emptyMap());
+        Map<Long, Ticket> tickets = c.getTicketId() == null ? Collections.emptyMap()
+                : ticketRepository.findById(c.getTicketId()).map(t -> Map.of(t.getId(), t)).orElse(Collections.emptyMap());
+        return claimToMap(c, merchants, campaigns, tickets);
+    }
+
+    private Map<String, Object> claimToMap(Claim c,
+                                           Map<Long, Merchant> merchants,
+                                           Map<Long, Campaign> campaigns,
+                                           Map<Long, Ticket> tickets) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", c.getId());
         map.put("claimReference", c.getClaimReference());
@@ -164,7 +192,7 @@ public class MobileCashbackController {
 
         // Resolve merchant name
         if (c.getMerchantId() != null) {
-            merchantRepository.findById(c.getMerchantId()).ifPresent(m -> {
+            Optional.ofNullable(merchants.get(c.getMerchantId())).ifPresent(m -> {
                 map.put("merchantName", m.getName());
                 map.put("merchantBrand", m.getBrandName());
             });
@@ -172,7 +200,7 @@ public class MobileCashbackController {
 
         // Resolve campaign name
         if (c.getCampaignId() != null) {
-            campaignRepository.findById(c.getCampaignId()).ifPresent(camp -> {
+            Optional.ofNullable(campaigns.get(c.getCampaignId())).ifPresent(camp -> {
                 map.put("campaignName", camp.getName());
                 if (camp.getCashbackValue() != null) {
                     map.put("cashbackRate", camp.getCashbackValue().intValue());
@@ -182,7 +210,7 @@ public class MobileCashbackController {
 
         // Resolve ticket info
         if (c.getTicketId() != null) {
-            ticketRepository.findById(c.getTicketId()).ifPresent(t -> {
+            Optional.ofNullable(tickets.get(c.getTicketId())).ifPresent(t -> {
                 map.put("ticketNumber", t.getTicketNumber());
                 map.put("ocrText", t.getOcrRawText());
             });

@@ -8,6 +8,10 @@ target/
 backup_*/
 *.bak
 *.bak-*
+*.backup*
+src/src/
+src/main/resources/static/index-ancien-avec-patchs.html
+src/main/resources/static/index-clean.html
 
 # Zips de deploiement (jamais committes)
 ticket2cash-deployment-*.zip

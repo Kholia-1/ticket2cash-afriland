@@ -3,6 +3,9 @@ package com.afriland.ticket2cash.fraud;
 import com.afriland.ticket2cash.audit.AuditLogService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 
@@ -20,8 +23,12 @@ public class FraudController {
     }
 
     @GetMapping("/alerts")
-    public List<FraudAlert> getAllAlerts() {
-        return fraudAlertRepository.findAll();
+    public Page<FraudAlert> getAllAlerts(@RequestParam(defaultValue = "0") int page,
+                                        @RequestParam(defaultValue = "50") int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 200);
+        return fraudAlertRepository.findAllByOrderByIdDesc(
+                PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "id")));
     }
 
     @GetMapping("/alerts/status/{status}")

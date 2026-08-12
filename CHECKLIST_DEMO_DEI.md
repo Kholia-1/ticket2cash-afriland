@@ -4,7 +4,7 @@
 
 Verifier que le projet compile :
 
-    cd C:\dev\ticket2cash
+    cd C:\dev\ticket2cash-local
     mvn clean compile
 
 Resultat attendu :
@@ -17,7 +17,7 @@ Lancer le projet :
 
 Verifier que le serveur demarre sur :
 
-    http://localhost:8080
+    http://localhost:3000
 
 ---
 
@@ -26,23 +26,23 @@ Verifier que le serveur demarre sur :
 ### Compte ADMIN principal
 
     Username : admin
-    Password : admin123
+    Password : définie par TICKET2CASH_ADMIN_PASSWORD
 
 ### Compte ADMIN de demonstration
 
     Username : secours
-    Password : Secours2026
+    Mot de passe : à définir séparément pour la démonstration
 
 ### Compte LECTEUR
 
     Username : testreset
-    Password : Reset2026
+    Mot de passe : à définir séparément pour la démonstration
 
 Important :
 
 - Ne pas modifier le mot de passe du compte admin pendant la presentation.
-- Utiliser le compte secours pour la demonstration.
-- Garder admin comme compte de recuperation.
+- Utiliser un compte de démonstration créé explicitement pour la présentation.
+- Ne jamais documenter les mots de passe dans le dépôt.
 
 ---
 
@@ -50,19 +50,19 @@ Important :
 
 Page de connexion :
 
-    http://localhost:8080/login.html
+    http://localhost:3000/login.html
 
 Interface principale :
 
-    http://localhost:8080/index.html
+    http://localhost:3000/index.html
 
 H2 Console :
 
-    http://localhost:8080/h2-console
+    http://localhost:3000/h2-console
 
 Rapport HTML exportable :
 
-    http://localhost:8080/api/demo-report/export-html
+    http://localhost:3000/api/demo-report/export-html
 
 ---
 
@@ -73,7 +73,7 @@ Rapport HTML exportable :
 Se connecter avec :
 
     secours
-    Secours2026
+    définie par TICKET2CASH_ADMIN_PASSWORD
 
 Montrer que l'utilisateur est ADMIN.
 
@@ -335,7 +335,7 @@ Message a dire :
 
 Essayer :
 
-    admin / admin123
+    mot de passe défini par TICKET2CASH_ADMIN_PASSWORD
 
 Si le compte secours ne marche plus, utiliser admin.
 
@@ -377,11 +377,11 @@ Lire uniquement les lignes qui commencent par :
 
 Verifier :
 
-    http://localhost:8080/h2-console
+    http://localhost:3000/h2-console
 
 Parametres :
 
-    JDBC URL  : jdbc:h2:file:C:/dev/ticket2cash/data/ticket2cashdb
+    JDBC URL  : jdbc:h2:file:./data/ticket2cashdb
     User Name : sa
     Password  :
 

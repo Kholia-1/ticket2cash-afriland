@@ -9,13 +9,16 @@ import java.time.LocalDateTime;
  * Used to verify scanned receipts against actual card transactions.
  */
 @Entity
-@Table(name = "pos_transactions")
+@Table(name = "pos_transactions", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_pos_transaction_ref", columnNames = "transaction_ref")
+})
 public class PosTransaction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "transaction_ref", nullable = false, unique = true, length = 120)
     private String transactionRef;      // Bank's unique transaction reference
     private String cardHash;            // SHA-256 hash of the card number
     private String maskedCard;          // Last 4 digits: ****1234

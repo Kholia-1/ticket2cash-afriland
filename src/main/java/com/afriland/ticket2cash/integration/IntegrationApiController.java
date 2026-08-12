@@ -9,6 +9,7 @@ import com.afriland.ticket2cash.pos.PosTransactionRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -31,7 +32,6 @@ import java.util.*;
  */
 @RestController
 @RequestMapping("/api/v1")
-@CrossOrigin(origins = "*")
 public class IntegrationApiController {
 
     private final ApiKeyService apiKeyService;
@@ -72,9 +72,16 @@ public class IntegrationApiController {
     }
 
     @PostMapping("/transactions/batch")
+    @Transactional
     public ResponseEntity<?> pushBatch(@RequestBody List<Map<String, Object>> items, HttpServletRequest request) {
         ApiKey k = auth(request);
         if (k == null) return ResponseEntity.status(401).body(Map.of("error", "Invalid or missing X-API-Key"));
+        if (items == null || items.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "At least one transaction is required"));
+        }
+        if (items.size() > 1000) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Maximum batch size is 1000"));
+        }
         List<Map<String, Object>> results = new ArrayList<>();
         for (Map<String, Object> item : items) results.add(ingest(item, k));
         Map<String, Object> out = new LinkedHashMap<>();

@@ -39,7 +39,6 @@ import java.util.*;
  */
 @RestController
 @RequestMapping("/api/mobile")
-@CrossOrigin(origins = "*")
 public class TicketVerificationController {
 
     private static final int MAX_TICKET_AGE_DAYS = 30;

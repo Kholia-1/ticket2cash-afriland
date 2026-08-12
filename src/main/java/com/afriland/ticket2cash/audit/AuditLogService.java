@@ -25,10 +25,16 @@ public class AuditLogService {
         log.setModuleName(moduleName);
         log.setEntityType(entityType);
         log.setEntityId(entityId);
-        log.setActor(actor);
+        log.setActor(sanitize(actor, 120));
         log.setStatus(status);
-        log.setMessage(message);
+        log.setMessage(sanitize(message, 1000));
 
         return auditLogRepository.save(log);
+    }
+
+    private String sanitize(String value, int maxLength) {
+        if (value == null) return null;
+        String sanitized = value.replaceAll("(?i)(password|pin|otp|api[-_ ]?key|card(number|hash)?)[=: ]+[^,; ]+", "$1=[REDACTED]");
+        return sanitized.length() > maxLength ? sanitized.substring(0, maxLength) : sanitized;
     }
 }

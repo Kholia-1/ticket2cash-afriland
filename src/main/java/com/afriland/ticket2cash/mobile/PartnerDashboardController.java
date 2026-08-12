@@ -56,8 +56,7 @@ public class PartnerDashboardController {
         }
 
         List<Claim> allClaims = claimRepository.findByMerchantId(merchantId);
-        List<Ticket> allTickets = ticketRepository.findAll().stream()
-            .filter(t -> merchantId.equals(t.getMerchantId())).collect(Collectors.toList());
+        List<Ticket> allTickets = ticketRepository.findByMerchantId(merchantId);
 
         // KPIs
         int totalClaims = allClaims.size();
@@ -145,8 +144,7 @@ public class PartnerDashboardController {
             return ResponseEntity.status(403).body(Map.of("error", "No merchant linked"));
         }
 
-        List<Claim> claims = claimRepository.findByMerchantId(merchantId);
-        claims.sort(Comparator.comparing(Claim::getSubmittedAt, Comparator.nullsLast(Comparator.reverseOrder())));
+        List<Claim> claims = claimRepository.findByMerchantIdOrderBySubmittedAtDesc(merchantId);
 
         List<Map<String, Object>> result = claims.stream().limit(20).map(c -> {
             Map<String, Object> map = new LinkedHashMap<>();

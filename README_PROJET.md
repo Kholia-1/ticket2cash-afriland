@@ -157,22 +157,12 @@ Le prototype contient les modules suivants :
 
 ## 5. Comptes de test
 
-### ADMIN principal
+Les comptes initiaux ne sont créés que si les variables suivantes sont définies avant le démarrage :
 
-    Username : admin
-    Password : admin123
+    TICKET2CASH_ADMIN_PASSWORD
+    TICKET2CASH_PARTNER_PASSWORD
 
-### ADMIN de secours
-
-    Username : secours
-    Password : Secours2026
-
-### Utilisateur lecteur de test
-
-    Username : testreset
-    Password : Reset2026
-
-Remarque : il est recommande de ne pas changer le mot de passe du compte admin principal pendant les demonstrations. Utiliser plutot le compte secours pour les tests de securite.
+Les mots de passe ne sont pas stockés dans le code ni dans cette documentation.
 
 ---
 
@@ -180,28 +170,28 @@ Remarque : il est recommande de ne pas changer le mot de passe du compte admin p
 
 Ouvrir PowerShell puis executer :
 
-    cd C:\dev\ticket2cash
+    cd C:\dev\ticket2cash-local
     mvn spring-boot:run
 
 L'application demarre sur :
 
-    http://localhost:8080
+    http://localhost:3000
 
 Page de connexion :
 
-    http://localhost:8080/login.html
+    http://localhost:3000/login.html
 
 Interface principale :
 
-    http://localhost:8080/index.html
+    http://localhost:3000/index.html
 
 Console H2 :
 
-    http://localhost:8080/h2-console
+    http://localhost:3000/h2-console
 
 Parametres H2 :
 
-    JDBC URL  : jdbc:h2:file:C:/dev/ticket2cash/data/ticket2cashdb
+    JDBC URL  : jdbc:h2:file:./data/ticket2cashdb
     User Name : sa
     Password  :
 
@@ -370,7 +360,7 @@ Lancer le projet :
 Creer une sauvegarde :
 
     cd C:\dev
-    Compress-Archive -Path "C:\dev\ticket2cash" -DestinationPath "C:\dev\ticket2cash-version-finale-dei.zip" -Force
+    Compress-Archive -Path "C:\dev\ticket2cash-local" -DestinationPath "C:\dev\ticket2cash-local-version-finale-dei.zip" -Force
 
 ---
 

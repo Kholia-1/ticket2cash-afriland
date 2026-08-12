@@ -12,7 +12,11 @@ public interface PosTransactionRepository extends JpaRepository<PosTransaction, 
 
     List<PosTransaction> findByMerchantId(Long merchantId);
 
+    List<PosTransaction> findAllByOrderByReceivedAtDesc();
+
     Optional<PosTransaction> findByTransactionRef(String transactionRef);
 
     List<PosTransaction> findByMatchedFalse();
+
+    List<PosTransaction> findByMatchedFalseOrderByReceivedAtDesc();
 }

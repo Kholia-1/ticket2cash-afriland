@@ -37,7 +37,13 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody LoginRequest request,
             HttpServletRequest httpRequest) {
 
-        AppUser user = userRepository.findByUsername(request.getUsername()).orElse(null);
+        if (request == null || request.getUsername() == null || request.getPassword() == null
+                || request.getUsername().isBlank() || request.getPassword().isBlank()) {
+            return ResponseEntity.badRequest().body("Username and password are required");
+        }
+
+        String username = request.getUsername().trim();
+        AppUser user = userRepository.findByUsername(username).orElse(null);
 
         if (user == null) {
             auditLogService.log(
@@ -45,7 +51,7 @@ public class AuthController {
                     "AUTH",
                     "AppUser",
                     null,
-                    request.getUsername(),
+                    username,
                     "FAILED",
                     "Unknown username");
 
@@ -127,13 +133,17 @@ public class AuthController {
                     "FAILED",
                     "Invalid password. Failed attempts: " + attempts);
 
-            return ResponseEntity.status(401).body("Invalid username or password. Failed attempts: " + attempts);
+            return ResponseEntity.status(401).body("Invalid username or password");
         }
 
         user.setFailedLoginAttempts(0);
         user.setAccountLocked(false);
         user.setLockedAt(null);
 
+        HttpSession existingSession = httpRequest.getSession(false);
+        if (existingSession != null) {
+            existingSession.invalidate();
+        }
         HttpSession session = httpRequest.getSession(true);
         session.setAttribute("AUTH_USER_ID", user.getId());
         session.setAttribute("AUTH_USERNAME", user.getUsername());

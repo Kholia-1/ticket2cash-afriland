@@ -34,8 +34,10 @@ public class AuthSessionInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        // Allow webhook endpoints (authenticated via API key in production)
-        if (uri.startsWith("/api/webhook/")) {
+        // Webhook writes authenticate with X-API-Key in the controller. Reads
+        // must use the normal admin session and are handled below.
+        if (uri.startsWith("/api/webhook/") &&
+                ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method))) {
             return true;
         }
 
@@ -95,6 +97,10 @@ public class AuthSessionInterceptor implements HandlerInterceptor {
                                       String method,
                                       HttpServletResponse response) throws Exception {
 
+        if (isRestrictedGlobalRead(uri, method)) {
+            return forbidden(response, "This resource is restricted to ADMIN");
+        }
+
         // Partners can access their own dashboard
         if (uri.startsWith("/api/partner/")) {
             return true;
@@ -135,6 +141,10 @@ public class AuthSessionInterceptor implements HandlerInterceptor {
                                      String method,
                                      HttpServletResponse response) throws Exception {
 
+        if (isRestrictedGlobalRead(uri, method)) {
+            return forbidden(response, "This resource is restricted to ADMIN");
+        }
+
         if ("GET".equalsIgnoreCase(method)) {
             if (uri.startsWith("/api/auth/users")) {
                 return forbidden(response, "ADMIN role required");
@@ -149,6 +159,10 @@ public class AuthSessionInterceptor implements HandlerInterceptor {
     private boolean isOperatorAllowed(String uri,
                                       String method,
                                       HttpServletResponse response) throws Exception {
+
+        if (isRestrictedGlobalRead(uri, method)) {
+            return forbidden(response, "This resource is restricted to ADMIN");
+        }
 
         if ("GET".equalsIgnoreCase(method)) {
             if (uri.startsWith("/api/auth/users")) {
@@ -175,6 +189,18 @@ public class AuthSessionInterceptor implements HandlerInterceptor {
         }
 
         return forbidden(response, "OPERATEUR role cannot perform this action");
+    }
+
+    private boolean isRestrictedGlobalRead(String uri, String method) {
+        if (!"GET".equalsIgnoreCase(method)) return false;
+        return uri.startsWith("/api/audit-logs")
+                || uri.startsWith("/api/exports")
+                || uri.startsWith("/api/security-dashboard")
+                || uri.startsWith("/api/settings")
+                || uri.startsWith("/api/api-keys")
+                || uri.startsWith("/api/webhook/")
+                || uri.startsWith("/api/demo-report")
+                || uri.startsWith("/api/demo-data");
     }
 
     private boolean forbidden(HttpServletResponse response, String message) throws Exception {

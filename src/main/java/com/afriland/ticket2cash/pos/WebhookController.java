@@ -1,10 +1,16 @@
 package com.afriland.ticket2cash.pos;
 
+import com.afriland.ticket2cash.apikey.ApiKey;
+import com.afriland.ticket2cash.apikey.ApiKeyService;
 import com.afriland.ticket2cash.audit.AuditLogService;
 import com.afriland.ticket2cash.merchant.Merchant;
 import com.afriland.ticket2cash.merchant.MerchantRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -27,19 +33,21 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/webhook")
-@CrossOrigin(origins = "*")
 public class WebhookController {
 
     private final PosTransactionRepository posRepository;
     private final MerchantRepository merchantRepository;
     private final AuditLogService auditLogService;
+    private final ApiKeyService apiKeyService;
 
     public WebhookController(PosTransactionRepository posRepository,
                               MerchantRepository merchantRepository,
-                              AuditLogService auditLogService) {
+                              AuditLogService auditLogService,
+                              ApiKeyService apiKeyService) {
         this.posRepository = posRepository;
         this.merchantRepository = merchantRepository;
         this.auditLogService = auditLogService;
+        this.apiKeyService = apiKeyService;
     }
 
     /**
@@ -61,7 +69,14 @@ public class WebhookController {
      * }
      */
     @PostMapping("/transaction")
-    public ResponseEntity<?> receiveTransaction(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> receiveTransaction(@RequestBody Map<String, Object> body,
+                                                HttpServletRequest request) {
+        ApiKey apiKey = authenticateWebhook(request);
+        if (apiKey == null) return unauthorized();
+        return ingestTransaction(body, apiKey);
+    }
+
+    private ResponseEntity<?> ingestTransaction(Map<String, Object> body, ApiKey apiKey) {
 
         String transactionRef = (String) body.get("transactionRef");
         if (transactionRef == null || transactionRef.isEmpty()) {
@@ -90,12 +105,21 @@ public class WebhookController {
         String merchantName = (String) body.get("merchantName");
         Number amountNum = (Number) body.get("amount");
         BigDecimal amount = amountNum != null ? BigDecimal.valueOf(amountNum.doubleValue()) : BigDecimal.ZERO;
+        if (amount.signum() <= 0) {
+            return ResponseEntity.badRequest().body(Map.of("error", "amount must be greater than zero"));
+        }
 
         // Try to match merchant
         Long merchantId = null;
         if (merchantName != null) {
             Merchant m = findMerchantByName(merchantName);
             if (m != null) merchantId = m.getId();
+        }
+        if (merchantId == null) {
+            merchantId = apiKey.getMerchantId();
+        }
+        if (apiKey.getMerchantId() != null && !apiKey.getMerchantId().equals(merchantId)) {
+            return ResponseEntity.status(403).body(Map.of("error", "API key is not authorized for this merchant"));
         }
 
         // Parse transaction date
@@ -118,7 +142,15 @@ public class WebhookController {
         pos.setAmount(amount);
         pos.setCurrency((String) body.getOrDefault("currency", "FCFA"));
         pos.setTransactionDate(txDate);
-        pos = posRepository.save(pos);
+        try {
+            pos = posRepository.save(pos);
+        } catch (DataIntegrityViolationException duplicate) {
+            return ResponseEntity.ok(Map.of(
+                "status", "DUPLICATE",
+                "message", "Transaction already received",
+                "transactionRef", transactionRef
+            ));
+        }
 
         auditLogService.log("WEBHOOK_TRANSACTION", "POS", "PosTransaction",
             pos.getId(), "WEBHOOK", "SUCCESS",
@@ -139,8 +171,30 @@ public class WebhookController {
      * Receive batch transactions (multiple at once).
      */
     @PostMapping("/transactions/batch")
-    public ResponseEntity<?> receiveBatch(@RequestBody Map<String, Object> body) {
-        List<Map<String, Object>> transactions = (List<Map<String, Object>>) body.get("transactions");
+    @Transactional
+    public ResponseEntity<?> receiveBatch(@RequestBody Map<String, Object> body,
+                                           HttpServletRequest request) {
+        ApiKey apiKey = authenticateWebhook(request);
+        if (apiKey == null) return unauthorized();
+
+        Object rawTransactions = body.get("transactions");
+        if (!(rawTransactions instanceof List<?>)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "transactions must be an array"));
+        }
+        List<?> rawList = (List<?>) rawTransactions;
+        if (rawList.size() > 1000) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Maximum batch size is 1000"));
+        }
+
+        List<Map<String, Object>> transactions = new ArrayList<>();
+        for (Object item : rawList) {
+            if (!(item instanceof Map<?, ?> map)) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Each transaction must be an object"));
+            }
+            Map<String, Object> normalized = new LinkedHashMap<>();
+            map.forEach((key, value) -> normalized.put(String.valueOf(key), value));
+            transactions.add(normalized);
+        }
         if (transactions == null || transactions.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "No transactions provided"));
         }
@@ -152,9 +206,8 @@ public class WebhookController {
                 duplicates++;
                 continue;
             }
-            // Process each transaction
-            receiveTransaction(tx);
-            received++;
+            ResponseEntity<?> response = ingestTransaction(tx, apiKey);
+            if (response.getStatusCode().is2xxSuccessful()) received++;
         }
 
         return ResponseEntity.ok(Map.of(
@@ -169,9 +222,9 @@ public class WebhookController {
      * Get all POS transactions (admin view).
      */
     @GetMapping("/transactions")
-    public ResponseEntity<?> getTransactions() {
-        List<PosTransaction> all = posRepository.findAll();
-        all.sort(Comparator.comparing(PosTransaction::getReceivedAt, Comparator.nullsLast(Comparator.reverseOrder())));
+    public ResponseEntity<?> getTransactions(HttpServletRequest request) {
+        if (!isAdmin(request)) return forbidden();
+        List<PosTransaction> all = posRepository.findAllByOrderByReceivedAtDesc();
 
         List<Map<String, Object>> result = all.stream().map(t -> {
             Map<String, Object> m = new LinkedHashMap<>();
@@ -195,8 +248,27 @@ public class WebhookController {
      * Get unmatched transactions (transactions without a corresponding scan).
      */
     @GetMapping("/transactions/unmatched")
-    public ResponseEntity<?> getUnmatched() {
-        return ResponseEntity.ok(posRepository.findByMatchedFalse());
+    public ResponseEntity<?> getUnmatched(HttpServletRequest request) {
+        if (!isAdmin(request)) return forbidden();
+        return ResponseEntity.ok(posRepository.findByMatchedFalseOrderByReceivedAtDesc());
+    }
+
+    private ApiKey authenticateWebhook(HttpServletRequest request) {
+        String rawKey = request.getHeader("X-API-Key");
+        return apiKeyService.authenticate(rawKey).orElse(null);
+    }
+
+    private boolean isAdmin(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        return session != null && "ADMIN".equals(String.valueOf(session.getAttribute("AUTH_ROLE")));
+    }
+
+    private ResponseEntity<Map<String, String>> unauthorized() {
+        return ResponseEntity.status(401).body(Map.of("error", "Valid X-API-Key required"));
+    }
+
+    private ResponseEntity<Map<String, String>> forbidden() {
+        return ResponseEntity.status(403).body(Map.of("error", "ADMIN role required"));
     }
 
     private Merchant findMerchantByName(String name) {

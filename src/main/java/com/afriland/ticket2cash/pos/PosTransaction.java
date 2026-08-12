@@ -30,6 +30,8 @@ public class PosTransaction {
     private String mccCode;
     private String channel;
     private String source;
+    private String terminalId;
+    private String status;
     private LocalDateTime transactionDate;  // When the transaction happened
     private LocalDateTime receivedAt;   // When webhook was received
 
@@ -55,6 +57,8 @@ public class PosTransaction {
     public String getMccCode() { return mccCode; }
     public String getChannel() { return channel; }
     public String getSource() { return source; }
+    public String getTerminalId() { return terminalId; }
+    public String getStatus() { return status; }
     public LocalDateTime getTransactionDate() { return transactionDate; }
     public LocalDateTime getReceivedAt() { return receivedAt; }
     public boolean isMatched() { return matched; }
@@ -73,6 +77,8 @@ public class PosTransaction {
     public void setMccCode(String mccCode) { this.mccCode = mccCode; }
     public void setChannel(String channel) { this.channel = channel; }
     public void setSource(String source) { this.source = source; }
+    public void setTerminalId(String terminalId) { this.terminalId = terminalId; }
+    public void setStatus(String status) { this.status = status; }
     public void setTransactionDate(LocalDateTime transactionDate) { this.transactionDate = transactionDate; }
     public void setReceivedAt(LocalDateTime receivedAt) { this.receivedAt = receivedAt; }
     public void setMatched(boolean matched) { this.matched = matched; }

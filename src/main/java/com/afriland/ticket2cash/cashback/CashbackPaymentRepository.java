@@ -11,6 +11,8 @@ public interface CashbackPaymentRepository extends JpaRepository<CashbackPayment
 
     Page<CashbackPayment> findAllByOrderByIdDesc(Pageable pageable);
 
+    List<CashbackPayment> findByStatusOrderByIdAsc(CashbackPaymentStatus status);
+
     List<CashbackPayment> findByUserId(String userId);
 
     List<CashbackPayment> findByMerchantId(Long merchantId);

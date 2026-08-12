@@ -585,12 +585,12 @@ const I18N={
 };
 const ST_LABEL={
  fr:{ACTIVE:"Actif",PENDING:"En attente",VALIDATED:"Validé",SUSPENDED:"Suspendu",REJECTED:"Rejeté",
-     SUBMITTED:"Soumis",APPROVED:"Approuvé",PAID:"Payé",SUCCESS:"Réussi",FAILED:"Échoué",
+     SUBMITTED:"Soumis",APPROVED:"Approuvé",PAID:"Payé",SUCCESS:"Payé",FAILED:"Échec",PROCESSING:"En traitement",PENDING:"En attente",
      DRAFT:"Brouillon",PAUSED:"En pause",EXPIRED:"Expiré",CLOSED:"Clôturé",
      OPEN:"Ouvert",UNDER_REVIEW:"En revue",RESOLVED:"Résolu",OCR_PENDING:"OCR en attente",OCR_PROCESSED:"OCR traité",
      ADMIN:"Admin",OPERATEUR:"Opérateur",LECTEUR:"Lecteur",PARTNER:"Partenaire"},
  en:{ACTIVE:"Active",PENDING:"Pending",VALIDATED:"Validated",SUSPENDED:"Suspended",REJECTED:"Rejected",
-     SUBMITTED:"Submitted",APPROVED:"Approved",PAID:"Paid",SUCCESS:"Success",FAILED:"Failed",
+     SUBMITTED:"Submitted",APPROVED:"Approved",PAID:"Paid",SUCCESS:"Paid",FAILED:"Failed",PROCESSING:"Processing",PENDING:"Pending",
      DRAFT:"Draft",PAUSED:"Paused",EXPIRED:"Expired",CLOSED:"Closed",
      OPEN:"Open",UNDER_REVIEW:"Under review",RESOLVED:"Resolved",OCR_PENDING:"OCR pending",OCR_PROCESSED:"OCR processed",
      ADMIN:"Admin",OPERATEUR:"Operator",LECTEUR:"Reader",PARTNER:"Partner"}
@@ -719,7 +719,7 @@ function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","
 function badge(status){
   const s=String(status||"").toUpperCase();
   const map={ACTIVE:"b-ok",VALIDATED:"b-ok",SUCCESS:"b-ok",PAID:"b-ok",APPROVED:"b-ok",OCR_PROCESSED:"b-ok",RESOLVED:"b-ok",
-    PENDING:"b-warn",OCR_PENDING:"b-warn",PAUSED:"b-warn",UNDER_REVIEW:"b-warn",SUBMITTED:"b-info",
+    PENDING:"b-warn",PAID:"b-ok",OCR_PENDING:"b-warn",PAUSED:"b-warn",UNDER_REVIEW:"b-warn",SUBMITTED:"b-info",
     DRAFT:"b-muted",EXPIRED:"b-muted",CLOSED:"b-muted",OPEN:"b-danger",REJECTED:"b-danger",FAILED:"b-danger",SUSPENDED:"b-danger",
     ADMIN:"b-info",PARTNER:"b-ok",OPERATEUR:"b-warn",LECTEUR:"b-muted"};
   return `<span class="badge ${map[s]||"b-muted"}">${esc(stLabel(status))}</span>`;
@@ -1402,9 +1402,9 @@ async function renderTable(key){
   if(needsMap||key==="merchants")await loadMerchants();
   const canAdd=["merchants","products","campaigns","users"].includes(key)&&ME.role!=="PARTNER";
   const addClick = key==="merchants" ? "merchantModal()" : `toast(t('form_soon')+' ${cfg.ep}','ok')`;
-  const actions=(canAdd?`<button class="btn btn-primary" onclick="${addClick}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${t("add")}</button>`:"")+refreshBtn();
+  const actions=(key==="payments"?`<button class="btn btn-primary" onclick="processPendingCashbackPayments()">Traiter les paiements en attente</button>`:"")+(canAdd?`<button class="btn btn-primary" onclick="${addClick}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${t("add")}</button>`:"")+refreshBtn();
    c.innerHTML=`<div class="page">${head(t(cfg.title),t(cfg.sub),actions)}
-     ${key==="transactions"?transactionImportPanel():""}
+     ${key==="transactions"?transactionImportPanel():key==="payments"?paymentProcessingPanel():""}
     <div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="cp">—</span></div>
     <div class="table-scroll"><table><thead><tr>${cfg.cols.map(col=>`<th>${t(col[1])}</th>`).join("")}</tr></thead>
     <tbody id="tbody">${rowSkeleton(cfg.cols.length,6)}</tbody></table></div></div></div>`;
@@ -1413,6 +1413,17 @@ async function renderTable(key){
     if(!Array.isArray(rows))rows=rows&&rows.content?rows.content:[];
     CACHE[key]=rows; paintRows(key,rows);
   }catch(e){document.getElementById("tbody").innerHTML=`<tr><td colspan="${cfg.cols.length}">${emptyMini(t("err_load"))}</td></tr>`;document.getElementById("cp").textContent="0";}
+}
+function paymentProcessingPanel(){return `<div id="paymentProcessingSummary" style="display:none;margin-bottom:16px"></div>`;}
+async function processPendingCashbackPayments(){
+  const box=document.getElementById("paymentProcessingSummary");
+  try{
+    const res=await fetch("/api/cashback/payments/process-pending",{method:"POST",credentials:"same-origin"});
+    const data=await res.json(); if(!res.ok)throw new Error(data.error||"Traitement impossible");
+    box.style.display="block";
+    box.innerHTML=`<div class="panel"><div class="panel-body"><div class="kpi-grid" style="margin:0">${importStat("En attente",data.totalPending)}${importStat("Traités",data.processed)}${importStat("Ignorés",data.skipped)}${importStat("Échecs",data.failed)}${importStat("Montant total payé",data.totalAmount)}</div><div style="margin-top:10px;font-size:12px">Références : ${esc((data.paymentReferences||[]).join(", ")||"—")}</div>${(data.errors||[]).length?`<div style="margin-top:8px;color:#991B1B">Erreurs : ${esc(data.errors.join(", "))}</div>`:""}</div></div>`;
+    toast("Paiements en attente traités.","ok"); await renderTable("payments");
+  }catch(e){if(box){box.style.display="block";box.innerHTML=`<div class="panel"><div class="panel-body" style="color:#991B1B">${esc(e.message)}</div></div>`;}toast("Échec du traitement des paiements.","err");}
 }
 function transactionImportPanel(){
   return `<div class="panel" style="margin-bottom:16px">

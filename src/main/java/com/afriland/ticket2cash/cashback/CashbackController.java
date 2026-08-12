@@ -4,6 +4,8 @@ import com.afriland.ticket2cash.audit.AuditLogService;
 import com.afriland.ticket2cash.claim.Claim;
 import com.afriland.ticket2cash.claim.ClaimRepository;
 import com.afriland.ticket2cash.claim.ClaimStatus;
+import com.afriland.ticket2cash.campaign.CampaignRepository;
+import com.afriland.ticket2cash.merchant.MerchantRepository;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -12,6 +14,9 @@ import org.springframework.data.domain.Sort;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/cashback")
@@ -20,22 +25,70 @@ public class CashbackController {
     private final CashbackPaymentRepository paymentRepository;
     private final ClaimRepository claimRepository;
     private final AuditLogService auditLogService;
+    private final CashbackPaymentProcessingService paymentProcessingService;
+    private final CampaignRepository campaignRepository;
+    private final MerchantRepository merchantRepository;
 
     public CashbackController(CashbackPaymentRepository paymentRepository,
                               ClaimRepository claimRepository,
-                              AuditLogService auditLogService) {
+                              AuditLogService auditLogService,
+                              CashbackPaymentProcessingService paymentProcessingService,
+                              CampaignRepository campaignRepository,
+                              MerchantRepository merchantRepository) {
         this.paymentRepository = paymentRepository;
         this.claimRepository = claimRepository;
         this.auditLogService = auditLogService;
+        this.paymentProcessingService = paymentProcessingService;
+        this.campaignRepository = campaignRepository;
+        this.merchantRepository = merchantRepository;
     }
 
     @GetMapping("/payments")
-    public Page<CashbackPayment> getAllPayments(@RequestParam(defaultValue = "0") int page,
+    public Page<PaymentDto> getAllPayments(@RequestParam(defaultValue = "0") int page,
                                                @RequestParam(defaultValue = "50") int size) {
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 200);
         return paymentRepository.findAllByOrderByIdDesc(
-                PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "id")));
+                PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "id")))
+                .map(payment -> PaymentDto.from(payment, campaignRepository, merchantRepository));
+    }
+
+    public static class PaymentDto {
+        private Long id;
+        private String paymentReference;
+        private String transactionRef;
+        private String maskedCard;
+        private String merchantName;
+        private BigDecimal amount;
+        private String currency;
+        private CashbackPaymentStatus status;
+        private Long campaignId;
+        private String campaignName;
+        private LocalDateTime processedAt;
+
+        static PaymentDto from(CashbackPayment payment, CampaignRepository campaigns,
+                               MerchantRepository merchants) {
+            PaymentDto dto = new PaymentDto();
+            dto.id = payment.getId(); dto.paymentReference = payment.getPaymentReference();
+            dto.transactionRef = payment.getTransactionRef(); dto.maskedCard = payment.getMaskedCard();
+            dto.amount = payment.getAmount(); dto.currency = payment.getCurrency();
+            dto.status = payment.getStatus(); dto.campaignId = payment.getCampaignId();
+            dto.processedAt = payment.getProcessedAt();
+            if (payment.getMerchantId() != null) dto.merchantName = merchants.findById(payment.getMerchantId()).map(m -> m.getName()).orElse(null);
+            if (payment.getCampaignId() != null) dto.campaignName = campaigns.findById(payment.getCampaignId()).map(c -> c.getName()).orElse(null);
+            return dto;
+        }
+        public Long getId(){return id;} public String getPaymentReference(){return paymentReference;}
+        public String getTransactionRef(){return transactionRef;} public String getMaskedCard(){return maskedCard;}
+        public String getMerchantName(){return merchantName;} public BigDecimal getAmount(){return amount;}
+        public String getCurrency(){return currency;} public CashbackPaymentStatus getStatus(){return status;}
+        public Long getCampaignId(){return campaignId;} public String getCampaignName(){return campaignName;}
+        public LocalDateTime getProcessedAt(){return processedAt;}
+    }
+
+    @PostMapping("/payments/process-pending")
+    public CashbackPaymentProcessingService.ProcessingSummary processPendingPayments() {
+        return paymentProcessingService.processPending();
     }
 
     @GetMapping("/payments/user/{userId}")

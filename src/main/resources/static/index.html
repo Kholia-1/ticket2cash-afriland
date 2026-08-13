@@ -765,6 +765,27 @@ function loyaltyInfoPanel(type){
   const p=panels[type]; if(!p) return "";
   return `<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-info">${p.badge}</span><div><strong>${p.title}</strong>${p.note?`<div style="margin-top:4px;color:var(--muted);font-size:12px">${p.note}</div>`:""}</div></div></div>`;
 }
+function adminInfoPanel(type){
+  const panels={
+    users:{badge:"Accès",title:"Gestion des comptes, rôles, accès et rattachements aux commerçants.",note:"Les modifications de rôle, verrouillage ou désactivation sont des actions sensibles."},
+    settings:{badge:"Système",title:"Configuration des paramètres système et services techniques de la plateforme.",note:"Les paramètres techniques doivent être modifiés uniquement par un administrateur habilité."},
+    profile:{badge:"Profil",title:"Consultation et mise à jour des informations du compte connecté."},
+    finance:{badge:"Finance",title:"Suivi financier des paiements cashback, historiques et transactions non rapprochées.",note:"Ce module sert au contrôle financier et au rapprochement, même s’il reste visible dans Administration."},
+    pricing:{badge:"Technique",title:"Gestion des offres, plans tarifaires ou paramètres de facturation de la plateforme.",note:"Module technique à réserver aux administrateurs."},
+    ticketTemplate:{badge:"Legacy",title:"Configuration des modèles liés à l’ancien flux Tickets/OCR.",note:"Le flux principal actuel repose sur les transactions cartes prépayées."},
+    inbox:{badge:"Demandes",title:"Traitement administratif des demandes envoyées par les partenaires.",note:"Cette page reprend les demandes partenaires côté administrateur."}
+  };
+  const p=panels[type]; if(!p) return "";
+  const cls=type==="ticketTemplate"?"b-muted":"b-info";
+  return `<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge ${cls}">${p.badge}</span><div><strong>${p.title}</strong>${p.note?`<div style="margin-top:4px;color:var(--muted);font-size:12px">${p.note}</div>`:""}</div></div></div>`;
+}
+function isSensitiveSetting(key){return /(password|passwd|secret|token|api[_-]?key|private[_-]?key|smtp[_-]?pass)/i.test(String(key||""));}
+function safeSettingValue(key,value){return isSensitiveSetting(key) ? "••••" : (value==null||value===""?"—":String(value));}
+function maskSecret(value){
+  const s=String(value||"");
+  if(!s) return "••••";
+  return s.length>8 ? `${s.slice(0,4)}••••${s.slice(-4)}` : "••••";
+}
 function refreshBtn(){return `<button class="btn btn-ghost" onclick="go('${CURRENT}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>${t("refresh")}</button>`;}
 
 /* ============ DASHBOARD ============ */
@@ -1618,6 +1639,7 @@ async function renderUsers(){
   const canManage = ME.role === "ADMIN";
   el.innerHTML = `<div class="page">${head(t("users"), t("users_sub"),
     (canManage ? `<button class="btn btn-primary" onclick="usrModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${t("adduser_btn")||"Ajouter"}</button>` : "") + refreshBtn())}
+    ${adminInfoPanel("users")}
     <div class="kpi-grid" style="margin-bottom:16px">
       <div class="kpi-card"><div class="kpi-label">Total</div><div class="kpi-value" id="uKpiTotal">—</div></div>
       <div class="kpi-card"><div class="kpi-label">Admins</div><div class="kpi-value" id="uKpiAdmin">—</div></div>
@@ -1720,7 +1742,7 @@ async function usrModal(id){
         <div class="field-error"></div>
       </div>
       <div class="field"><label>${isEdit ? "Nouveau mot de passe (vide = inchangé)" : "Mot de passe *"}</label>
-        <input id="usr_password" type="text" data-validate="${isEdit ? '' : 'password'}" placeholder="${isEdit ? '(inchangé)' : 'Min 8 caractères'}">
+        <input id="usr_password" type="password" data-validate="${isEdit ? '' : 'password'}" placeholder="${isEdit ? '(inchangé)' : 'Min 8 caractères'}" autocomplete="new-password">
         <div class="field-error"></div>
       </div>
       <div class="field"><label>Rôle *</label>
@@ -1880,17 +1902,19 @@ async function secRenderAudit(){
 async function renderSettings(){
   const c=document.getElementById("content");
   c.innerHTML=`<div class="page">${head(t("settings"),t("set_sub"),refreshBtn())}
+    ${adminInfoPanel("settings")}
     <div class="table-wrap"><div class="table-scroll"><table><thead><tr><th>${t("set_param")}</th><th>${t("set_value")}</th></tr></thead><tbody id="stb">${rowSkeleton(2,5)}</tbody></table></div></div></div>`;
   try{
     let s=await api("/api/settings");
     let rows=Array.isArray(s)?s:Object.entries(s||{}).map(([k,v])=>({key:k,value:v}));
     const tb=document.getElementById("stb");
-    tb.innerHTML=rows.length?rows.map(r=>`<tr><td class="strong">${esc(r.key||r.name)}</td><td><span class="mono">${esc(r.value)}</span></td></tr>`).join(""):`<tr><td colspan="2">${emptyFull()}</td></tr>`;
+    tb.innerHTML=rows.length?rows.map(r=>{const key=r.key||r.name;return `<tr><td class="strong">${esc(key)}</td><td><span class="mono">${esc(safeSettingValue(key,r.value))}</span></td></tr>`;}).join(""):`<tr><td colspan="2">${emptyFull()}</td></tr>`;
   }catch(e){document.getElementById("stb").innerHTML=`<tr><td colspan="2">${emptyMini(t("err_load"))}</td></tr>`;}
 }
 function renderProfile(){
   const c=document.getElementById("content");
   c.innerHTML=`<div class="page">${head(t("profile"),t("pf_sub"))}
+    ${adminInfoPanel("profile")}
     <div class="panel profile-card"><div class="panel-head"><h3>${t("pf_account")}</h3><span class="badge b-ok">${t("connected")}</span></div>
     <div class="panel-body">
       <div class="pf-row"><span class="k">${t("pf_fullname")}</span><span class="v">${esc(ME.fullName||"—")}</span></div>
@@ -2194,7 +2218,7 @@ async function addUserModal(){
     <div class="field"><label>${t("f_username")}</label><input id="nu_username"></div>
     <div class="field"><label>${t("f_fullname")}</label><input id="nu_fullname"></div>
     <div class="field"><label>${t("f_email")}</label><input id="nu_email" type="email"></div>
-    <div class="field"><label>${t("f_password")}</label><input id="nu_password" type="text"></div>
+    <div class="field"><label>${t("f_password")}</label><input id="nu_password" type="password" autocomplete="new-password"></div>
     <div class="field"><label>${t("f_role")}</label><select id="nu_role" onchange="toggleMerchantField()">${roles.map(r=>`<option value="${r}">${stLabel(r)}</option>`).join("")}</select></div>
     <div class="field" id="nu_merchant_wrap" style="display:none"><label>${t("f_merchant")}</label><select id="nu_merchant">${MERCH.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join("")}</select></div>
     </div>`,
@@ -2461,6 +2485,7 @@ function copyVal(id){const el=document.getElementById(id);el.select();try{naviga
 async function renderFinance(){
   const c=document.getElementById("content");
   c.innerHTML=`<div class="page">${head(t("finance"),t("finance_sub"),refreshBtn())}
+    ${adminInfoPanel("finance")}
     <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)" id="finKpis">${kpiSkeletons(3)}</div>
     <div class="grid-2">
       <div class="panel"><div class="panel-head"><h3>${t("payments")}</h3><span class="link" onclick="go('payments')">${t("view_all")}</span></div><div class="panel-body" id="finPay">${skLines(4)}</div></div>
@@ -2529,6 +2554,7 @@ async function renderCrud(key){
   const cfg=CRUD[key];await loadMerchants();
   const canManage=ME.role==="ADMIN";
   document.getElementById("content").innerHTML=`<div class="page">${head(t(cfg.title),t(cfg.sub),(canManage?`<button class="btn btn-primary" onclick="crudModal('${key}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${t("new_item")}</button>`:"")+refreshBtn())}
+    ${adminInfoPanel(key)}
     <div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="cCp">—</span></div>
     <div class="table-scroll"><table><thead><tr>${cfg.cols.map(c=>`<th>${t(c[1])}</th>`).join("")}${canManage?`<th style="text-align:right">${t("col_actions")}</th>`:""}</tr></thead>
     <tbody id="cBody">${rowSkeleton(cfg.cols.length+1,5)}</tbody></table></div></div></div>`;
@@ -2673,7 +2699,7 @@ async function createPartnerModal(){
        <div class="field"><label>${t("cp_contact")}</label><input id="cp_fullname"></div>
        <div class="field"><label>${t("cp_username")}</label><input id="cp_username" placeholder="ex: santalucia"></div>
        <div class="field full"><label>${t("cp_password")}</label>
-         <div style="display:flex;gap:8px"><input id="cp_password" type="text"><button type="button" class="btn btn-ghost" onclick="fillGenPw()">${t("cp_generate")}</button></div>
+         <div style="display:flex;gap:8px"><input id="cp_password" type="password" autocomplete="new-password"><button type="button" class="btn btn-ghost" onclick="fillGenPw()">${t("cp_generate")}</button></div>
          <div class="hint">${t("pw_hint")}</div></div>
      </div>`,
     `<button class="btn btn-ghost" onclick="closeModal()">${t("cancel")}</button><button class="btn btn-primary" onclick="submitCreatePartner()">${t("save")}</button>`);
@@ -2702,14 +2728,14 @@ let LAST_CREDS=null;
 function showPartnerCredentials(name,username,password,opts){
   opts=opts||{};LAST_CREDS={name:name,username:username,password:password,email:opts.email||""};
   const url=effectiveBase()+"/login.html";
-  const msg=`${LANG==="fr"?"Bonjour, votre espace partenaire Ticket2Cash":"Hello, your Ticket2Cash partner space"} (${name}) ${LANG==="fr"?"est prêt.":"is ready."}\n${t("cp_loginurl")}: ${url}\n${t("cp_username")}: ${username}\n${t("cp_password")}: ${password}`;
+  const msg=`${LANG==="fr"?"Bonjour, votre espace partenaire Ticket2Cash":"Hello, your Ticket2Cash partner space"} (${name}) ${LANG==="fr"?"est prêt.":"is ready."}\n${t("cp_loginurl")}: ${url}\n${t("cp_username")}: ${username}\n${t("cp_password")}: ${maskSecret(password)}\n${LANG==="fr"?"Le mot de passe complet est transmis séparément de manière sécurisée.":"The full password is shared separately through a secure channel."}`;
   const emailLine=opts.emailSent?`<div class="cred-box" style="border-color:var(--ok)"><span class="k">${t("cp_email_status")}</span><span class="v" style="color:var(--ok);font-family:var(--font-sans)">✉ ${t("cp_email_sent")} ${esc(opts.email||"")}</span></div>`:"";
   const sendBtn=(!opts.emailSent&&opts.email&&opts.canSend)?`<button class="btn btn-ghost" onclick="sendCredsEmail()">${t("cp_send_email")}</button>`:"";
   openModal(t("cp_created_title"),
     `<p style="color:var(--text-2);margin-bottom:16px">${t("cp_created_msg")}</p>
      ${emailLine}
      <div class="cred-box"><span class="k">${t("cp_username")}</span><span class="v" id="cr_user">${esc(username)}</span></div>
-     <div class="cred-box"><span class="k">${t("cp_password")}</span><span class="v" id="cr_pw">${esc(password)}</span></div>
+     <div class="cred-box"><span class="k">${t("cp_password")}</span><span class="v" id="cr_pw">${esc(maskSecret(password))}</span></div>
      <div class="cred-box"><span class="k">${t("cp_loginurl")}</span><span class="v" id="cr_url">${esc(url)}</span></div>
      <div class="field full" style="margin-top:6px"><label>${t("cp_msg_label")}</label><textarea id="cr_msg" readonly rows="5" style="font-size:12.5px">${esc(msg)}</textarea></div>`,
     `<button class="btn btn-ghost" onclick="closeModal();go(CURRENT)">${t("cancel")}</button>${sendBtn}<button class="btn btn-primary" onclick="copyVal('cr_msg')">${t("cp_copy_msg")}</button>`);
@@ -3262,7 +3288,7 @@ function showApiKeyOnce(key,name){
   openModal(t("ak_created"),
     `<p style="color:var(--text-2);margin-bottom:14px">${t("ak_once")}</p>
      <div class="cred-box"><span class="k">${t("ak_name")}</span><span class="v" style="font-family:var(--font-sans)">${esc(name)}</span></div>
-     <div class="field full" style="margin-top:6px"><label>${t("ak_prefix")}</label><textarea id="ak_key" readonly rows="2" style="font-family:var(--font-mono);font-size:12.5px">${esc(key||"")}</textarea></div>
+     <div class="field full" style="margin-top:6px"><label>${t("ak_prefix")}</label><textarea id="ak_key" readonly rows="2" style="font-family:var(--font-mono);font-size:12.5px">${esc(maskSecret(key))}</textarea></div>
      <div class="field full" style="margin-top:10px"><label>${t("ak_endpoint")}</label><input readonly id="ak_ep2" value="${esc(base)}/api/v1/transactions"></div>`,
     `<button class="btn btn-ghost" onclick="closeModal();renderApiKeys()">${t("cancel")}</button><button class="btn btn-primary" onclick="copyVal('ak_key')">${t("ak_copy")}</button>`);
 }
@@ -4573,6 +4599,7 @@ async function renderPartnerRequests(){
 async function renderAdminInbox(){
   const el=document.getElementById("content");
   el.innerHTML=`<div class="page">${head(t("adminInbox"),t("inbox_sub"),refreshBtn())}
+    ${adminInfoPanel("inbox")}
     <div class="tabs" id="inboxTabs">
       <div class="tab active" data-inboxtab="all" onclick="inboxSwitch('all')">Tout</div>
       <div class="tab" data-inboxtab="OPEN" onclick="inboxSwitch('OPEN')">Nouvelles</div>
@@ -4792,7 +4819,7 @@ function subPartnerModal(){
     `<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:16px 0 10px">${t("sp_login_section")}</div>
      <div class="form-grid">
        <div class="field"><label>${t("cp_username")}</label><input id="sp_username" placeholder="ex: orange-cm"></div>
-       <div class="field full"><label>${t("cp_password")}</label><div style="display:flex;gap:8px"><input id="sp_password" type="text"><button type="button" class="btn btn-ghost" onclick="fillPw('sp_password')">${t("cp_generate")}</button></div><div class="hint">${t("pw_hint")}</div></div>
+        <div class="field full"><label>${t("cp_password")}</label><div style="display:flex;gap:8px"><input id="sp_password" type="password" autocomplete="new-password"><button type="button" class="btn btn-ghost" onclick="fillPw('sp_password')">${t("cp_generate")}</button></div><div class="hint">${t("pw_hint")}</div></div>
      </div>`,
     `<button class="btn btn-ghost" onclick="closeModal()">${t("cancel")}</button><button class="btn btn-primary" onclick="submitSubPartner()">${t("save")}</button>`);
 }
@@ -4815,7 +4842,7 @@ function subUserModal(subId,name){
   openModal(t("sp_access_title")+" "+name,
     `<div class="form-grid">
        <div class="field"><label>${t("cp_username")}</label><input id="su_username"></div>
-       <div class="field full"><label>${t("cp_password")}</label><div style="display:flex;gap:8px"><input id="su_password" type="text"><button type="button" class="btn btn-ghost" onclick="fillPw('su_password')">${t("cp_generate")}</button></div><div class="hint">${t("pw_hint")}</div></div>
+       <div class="field full"><label>${t("cp_password")}</label><div style="display:flex;gap:8px"><input id="su_password" type="password" autocomplete="new-password"><button type="button" class="btn btn-ghost" onclick="fillPw('su_password')">${t("cp_generate")}</button></div><div class="hint">${t("pw_hint")}</div></div>
      </div>`,
     `<button class="btn btn-ghost" onclick="closeModal()">${t("cancel")}</button><button class="btn btn-primary" onclick="submitSubUser(${subId},'${esc(name)}')">${t("save")}</button>`);
 }

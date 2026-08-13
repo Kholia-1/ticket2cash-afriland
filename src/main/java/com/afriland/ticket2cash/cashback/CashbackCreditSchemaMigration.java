@@ -16,7 +16,7 @@ public class CashbackCreditSchemaMigration implements CommandLineRunner {
         add("credit_status", "VARCHAR(50)"); add("credit_reference", "VARCHAR(255)");
         add("credited_at", "TIMESTAMP"); add("credit_failure_reason", "VARCHAR(2000)");
         add("prepaid_account_ref", "VARCHAR(255)"); add("customer_ref", "VARCHAR(255)");
-        jdbcTemplate.update("UPDATE cashback_payments SET credit_status = 'CREDIT_PENDING' WHERE credit_status IS NULL AND status IN ('PENDING','SUCCESS')");
+        jdbcTemplate.update("UPDATE cashback_payments SET credit_status = 'CREDIT_PENDING' WHERE credit_status IS NULL");
     }
     private void add(String name, String definition) {
         jdbcTemplate.execute("ALTER TABLE cashback_payments ADD COLUMN IF NOT EXISTS " + name + " " + definition);

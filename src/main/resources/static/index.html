@@ -1474,7 +1474,7 @@ payments:{ep:"/api/cashback/payments",title:"payments",sub:"payments_sub",cols:[
 };
 function cashbackContextPanel(key){
   const panels={
-    transactions:`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-ok">Principal</span><div><strong>Flux principal de cashback basé sur les transactions cartes prépayées Afriland.</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">Chaque transaction importée ou reçue est contrôlée, dédupliquée, rapprochée à une campagne, puis utilisée pour générer un cashback.</div></div></div></div>`,
+    transactions:`<div style="margin-bottom:12px"><span class="badge b-ok">Principal</span></div>`,
     payments:`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-info">Paiement</span><div><strong>Suivi des paiements cashback générés à partir des transactions cartes.</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">Dans cette version, SUCCESS signifie paiement traité avec succès dans le prototype. L’intégration bancaire réelle devra être branchée en production.</div></div></div></div>`,
     claims:`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-info">Réclamations clients</span><div><strong>Suivi des contestations ou anomalies déclarées : cashback non reçu, montant incorrect, transaction introuvable ou campagne non appliquée.</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">Le suivi opérationnel des transactions importées se fait dans Transactions cartes.</div></div></div></div>`,
     tickets:`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-muted">Legacy</span><div><strong>Flux secondaire / Legacy</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">Flux secondaire conservé pour les tickets/OCR. Le flux principal actuel repose sur les transactions cartes prépayées.</div></div></div></div>`
@@ -1492,10 +1492,10 @@ async function renderTable(key){
   const transactionFilters=key==="transactions"?`<div class="table-toolbar" style="margin-bottom:10px"><input id="txSearch" placeholder="Rechercher une référence…" oninput="filterTransactionRows()" style="flex:1;min-width:180px"><select id="txCashbackFilter" onchange="filterTransactionRows()"><option value="">Tous les statuts cashback</option><option value="APPROVED">Approuvé</option><option value="PENDING">En attente</option><option value="SUCCESS">Traité</option><option value="FAILED">Rejeté</option></select><select id="txWorkflowFilter" onchange="filterTransactionRows()"><option value="">Tous les workflows</option><option value="RECEIVED">Reçue</option><option value="MANUAL_REVIEW">En révision</option><option value="APPROVED_FOR_PAYMENT">Paiement autorisé</option><option value="APPROVED_FOR_CREDIT">Crédit autorisé</option></select><label style="font-size:12px;color:var(--muted);display:flex;gap:5px;align-items:center"><input id="txReviewFilter" type="checkbox" onchange="filterTransactionRows()"> Révision manuelle</label></div>`:"";
   const addClick = key==="merchants" ? "merchantModal()" : `toast(t('form_soon')+' ${cfg.ep}','ok')`;
   const actions=(key==="payments"?`<button class="btn btn-primary" onclick="processPendingCashbackPayments()">Traiter les paiements en attente</button><button class="btn btn-ghost" onclick="creditPendingCashbacks()">Créditer les cashback validés</button>`:"")+(canAdd?`<button class="btn btn-primary" onclick="${addClick}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${t("add")}</button>`:"")+refreshBtn();
-  const displayTitle=key==="claims"?"Réclamations clients":t(cfg.title);
-   c.innerHTML=`<div class="page">${head(displayTitle,t(cfg.sub),actions)}
+  const displayTitle=key==="transactions"?"Transactions cartes prépayées":key==="claims"?"Réclamations clients":t(cfg.title);
+  const displaySub=key==="transactions"?"Importez, suivez et validez les transactions utilisées pour calculer le cashback.":t(cfg.sub);
+   c.innerHTML=`<div class="page">${head(displayTitle,displaySub,actions)}
     ${cashbackContextPanel(key)}
-    ${key==="transactions"?`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="font-size:12px;color:var(--muted)">Suivi principal des transactions cartes importées ou reçues depuis les systèmes partenaires.</div></div>`:""}
     ${key==="payments"?`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="font-size:12px;color:var(--muted)">Dans le prototype, le crédit client est simulé. En production, cette étape devra être connectée au système cartes prépayées ou au core banking.</div></div>`:""}
     ${key==="review"?`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-warn">Contrôle manuel</span><div><strong>Validation manuelle des réclamations nécessitant un contrôle avant approbation ou rejet.</strong></div></div></div>`:""}
      ${key==="transactions"?transactionImportPanel():key==="payments"?paymentProcessingPanel():""}
@@ -1577,29 +1577,25 @@ async function processPendingCashbackPayments(){
 }
 function transactionImportPanel(){
   return `<div class="panel" style="margin-bottom:16px">
-        <div class="panel-head"><div><h3>Importer des transactions cartes</h3><p style="margin:4px 0 0;color:var(--muted);font-size:12px">Le flux principal actuel repose sur les transactions cartes prépayées. Tickets/OCR reste disponible comme flux secondaire.</p></div></div>
+        <div class="panel-head"><div><h3>Import CSV</h3><p style="margin:4px 0 0;color:var(--muted);font-size:12px">Ajoutez une liste de transactions cartes prépayées.</p></div></div>
     <div class="panel-body">
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <input type="file" id="transactionsCsvFile" accept=".csv" style="flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text);font-size:14px">
-        <button class="btn btn-primary" id="transactionCsvBtn" onclick="importTransactionsCsv()">Importer transactions CSV</button>
+        <button class="btn btn-primary" id="transactionCsvBtn" onclick="importTransactionsCsv()">Importer CSV</button>
       </div>
-      <div style="margin-top:10px;color:var(--muted);font-size:12px;line-height:1.5">
-        Format attendu : <code>transactionRef,transactionDate,cardHash,maskedCard,cardBin,merchantId,merchantName,amount,currency,mccCode,channel,terminalId,status</code><br>
-        Exemple : <code>TX-001,2026-08-12T10:25:00,hash,****1234,456120,7,Shop,25000,FCFA,5411,F2F,T1,SUCCESS</code>
-      </div>
+      <div style="margin-top:10px"><button type="button" class="link" onclick="toggleCsvFormat()">Voir le format attendu</button><div id="csvExpectedFormat" style="display:none;margin-top:8px;color:var(--muted);font-size:12px;line-height:1.5"><code>transactionRef, transactionDate, cardHash, maskedCard, cardBin, merchantId, merchantName, amount, currency, mccCode, channel, terminalId, status</code></div></div>
       <div id="transactionImportSummary" style="display:none;margin-top:14px"></div>
     </div>
-  </div>`.replace("Importer des transactions cartes","Import CSV transactions cartes prépayées");
+  </div>`;
 }
 
 const _transactionImportPanelBase=transactionImportPanel;
 transactionImportPanel=function(){
-  const title="Import CSV transactions cartes "+String.fromCharCode(0xE9)+"pay"+String.fromCharCode(0xE9)+"es";
-  const help="Importez une liste de transactions cartes pr"+String.fromCharCode(0xE9)+"pay"+String.fromCharCode(0xE9)+"es Afriland. Le syst"+String.fromCharCode(0xE8)+"me d"+String.fromCharCode(0xE9)+"tecte les doublons, traite le cashback et retourne un r"+String.fromCharCode(0xE9)+"sum"+String.fromCharCode(0xE9)+" d'import.";
   return _transactionImportPanelBase()
-    .replace(/Importer des transactions cartes/,title)
-    .replace(/Importez les transactions[^<]*format CSV\./,help);
+    ;
 };
+
+function toggleCsvFormat(){const el=document.getElementById("csvExpectedFormat");if(el)el.style.display=el.style.display==="none"?"block":"none";}
 
 async function importTransactionsCsv(){
   const input=document.getElementById("transactionsCsvFile");
@@ -1625,7 +1621,7 @@ async function importTransactionsCsv(){
     summary.style.display="block";
     summary.innerHTML=`<div style="padding:10px 12px;border-radius:8px;background:#FEF2F2;color:#991B1B;font-size:13px">${esc(e.message||"Échec de l’import CSV")}</div>`;
     toast("Échec de l’import CSV.","err");
-  }finally{button.disabled=false;button.textContent="Importer transactions CSV";}
+  }finally{button.disabled=false;button.textContent="Importer CSV";}
 }
 
 function importStat(label,value){return `<div class="kpi-card"><div class="kpi-label">${label}</div><div class="kpi-value">${esc(value??0)}</div></div>`;}

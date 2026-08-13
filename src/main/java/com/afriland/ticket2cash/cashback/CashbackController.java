@@ -7,6 +7,7 @@ import com.afriland.ticket2cash.claim.ClaimStatus;
 import com.afriland.ticket2cash.campaign.CampaignRepository;
 import com.afriland.ticket2cash.merchant.MerchantRepository;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -28,19 +29,22 @@ public class CashbackController {
     private final CashbackPaymentProcessingService paymentProcessingService;
     private final CampaignRepository campaignRepository;
     private final MerchantRepository merchantRepository;
+    private final CashbackCreditService creditService;
 
     public CashbackController(CashbackPaymentRepository paymentRepository,
                               ClaimRepository claimRepository,
                               AuditLogService auditLogService,
                               CashbackPaymentProcessingService paymentProcessingService,
                               CampaignRepository campaignRepository,
-                              MerchantRepository merchantRepository) {
+                              MerchantRepository merchantRepository,
+                              CashbackCreditService creditService) {
         this.paymentRepository = paymentRepository;
         this.claimRepository = claimRepository;
         this.auditLogService = auditLogService;
         this.paymentProcessingService = paymentProcessingService;
         this.campaignRepository = campaignRepository;
         this.merchantRepository = merchantRepository;
+        this.creditService = creditService;
     }
 
     @GetMapping("/payments")
@@ -65,6 +69,7 @@ public class CashbackController {
         private Long campaignId;
         private String campaignName;
         private LocalDateTime processedAt;
+        private CashbackCreditStatus creditStatus; private String creditReference; private LocalDateTime creditedAt; private String creditFailureReason;
 
         static PaymentDto from(CashbackPayment payment, CampaignRepository campaigns,
                                MerchantRepository merchants) {
@@ -74,6 +79,7 @@ public class CashbackController {
             dto.amount = payment.getAmount(); dto.currency = payment.getCurrency();
             dto.status = payment.getStatus(); dto.campaignId = payment.getCampaignId();
             dto.processedAt = payment.getProcessedAt();
+            dto.creditStatus=payment.getCreditStatus(); dto.creditReference=payment.getCreditReference(); dto.creditedAt=payment.getCreditedAt(); dto.creditFailureReason=payment.getCreditFailureReason();
             if (payment.getMerchantId() != null) dto.merchantName = merchants.findById(payment.getMerchantId()).map(m -> m.getName()).orElse(null);
             if (payment.getCampaignId() != null) dto.campaignName = campaigns.findById(payment.getCampaignId()).map(c -> c.getName()).orElse(null);
             return dto;
@@ -84,12 +90,19 @@ public class CashbackController {
         public String getCurrency(){return currency;} public CashbackPaymentStatus getStatus(){return status;}
         public Long getCampaignId(){return campaignId;} public String getCampaignName(){return campaignName;}
         public LocalDateTime getProcessedAt(){return processedAt;}
+        public CashbackCreditStatus getCreditStatus(){return creditStatus;} public String getCreditReference(){return creditReference;} public LocalDateTime getCreditedAt(){return creditedAt;} public String getCreditFailureReason(){return creditFailureReason;}
     }
 
     @PostMapping("/payments/process-pending")
     public CashbackPaymentProcessingService.ProcessingSummary processPendingPayments() {
         return paymentProcessingService.processPending();
     }
+
+    @PostMapping("/payments/credit-pending")
+    public CashbackCreditService.CreditSummary creditPending(HttpServletRequest request) { return creditService.creditPending(request); }
+
+    @PostMapping("/payments/{id}/credit")
+    public CashbackCreditService.CreditSummary creditOne(@PathVariable Long id, HttpServletRequest request) { return creditService.creditOne(id, request); }
 
     @GetMapping("/payments/user/{userId}")
     public List<CashbackPayment> getPaymentsByUser(@PathVariable String userId) {

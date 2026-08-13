@@ -22,4 +22,6 @@ public interface CashbackPaymentRepository extends JpaRepository<CashbackPayment
     List<CashbackPayment> findByCampaignId(Long campaignId);
 
     List<CashbackPayment> findByCampaignIdAndCardHash(Long campaignId, String cardHash);
+
+    List<CashbackPayment> findByCreditStatusOrderByIdAsc(CashbackCreditStatus creditStatus);
 }

@@ -601,6 +601,8 @@ const ST_LABEL={
      OPEN:"Open",UNDER_REVIEW:"Under review",RESOLVED:"Resolved",OCR_PENDING:"OCR pending",OCR_PROCESSED:"OCR processed",
      ADMIN:"Admin",SUPERVISEUR:"Supervisor",OPERATEUR:"Operator",LECTEUR:"Reader",PARTNER:"Partner"}
 };
+ST_LABEL.fr.CREDIT_PENDING="Crédit en attente"; ST_LABEL.fr.CREDITED="Crédité"; ST_LABEL.fr.REVERSED="Annulé";
+ST_LABEL.en.CREDIT_PENDING="Credit pending"; ST_LABEL.en.CREDITED="Credited"; ST_LABEL.en.REVERSED="Reversed";
 let LANG=localStorage.getItem("t2c_lang")||"fr";
 function t(k){return (I18N[LANG]&&I18N[LANG][k])||I18N.fr[k]||k;}
 function stLabel(s){const u=String(s||"").toUpperCase();return (ST_LABEL[LANG]&&ST_LABEL[LANG][u])||s||"—";}
@@ -644,7 +646,7 @@ const IC={
 /* ============ NAV MODEL ============ */
 const MENU_GROUPS={
  dashboards:{label:"TABLEAUX DE BORD",desc:"Vues synthétiques de l’activité.",icon:"dashboard",items:["dashboard","businessDashboard","security","trends"]},
- cards:{label:"CASHBACK CARTES",desc:"Transactions, réclamations et paiements.",icon:"payments",items:["transactions","payments","claims","review","tickets","ocr"]},
+ cards:{label:"CASHBACK CARTES",desc:"Transactions, contrôles manuels, réclamations et paiements.",icon:"payments",items:["transactions","payments","claims","review","tickets","ocr"]},
  partners:{label:"PARTENAIRES & OFFRES",desc:"Commerçants, produits et campagnes.",icon:"merchants",items:["merchants","products","campaigns","partnerRequests","subPartners"]},
  loyalty:{label:"FIDÉLITÉ AFRILAND",desc:"Clients, points, niveaux et avantages.",icon:"loyalty",items:["loyalty","points","loyaltyTiers","vouchers","prepaidCards","cloOffers"]},
  control:{label:"CONTRÔLE & AUDIT",desc:"Fraude et traçabilité des actions.",icon:"security",items:["fraud","auditLogs"]},
@@ -694,9 +696,9 @@ function buildNav(role){
     return `<div class="nav-group ${open?"":"is-closed"}" data-group data-group-key="${g.key}">
       <button class="nav-group-toggle" type="button" onclick="toggleNavGroup('${g.key}')"><span>${g.label}</span><span class="chevron">⌄</span></button>
       <div class="nav-group-desc">${g.desc}</div><div class="nav-group-items">
-      ${g.items.map(id=>`<a class="nav-item" data-nav="${id}" data-label="${t(id)}" onclick="go('${id}')">
+      ${g.items.map(id=>{const label=id==="review"?"Contrôles manuels":id==="claims"?"Réclamations clients":t(id);return `<a class="nav-item" data-nav="${id}" data-label="${label}" onclick="go('${id}')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[id]||IC.dashboard}</svg>
-        <span>${t(id)}</span></a>`).join("")}</div>
+        <span>${label}${id==="tickets"||id==="ocr"?` <span class="badge b-muted" style="font-size:9px">Legacy</span>`:""}</span></a>`}).join("")}</div>
     </div>`;
   }).join("");
   document.querySelectorAll(".nav-item").forEach(n=>n.classList.toggle("active",n.dataset.nav===CURRENT));
@@ -1072,7 +1074,7 @@ function loyBatchActions(b){
 function loyStatusBadge(s){
   const u = String(s||"").toUpperCase();
   const map = { IMPORTED:"b-info", CALCULATING:"b-warn", CALCULATED:"b-info", APPROVED:"b-warn",
-    CREDITED:"b-ok", REJECTED:"b-danger", FAILED:"b-danger",
+    CREDITED:"b-ok", CREDIT_PENDING:"b-warn", REVERSED:"b-muted", REJECTED:"b-danger", FAILED:"b-danger",
     PENDING:"b-warn", QUEUED:"b-info", CANCELLED:"b-muted", ACTIVE:"b-ok", INACTIVE:"b-muted" };
   const label = { IMPORTED:"Importé", CALCULATING:"Calcul…", CALCULATED:"Calculé",
     APPROVED:"Approuvé", CREDITED:"Crédité", REJECTED:"Rejeté", FAILED:"Échoué",
@@ -1459,18 +1461,18 @@ const TABLES={
  campaigns:{ep:"/api/campaigns",title:"campaigns",sub:"campaigns_sub",cols:[["name","c_campaign","strong"],["cashbackType","c_type"],["cashbackValue","c_value","numval"],["totalBudget","c_budget","money"],["endDate","c_end","date"],["status","c_status","badge"]]},
  tickets:{ep:"/api/tickets",title:"tickets",sub:"tickets_sub",cols:[["ticketNumber","c_ticketno","mono"],["storeName","c_store","strong"],["totalAmount","c_amount","money"],["ticketDateTime","c_date","date"],["fraudScore","c_risk","risk"],["status","c_status","badge"]]},
  claims:{ep:"__CLAIMS__",title:"claims",sub:"claims_sub",cols:[["claimReference","c_reference","mono"],["merchantId","c_partner","chain"],["maskedCard","c_card","mono"],["cashbackAmount","c_cashback","money"],["status","c_status","badge"],["submittedAt","c_submitted","date"]]},
- payments:{ep:"/api/cashback/payments",title:"payments",sub:"payments_sub",cols:[["paymentReference","c_payref","mono"],["userId","c_beneficiary","mono"],["amount","c_amount","money"],["currency","c_currency"],["status","c_status","badge"],["processedAt","c_processed","date"]]},
+payments:{ep:"/api/cashback/payments",title:"payments",sub:"payments_sub",cols:[["paymentReference","c_payref","mono"],["userId","c_beneficiary","mono"],["amount","c_amount","money"],["currency","c_currency"],["status","c_status","badge"],["creditStatus","Crédit client","badge"],["creditReference","Référence crédit","mono"],["creditedAt","Date crédit","date"],["creditFailureReason","Motif crédit","text"],["processedAt","c_processed","date"]]},
  users:{ep:"/api/auth/users",title:"users",sub:"users_sub",cols:[["username","c_username","strong"],["fullName","c_fullname"],["email","c_email","mono"],["role","c_role","badge"],["accountLocked","c_locked","lock"],["lastLoginAt","c_lastlogin","date"]]},
  fraud:{ep:"/api/fraud/alerts",title:"fraud",sub:"fraud_sub",cols:[["alertReference","c_alertref","mono"],["reason","c_reason","strong"],["riskScore","c_score","risk"],["userId","c_user","mono"],["status","c_status","badge"],["createdAt","c_created","date"]]},
  auditLogs:{ep:"/api/audit-logs",title:"auditLogs",sub:"auditLogs_sub",cols:[["action","c_action","strong"],["auditIdentifier","c_username","mono"],["auditDetails","c_details","auditDetails"],["createdAt","c_timestamp","date"]]},
- transactions:{ep:"/api/transactions",title:"transactions",sub:"transactions_sub",cols:[["transactionRef","c_reference","mono"],["maskedCard","c_card","mono"],["amount","c_amount_currency","moneyCurrency"],["merchantName","c_store","strong"],["mccCode","c_mcc","mono"],["channel","c_channel"],["terminalId","c_terminal","mono"],["status","c_status","transactionStatus"],["matched","c_match","matchingStatus"],["transactionDate","c_transaction_date","transactionDate"],["receivedAt","c_received_date","transactionDate"],["cashbackAmount","c_cashback_amount","cashbackMoney"],["cashbackStatus","c_cashback_status","badge"],["campaignName","c_campaign_name","campaign"],["cashbackDecision","c_cashback_decision","badge"],["rejectionReason","c_rejection_reason","text"]]}
+ transactions:{ep:"/api/transactions",title:"transactions",sub:"transactions_sub",cols:[["transactionRef","c_reference","mono"],["maskedCard","c_card","mono"],["amount","c_amount_currency","moneyCurrency"],["merchantName","c_store","strong"],["mccCode","c_mcc","mono"],["channel","c_channel"],["terminalId","c_terminal","mono"],["status","c_status","transactionStatus"],["matched","c_match","matchingStatus"],["transactionDate","c_transaction_date","transactionDate"],["receivedAt","c_received_date","transactionDate"],["cashbackAmount","c_cashback_amount","cashbackMoney"],["cashbackStatus","c_cashback_status","badge"],["campaignName","c_campaign_name","campaign"],["cashbackDecision","c_cashback_decision","badge"],["workflowStatus","Workflow","workflowBadge"],["currentStep","Étape","workflowStep"],["manualReviewRequired","Révision manuelle","bool"],["rejectionReason","c_rejection_reason","text"]]}
 };
 function cashbackContextPanel(key){
   const panels={
     transactions:`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-ok">Principal</span><div><strong>Flux principal de cashback basé sur les transactions cartes prépayées Afriland.</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">Chaque transaction importée ou reçue est contrôlée, dédupliquée, rapprochée à une campagne, puis utilisée pour générer un cashback.</div></div></div></div>`,
     payments:`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-info">Paiement</span><div><strong>Suivi des paiements cashback générés à partir des transactions cartes.</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">Dans cette version, SUCCESS signifie paiement traité avec succès dans le prototype. L’intégration bancaire réelle devra être branchée en production.</div></div></div></div>`,
-    claims:`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-info">Suivi</span><div><strong>Suivi des demandes ou anomalies liées aux cashback.</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">Cette page centralise les réclamations générales.</div></div></div></div>`,
-    tickets:`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-muted">Legacy</span><div><strong>Flux secondaire / Legacy</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">Le flux principal actuel repose sur les transactions cartes prépayées. Tickets/OCR reste disponible comme parcours secondaire.</div></div></div></div>`
+    claims:`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-info">Réclamations clients</span><div><strong>Suivi des contestations ou anomalies déclarées : cashback non reçu, montant incorrect, transaction introuvable ou campagne non appliquée.</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">Le suivi opérationnel des transactions importées se fait dans Transactions cartes.</div></div></div></div>`,
+    tickets:`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-muted">Legacy</span><div><strong>Flux secondaire / Legacy</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">Flux secondaire conservé pour les tickets/OCR. Le flux principal actuel repose sur les transactions cartes prépayées.</div></div></div></div>`
   };
   return panels[key]||"";
 }
@@ -1483,9 +1485,12 @@ async function renderTable(key){
   if(needsMap||key==="merchants")await loadMerchants();
   const canAdd=["merchants","products","campaigns","users"].includes(key)&&ME.role!=="PARTNER";
   const addClick = key==="merchants" ? "merchantModal()" : `toast(t('form_soon')+' ${cfg.ep}','ok')`;
-  const actions=(key==="payments"?`<button class="btn btn-primary" onclick="processPendingCashbackPayments()">Traiter les paiements en attente</button>`:"")+(canAdd?`<button class="btn btn-primary" onclick="${addClick}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${t("add")}</button>`:"")+refreshBtn();
-   c.innerHTML=`<div class="page">${head(t(cfg.title),t(cfg.sub),actions)}
+  const actions=(key==="payments"?`<button class="btn btn-primary" onclick="processPendingCashbackPayments()">Traiter les paiements en attente</button><button class="btn btn-ghost" onclick="creditPendingCashbacks()">Créditer les cashback validés</button>`:"")+(canAdd?`<button class="btn btn-primary" onclick="${addClick}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${t("add")}</button>`:"")+refreshBtn();
+  const displayTitle=key==="claims"?"Réclamations clients":t(cfg.title);
+   c.innerHTML=`<div class="page">${head(displayTitle,t(cfg.sub),actions)}
     ${cashbackContextPanel(key)}
+    ${key==="transactions"?`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="font-size:12px;color:var(--muted)">Suivi principal des transactions cartes importées ou reçues depuis les systèmes partenaires.</div></div>`:""}
+    ${key==="payments"?`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="font-size:12px;color:var(--muted)">Dans le prototype, le crédit client est simulé. En production, cette étape devra être connectée au système cartes prépayées ou au core banking.</div></div>`:""}
     ${key==="review"?`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-warn">Contrôle manuel</span><div><strong>Validation manuelle des réclamations nécessitant un contrôle avant approbation ou rejet.</strong></div></div></div>`:""}
      ${key==="transactions"?transactionImportPanel():key==="payments"?paymentProcessingPanel():""}
     <div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="cp">—</span></div>
@@ -1551,6 +1556,9 @@ async function renderAuditLogsPage(){
   try{AUDIT_ROWS=unwrapRows(await api("/api/audit-logs"));renderAuditRows();}catch(e){AUDIT_ROWS=[];renderAuditRows();}
 }
 function paymentProcessingPanel(){return `<div id="paymentProcessingSummary" style="display:none;margin-bottom:16px"></div>`;}
+async function creditPendingCashbacks(){
+  try{const res=await fetch("/api/cashback/payments/credit-pending",{method:"POST",credentials:"same-origin"});const data=await res.json();if(!res.ok)throw new Error(data.message||data.error||"Crédit impossible");toast(`Crédits traités : ${data.credited||0}`,"ok");await renderTable("payments");}catch(e){toast(String(e.message||e).slice(0,180),"err");}
+}
 async function processPendingCashbackPayments(){
   const box=document.getElementById("paymentProcessingSummary");
   try{
@@ -1638,6 +1646,8 @@ function cell(row,col){
     case "auditDetails":return `<span style="display:block;max-width:520px;white-space:pre-wrap;line-height:1.4;font-size:12px">${esc(row.message||row.details||row.description||"—")}</span>`;
     case "date":return `<span style="color:var(--text-2)">${dt(v)}</span>`;
     case "badge":return badge(v);
+    case "workflowBadge":return `<span class="badge ${v==="MANUAL_REVIEW"||v==="REJECTED"?"b-danger":v==="APPROVED_FOR_CREDIT"||v==="CREDITED"?"b-ok":"b-info"}">${esc(workflowStatusLabel(v))}</span>`;
+    case "workflowStep":return esc(v||row.workflowStatus||"—");
     case "transactionStatus":return badge(v|| (row.matched?"Rapprochée":"Non rapprochée"));
     case "matchingStatus":return badge(v?"Rapprochée":"Non rapprochée");
     case "transactionDate":return `<span style="color:var(--text-2)">${dt(v||row.receivedAt)}</span>`;
@@ -2522,19 +2532,21 @@ async function renderFinance(){
   const c=document.getElementById("content");
   c.innerHTML=`<div class="page">${head(t("finance"),t("finance_sub"),refreshBtn())}
     ${adminInfoPanel("finance")}
-    <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)" id="finKpis">${kpiSkeletons(3)}</div>
+    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)" id="finKpis">${kpiSkeletons(4)}</div>
     <div class="grid-2">
       <div class="panel"><div class="panel-head"><h3>${t("payments")}</h3><span class="link" onclick="go('payments')">${t("view_all")}</span></div><div class="panel-body" id="finPay">${skLines(4)}</div></div>
       <div class="panel"><div class="panel-head"><h3>${t("wh_unmatched")}</h3></div><div class="panel-body" id="finUn">${skLines(4)}</div></div>
     </div></div>`;
   try{
     const [pays,un]=await Promise.all([api("/api/cashback/payments").catch(()=>[]),api("/api/webhook/transactions/unmatched").catch(()=>[])]);
-    const P=Array.isArray(pays)?pays:[],U=Array.isArray(un)?un:[];
-    const total=P.reduce((a,p)=>a+Number(p.amount||0),0);
+    const P=Array.isArray(pays)?pays:(pays&&Array.isArray(pays.content)?pays.content:[]),U=Array.isArray(un)?un:(un&&Array.isArray(un.content)?un.content:[]);
+    const total=P.reduce((a,p)=>a+Number(p.amount||0),0), credited=P.filter(p=>String(p.creditStatus||"").toUpperCase()==="CREDITED"), failed=P.filter(p=>String(p.creditStatus||"").toUpperCase()==="FAILED"), pending=P.filter(p=>String(p.creditStatus||"").toUpperCase()==="CREDIT_PENDING");
+    const creditedTotal=credited.reduce((a,p)=>a+Number(p.amount||0),0);
     document.getElementById("finKpis").innerHTML=[
-      {icon:"payments",label:t("fin_paid"),val:money(total),sub:""},
-      {icon:"finance",label:t("fin_count"),val:num(P.length),sub:""},
-      {icon:"fraud",label:t("fin_unmatched"),val:num(U.length),sub:""}
+      {icon:"payments",label:t("fin_paid"),val:money(total),sub:"Paiements"},
+      {icon:"success",label:"Crédités",val:money(creditedTotal),sub:num(credited.length)+" crédit(s)"},
+      {icon:"fraud",label:"Crédits échoués",val:num(failed.length),sub:"À contrôler"},
+      {icon:"finance",label:"Crédits en attente",val:num(pending.length),sub:"À traiter"}
     ].map(kpiCard).join("");animateCounters();
     document.getElementById("finPay").innerHTML=P.length?`<div class="table-scroll"><table style="min-width:auto"><tbody>${P.slice(0,7).map(p=>`<tr><td><span class="mono">${esc(p.paymentReference||("#"+p.id))}</span></td><td class="strong">${money(p.amount)}</td><td>${badge(p.status)}</td><td style="color:var(--muted);font-size:12px">${dt(p.processedAt||p.createdAt)}</td></tr>`).join("")}</tbody></table></div>`:emptyMini(t("empty"));
     document.getElementById("finUn").innerHTML=miniTxTable(U);
@@ -3339,25 +3351,20 @@ async function deleteApiKey(id){
   catch(e){toast(String(e.message||e).slice(0,140),"err");}
 }
 async function renderReviewQueue(){
-  await loadMerchants();
   const c=document.getElementById("content");
-  c.innerHTML=`<div class="page">${head(t("review"),t("review_sub"),refreshBtn())}
-    <div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-warn">Contrôle manuel</span><div><strong>Validation manuelle des réclamations nécessitant un contrôle avant approbation ou rejet.</strong></div></div></div>
+  c.innerHTML=`<div class="page">${head("Contrôles manuels","Transactions nécessitant une validation ou une décision manuelle avant paiement ou crédit.",refreshBtn())}
+    <div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-warn">Contrôle manuel</span><div><strong>File basée sur le workflow transactionnel, indépendamment des anciennes réclamations.</strong></div></div></div>
     <div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="rqCp">—</span></div>
-    <div class="table-scroll"><table><thead><tr><th>${t("c_reference")}</th><th>${t("c_partner")}</th><th>${t("c_cashback")}</th><th>${t("rq_fraud")}</th><th>${t("rq_reason")}</th><th>${t("c_submitted")}</th><th style="text-align:right">${t("col_actions")}</th></tr></thead>
-    <tbody id="rqBody">${rowSkeleton(7,6)}</tbody></table></div></div></div>`;
-  try{let rows=await api("/api/claims/status/SUBMITTED");if(!Array.isArray(rows))rows=[];
+    <div class="table-scroll"><table><thead><tr><th>Référence</th><th>Carte</th><th>Montant</th><th>Commerçant</th><th>Statut workflow</th><th>Étape</th><th>Commentaire</th><th>Motif rejet</th><th>Actions</th></tr></thead>
+    <tbody id="rqBody">${rowSkeleton(9,6)}</tbody></table></div></div></div>`;
+  try{let rows=await api("/api/transactions/workflow/review-queue");if(!Array.isArray(rows))rows=[];
     document.getElementById("rqCp").textContent=rows.length+" "+t("items");
     document.getElementById("rqBody").innerHTML=rows.length?rows.map(cl=>`<tr>
-      <td><span class="mono">${esc(cl.claimReference||("#"+cl.id))}</span></td>
-      <td>${cl.merchantId!=null?merchantChain(cl.merchantId):"—"}</td>
-      <td class="strong">${money(cl.cashbackAmount)}</td>
-      <td>${fraudBadge(cl.fraudScore)}</td>
-      <td style="color:var(--text-2);font-size:12.5px;max-width:280px">${esc(cl.reviewNotes||"—")}</td>
-      <td style="color:var(--muted);font-size:12px">${dt(cl.submittedAt)}</td>
-      <td class="row-actions"><button class="mini-btn" style="color:var(--ok);border-color:transparent;background:var(--ok-bg)" onclick="reviewClaim(${cl.id},'APPROVED')">${t("approve")}</button><button class="mini-btn danger" onclick="reviewClaim(${cl.id},'REJECTED')">${t("reject")}</button></td>
-    </tr>`).join(""):`<tr><td colspan="7">${emptyMini(t("rq_empty"))}</td></tr>`;
-  }catch(e){document.getElementById("rqBody").innerHTML=`<tr><td colspan="7">${emptyMini(t("err_load"))}</td></tr>`;}
+      <td><span class="mono">${esc(cl.transactionRef||("#"+cl.id))}</span></td><td><span class="mono">${esc(cl.maskedCard||"—")}</span></td><td class="strong">${money(cl.amount)} ${esc(cl.currency||"")}</td><td>${esc(cl.merchantName||"—")}</td>
+      <td>${badge(cl.workflowStatus)}</td><td>${esc(cl.currentStep||"—")}</td><td style="max-width:220px;white-space:pre-wrap">${esc(cl.lastWorkflowComment||"—")}</td><td style="max-width:220px;white-space:pre-wrap">${esc(cl.rejectionReason||"—")}</td>
+      <td class="row-actions"><button class="mini-btn" onclick="openTransactionWorkflow(${Number(cl.id)||0})">Voir parcours</button></td>
+    </tr>`).join(""):`<tr><td colspan="9">${emptyMini(t("rq_empty"))}</td></tr>`;
+  }catch(e){document.getElementById("rqBody").innerHTML=`<tr><td colspan="9">${emptyMini(t("err_load"))}</td></tr>`;}
 }
 async function reviewClaim(id,status){
   try{await api(`/api/claims/${id}/status?status=${status}`,{method:"PUT"});

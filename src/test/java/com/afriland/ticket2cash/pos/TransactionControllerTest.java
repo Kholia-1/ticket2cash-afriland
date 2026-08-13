@@ -59,6 +59,9 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$[0].status").value("SUCCESS"))
                 .andExpect(jsonPath("$[0].cashbackStatus").value("AUCUN_CASHBACK"))
                 .andExpect(jsonPath("$[0].cashbackDecision").value("NON_TRAITE"))
+                .andExpect(jsonPath("$[0].workflowStatus").value("RECEIVED"))
+                .andExpect(jsonPath("$[0].currentStep").value("RECEIVED"))
+                .andExpect(jsonPath("$[0].manualReviewRequired").value(false))
                 .andExpect(jsonPath("$[0].receivedAt").exists());
     }
 
@@ -82,5 +85,22 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$[0].cashbackStatus").value("PENDING"))
                 .andExpect(jsonPath("$[0].campaignId").value(9))
                 .andExpect(jsonPath("$[0].cashbackDecision").value("APPROVED"));
+    }
+
+    @Test
+    void reviewQueueReturnsWorkflowTransactions() throws Exception {
+        PosTransaction transaction = new PosTransaction();
+        transaction.setId(20L); transaction.setTransactionRef("TX-REVIEW"); transaction.setMaskedCard("****1234");
+        transaction.setAmount(new BigDecimal("12000")); transaction.setMerchantName("Shop");
+        transaction.setWorkflowStatus(TransactionWorkflowStatus.MANUAL_REVIEW); transaction.setCurrentStep("MANUAL_REVIEW");
+        transaction.setManualReviewRequired(true); transaction.setLastWorkflowComment("Contrôle requis");
+        when(repository.findReviewQueue(TransactionWorkflowStatus.MANUAL_REVIEW, "MANUAL_REVIEW")).thenReturn(List.of(transaction));
+
+        mockMvc.perform(get("/api/transactions/workflow/review-queue"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].transactionRef").value("TX-REVIEW"))
+                .andExpect(jsonPath("$[0].maskedCard").value("****1234"))
+                .andExpect(jsonPath("$[0].workflowStatus").value("MANUAL_REVIEW"))
+                .andExpect(jsonPath("$[0].lastWorkflowComment").value("Contrôle requis"));
     }
 }

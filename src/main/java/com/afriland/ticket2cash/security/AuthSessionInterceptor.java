@@ -75,6 +75,10 @@ public class AuthSessionInterceptor implements HandlerInterceptor {
             return true;
         }
 
+        if ("SUPERVISEUR".equals(role)) {
+            return isSupervisorAllowed(uri, method, response);
+        }
+
         if ("PARTNER".equals(role)) {
             return isPartnerAllowed(uri, method, response);
         }
@@ -189,6 +193,22 @@ public class AuthSessionInterceptor implements HandlerInterceptor {
         }
 
         return forbidden(response, "OPERATEUR role cannot perform this action");
+    }
+
+    private boolean isSupervisorAllowed(String uri,
+                                        String method,
+                                        HttpServletResponse response) throws Exception {
+        // Supervisors may inspect the same operational data as administrators,
+        // while write access remains limited to workflow/payment decisions.
+        if ("GET".equalsIgnoreCase(method)) return true;
+        if ("POST".equalsIgnoreCase(method)
+                && (uri.matches("/api/transactions/[0-9]+/workflow/(validate-step|reject|manual-review|approve-for-payment|approve-for-credit)")
+                || uri.equals("/api/cashback/payments/process-pending")
+                || uri.equals("/api/cashback/payments/credit-pending")
+                || uri.matches("/api/cashback/payments/[0-9]+/credit"))) {
+            return true;
+        }
+        return forbidden(response, "SUPERVISEUR role cannot perform this action");
     }
 
     private boolean isRestrictedGlobalRead(String uri, String method) {

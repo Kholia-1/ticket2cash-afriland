@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
@@ -53,6 +54,38 @@ public class TransactionImportController {
         return ResponseEntity.ok(importService.importCsv(file));
     }
 
+    @org.springframework.web.bind.annotation.GetMapping("/workflow/review-queue")
+    public List<ReviewQueueDto> reviewQueue(HttpServletRequest request) {
+        java.util.List<PosTransaction> transactions;
+        jakarta.servlet.http.HttpSession session = request == null ? null : request.getSession(false);
+        String role = session == null ? null : String.valueOf(session.getAttribute("AUTH_ROLE"));
+        if ("PARTNER".equals(role)) {
+            Object merchant = session.getAttribute("AUTH_MERCHANT_ID");
+            Long merchantId = merchant == null ? null : Long.valueOf(String.valueOf(merchant));
+            transactions = merchantId == null ? java.util.List.of() : transactionRepository.findReviewQueueByMerchant(TransactionWorkflowStatus.MANUAL_REVIEW, "MANUAL_REVIEW", merchantId);
+        } else {
+            transactions = transactionRepository.findReviewQueue(TransactionWorkflowStatus.MANUAL_REVIEW, "MANUAL_REVIEW");
+        }
+        return transactions
+                .stream().map(ReviewQueueDto::from).collect(Collectors.toList());
+    }
+
+    public static class ReviewQueueDto {
+        private Long id; private String transactionRef; private String maskedCard; private BigDecimal amount;
+        private String currency; private String merchantName; private TransactionWorkflowStatus workflowStatus;
+        private String currentStep; private String lastWorkflowComment; private String rejectionReason;
+        static ReviewQueueDto from(PosTransaction tx) {
+            ReviewQueueDto dto = new ReviewQueueDto(); dto.id=tx.getId(); dto.transactionRef=tx.getTransactionRef();
+            dto.maskedCard=tx.getMaskedCard(); dto.amount=tx.getAmount(); dto.currency=tx.getCurrency();
+            dto.merchantName=tx.getMerchantName(); dto.workflowStatus=tx.getWorkflowStatus(); dto.currentStep=tx.getCurrentStep();
+            dto.lastWorkflowComment=tx.getLastWorkflowComment(); dto.rejectionReason=tx.getRejectionReason(); return dto;
+        }
+        public Long getId(){return id;} public String getTransactionRef(){return transactionRef;} public String getMaskedCard(){return maskedCard;}
+        public BigDecimal getAmount(){return amount;} public String getCurrency(){return currency;} public String getMerchantName(){return merchantName;}
+        public TransactionWorkflowStatus getWorkflowStatus(){return workflowStatus;} public String getCurrentStep(){return currentStep;}
+        public String getLastWorkflowComment(){return lastWorkflowComment;} public String getRejectionReason(){return rejectionReason;}
+    }
+
     public static class TransactionDto {
         private Long id;
         private String transactionRef;
@@ -76,6 +109,9 @@ public class TransactionImportController {
         private String cashbackDecision;
         private String rejectionReason;
         private LocalDateTime cashbackProcessedAt;
+        private TransactionWorkflowStatus workflowStatus;
+        private String currentStep;
+        private boolean manualReviewRequired;
 
         public static TransactionDto from(PosTransaction source, CashbackPayment payment,
                                           CampaignRepository campaignRepository) {
@@ -94,6 +130,9 @@ public class TransactionImportController {
             dto.transactionDate = source.getTransactionDate();
             dto.receivedAt = source.getReceivedAt();
             dto.matched = source.isMatched();
+            dto.workflowStatus = source.getWorkflowStatus() == null ? TransactionWorkflowStatus.RECEIVED : source.getWorkflowStatus();
+            dto.currentStep = source.getCurrentStep() == null ? dto.workflowStatus.name() : source.getCurrentStep();
+            dto.manualReviewRequired = source.isManualReviewRequired();
             if (payment == null) {
                 dto.cashbackStatus = "AUCUN_CASHBACK";
                 dto.cashbackDecision = "NON_TRAITE";
@@ -132,5 +171,8 @@ public class TransactionImportController {
         public String getCashbackDecision() { return cashbackDecision; }
         public String getRejectionReason() { return rejectionReason; }
         public LocalDateTime getCashbackProcessedAt() { return cashbackProcessedAt; }
+        public TransactionWorkflowStatus getWorkflowStatus() { return workflowStatus; }
+        public String getCurrentStep() { return currentStep; }
+        public boolean isManualReviewRequired() { return manualReviewRequired; }
     }
 }

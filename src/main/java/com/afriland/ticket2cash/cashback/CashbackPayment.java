@@ -35,6 +35,15 @@ public class CashbackPayment {
     private String cardBin;
     private LocalDateTime transactionDateTime;
 
+    @Enumerated(EnumType.STRING)
+    private CashbackCreditStatus creditStatus;
+    private String creditReference;
+    private LocalDateTime creditedAt;
+    @Column(length = 2000)
+    private String creditFailureReason;
+    private String prepaidAccountRef;
+    private String customerRef;
+
     public CashbackPayment() {
     }
 
@@ -50,6 +59,9 @@ public class CashbackPayment {
 
         if (this.status == null) {
             this.status = CashbackPaymentStatus.PENDING;
+        }
+        if (this.creditStatus == null && (this.status == CashbackPaymentStatus.PENDING || this.status == CashbackPaymentStatus.SUCCESS)) {
+            this.creditStatus = CashbackCreditStatus.CREDIT_PENDING;
         }
     }
 
@@ -68,6 +80,12 @@ public class CashbackPayment {
     public String getMaskedCard() { return maskedCard; }
     public String getCardBin() { return cardBin; }
     public LocalDateTime getTransactionDateTime() { return transactionDateTime; }
+    public CashbackCreditStatus getCreditStatus() { return creditStatus; }
+    public String getCreditReference() { return creditReference; }
+    public LocalDateTime getCreditedAt() { return creditedAt; }
+    public String getCreditFailureReason() { return creditFailureReason; }
+    public String getPrepaidAccountRef() { return prepaidAccountRef; }
+    public String getCustomerRef() { return customerRef; }
 
     public void setId(Long id) { this.id = id; }
     public void setPaymentReference(String paymentReference) { this.paymentReference = paymentReference; }
@@ -84,4 +102,10 @@ public class CashbackPayment {
     public void setMaskedCard(String maskedCard) { this.maskedCard = maskedCard; }
     public void setCardBin(String cardBin) { this.cardBin = cardBin; }
     public void setTransactionDateTime(LocalDateTime transactionDateTime) { this.transactionDateTime = transactionDateTime; }
+    public void setCreditStatus(CashbackCreditStatus creditStatus) { this.creditStatus = creditStatus; }
+    public void setCreditReference(String creditReference) { this.creditReference = creditReference; }
+    public void setCreditedAt(LocalDateTime creditedAt) { this.creditedAt = creditedAt; }
+    public void setCreditFailureReason(String creditFailureReason) { this.creditFailureReason = creditFailureReason; }
+    public void setPrepaidAccountRef(String prepaidAccountRef) { this.prepaidAccountRef = prepaidAccountRef; }
+    public void setCustomerRef(String customerRef) { this.customerRef = customerRef; }
 }

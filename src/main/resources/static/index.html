@@ -753,6 +753,18 @@ function badge(status){
   return `<span class="badge ${map[s]||"b-muted"}">${esc(stLabel(status))}</span>`;
 }
 function head(title,sub,actions){return `<div class="page-head"><h1>${esc(title)}</h1>${sub?`<p>${esc(sub)}</p>`:""}${actions?`<div class="page-actions">${actions}</div>`:""}</div>`;}
+function loyaltyInfoPanel(type){
+  const panels={
+    program:{badge:"Programme",title:"Vue globale du programme de fidélité Afriland : clients, batches, règles et cashback fidélité.",note:"Ce module complète le cashback transactionnel par une gestion de fidélisation client."},
+    points:{badge:"Points",title:"Suivi des comptes de points, mouvements, règles d’attribution et expiration.",note:"Les points sont un avantage fidélité distinct du paiement cashback."},
+    tiers:{badge:"Niveau",title:"Gestion des paliers clients selon leur activité ou leur niveau d’engagement."},
+    vouchers:{badge:"Voucher",title:"Gestion des bons, avantages ou récompenses utilisables par les clients.",note:"La consommation ou l’annulation d’un voucher est une action sensible."},
+    cards:{badge:"Carte",title:"Suivi des cartes prépayées liées aux clients et aux offres."},
+    clo:{badge:"CLO",title:"Offres liées automatiquement aux cartes, permettant de déclencher des avantages selon les transactions.",note:"Les offres CLO complètent les campagnes cashback en reliant une carte, une offre et une transaction."}
+  };
+  const p=panels[type]; if(!p) return "";
+  return `<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-info">${p.badge}</span><div><strong>${p.title}</strong>${p.note?`<div style="margin-top:4px;color:var(--muted);font-size:12px">${p.note}</div>`:""}</div></div></div>`;
+}
 function refreshBtn(){return `<button class="btn btn-ghost" onclick="go('${CURRENT}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>${t("refresh")}</button>`;}
 
 /* ============ DASHBOARD ============ */
@@ -919,6 +931,7 @@ async function renderLoyalty(){
   document.getElementById("content").innerHTML = `<div class="page">
     <div class="page-head"><h1>Fidélité Afriland</h1>
       <p>Moteur de cashback pour les clients à fort volume.</p></div>
+    ${loyaltyInfoPanel("program")}
     <div class="kpi-grid" id="loyKpis">${kpiSkeletons ? kpiSkeletons(4) : ''}</div>
     <div class="tabs" id="loyTabs">
       <div class="tab active" data-loytab="batches" onclick="loySwitchTab('batches')">Batches</div>
@@ -1349,7 +1362,7 @@ function loyOpenClientModal(id){
   openModal(id ? "Modifier client" : "Nouveau client",
     `<div class="grid-2">${inp("loyCAcc","N° compte bancaire *", c.accountNumber, id)}${inp("loyCName","Nom complet", c.fullName)}</div>
      <div class="grid-2">${inp("loyCPhone","Téléphone", c.phone)}${inp("loyCEmail","Email", c.email)}</div>
-     <div class="grid-2">${inp("loyCCard","N° carte", c.cardNumber)}${sel("loyCTier","Tier",[["CLASSIC","CLASSIC"],["SILVER","SILVER"],["GOLD","GOLD"],["PLATINUM","PLATINUM"]], c.tier)}</div>
+     <div class="grid-2">${inp("loyCCard","Carte masquée", c.maskedCard || c.cardNumberMasked || "")}${sel("loyCTier","Tier",[["CLASSIC","CLASSIC"],["SILVER","SILVER"],["GOLD","GOLD"],["PLATINUM","PLATINUM"]], c.tier)}</div>
      <div class="grid-2">${sel("loyCType","Type entité",[["INDIVIDUAL","Particulier"],["COMPANY","Entreprise"]], c.entityType||"INDIVIDUAL")}${inp("loyCCity","Ville", c.city)}</div>
      ${inp("loyCBranch","Agence", c.branch)}
      <div class="grid-2" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
@@ -3309,6 +3322,7 @@ async function renderPoints(){
     (canManage?`<button class="btn btn-primary" onclick="ptsCreditModal()">+ Créditer un compte</button>
      <button class="btn btn-ghost" onclick="ptsRuleModal()">Nouvelle règle</button>
      <button class="btn btn-ghost" onclick="ptsExpireCheck()">Lancer expiration</button>`:"")+refreshBtn())}
+    ${loyaltyInfoPanel("points")}
     <div class="kpi-grid" style="margin-bottom:16px">
       <div class="kpi-card"><div class="kpi-label">Comptes</div><div class="kpi-value" id="ptsKpiAcc">—</div></div>
       <div class="kpi-card"><div class="kpi-label">Points en circulation</div><div class="kpi-value" id="ptsKpiCirc">—</div></div>
@@ -3616,6 +3630,7 @@ async function renderPrepaidCards(){
   const canManage=ME.role==="ADMIN";
   el.innerHTML=`<div class="page">${head(t("prepaidCards"),t("pc_sub"),
     (canManage?`<button class="btn btn-primary" onclick="pcModal()">+ Émettre une carte</button>`:"")+refreshBtn())}
+    ${loyaltyInfoPanel("cards")}
     <div class="kpi-grid" style="margin-bottom:16px">
       <div class="kpi-card"><div class="kpi-label">Total cartes</div><div class="kpi-value" id="pcKpiTot">—</div></div>
       <div class="kpi-card"><div class="kpi-label">Actives</div><div class="kpi-value" id="pcKpiAct">—</div></div>
@@ -3778,6 +3793,7 @@ async function renderCloOffers(){
     (canManage?`<button class="btn btn-primary" onclick="cloOfferModal()">+ Créer une offre</button>
      <button class="btn btn-ghost" onclick="cloOptInsView()">Opt-ins clients</button>
      <button class="btn btn-ghost" onclick="cloSimulateModal()">Simuler une transaction</button>`:"")+refreshBtn())}
+    ${loyaltyInfoPanel("clo")}
     <div class="kpi-grid" style="margin-bottom:16px">
       <div class="kpi-card"><div class="kpi-label">Offres totales</div><div class="kpi-value" id="cloKpiTot">—</div></div>
       <div class="kpi-card"><div class="kpi-label">Actives</div><div class="kpi-value" id="cloKpiAct">—</div></div>
@@ -4104,6 +4120,7 @@ async function renderLoyaltyTiers(){
   const canManage=ME.role==="ADMIN";
   el.innerHTML=`<div class="page">${head(t("loyaltyTiers"),t("tiers_sub"),
     (canManage?`<button class="btn btn-primary" onclick="tierModal()">+ Nouveau niveau</button>`:"")+refreshBtn())}
+    ${loyaltyInfoPanel("tiers")}
     <div id="tiersGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-top:20px">
       ${rowSkeleton(4,1)}
     </div></div>`;
@@ -4236,6 +4253,7 @@ async function renderVouchers(){
   el.innerHTML=`<div class="page">${head(t("vouchers"),t("vou_sub"),
     (canManage?`<button class="btn btn-primary" onclick="vouModal()">+ Créer un voucher</button>
      <button class="btn btn-ghost" onclick="vouBulkModal()">Génération en masse</button>`:"")+refreshBtn())}
+    ${loyaltyInfoPanel("vouchers")}
     <div class="kpi-grid" style="margin-bottom:16px">
       <div class="kpi-card"><div class="kpi-label">Total</div><div class="kpi-value" id="vouKpiTotal">—</div></div>
       <div class="kpi-card"><div class="kpi-label">Émis</div><div class="kpi-value" id="vouKpiIssued">—</div></div>

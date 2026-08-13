@@ -2204,6 +2204,7 @@ async function renderProducts(){
   await loadMerchants();
   const canManage=ME.role==="PARTNER";
   document.getElementById("content").innerHTML=`<div class="page">${head(t("cat_products"),t("cat_sub"))}
+    ${partnerContextPanel("products")}
     <div class="info-banner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><div>${t("group_info")}</div></div>
     <div class="prod-toolbar">
       <div class="grow tb-search" style="position:relative;max-width:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
@@ -2671,11 +2672,22 @@ async function sendCredsEmail(){
 }
 
 /* ---- Admin: partner hierarchy (partners + sub-partners) ---- */
+function partnerContextPanel(kind){
+  const panels={
+    merchants:`<div class="panel" style="margin-bottom:16px"><div class="panel-body"><strong>Gestion des commerçants et partenaires acceptant les offres Ticket2Cash.</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">Un commerçant peut porter des produits, des campagnes et des transactions cashback.</div></div></div>`,
+    subPartners:`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-info">Sous-partenaire</span><div><strong>Gestion des sous-enseignes, agences, points de vente ou entités rattachées à un partenaire principal.</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">Module disponible selon le rôle PARTNER ou ADMIN.</div></div></div></div>`,
+    products:`<div class="panel" style="margin-bottom:16px"><div class="panel-body"><strong>Catalogue des produits ou références pouvant être liés aux offres et campagnes.</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">Les produits peuvent affiner les règles commerciales, mais le flux principal actuel repose sur les transactions cartes.</div></div></div>`,
+    campaigns:`<div class="panel" style="margin-bottom:16px"><div class="panel-body"><strong>Configuration des campagnes cashback : période, commerçant, produit, MCC, montant minimum, budget et plafonds.</strong></div></div>`,
+    partnerRequests:`<div class="panel" style="margin-bottom:16px"><div class="panel-body"><strong>Suivi des demandes envoyées par les partenaires à Afriland.</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">La boîte de réception administrateur affiche aussi ces demandes côté administration.</div></div></div>`
+  };
+  return panels[kind]||"";
+}
 async function renderMerchants(){
   MERCH=[];await loadMerchants();  // always fetch fresh so new sub-partners appear
   const c=document.getElementById("content");
   const canAdd=ME.role==="ADMIN";
   c.innerHTML=`<div class="page">${head(t("mrch_title"),t("mrch_sub"),(canAdd?`<button class="btn btn-primary" onclick="createPartnerModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${t("mrch_new")}</button>`:"")+refreshBtn())}
+    ${partnerContextPanel("merchants")}
     <div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="mCp">—</span></div>
     <div class="table-scroll"><table><thead><tr><th>${t("c_partner")}</th><th>${t("m_city")}</th><th>${t("m_phone")}</th><th>${t("m_status")}</th><th>${t("c_created")}</th><th style="text-align:right">${t("col_actions")}</th></tr></thead>
     <tbody id="mBody"></tbody></table></div></div></div>`;
@@ -2689,11 +2701,11 @@ async function renderMerchants(){
     const kids=MERCH.filter(x=>x.parentMerchantId===p.id);
     const chevron=kids.length?`<span class="tree-toggle"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg></span>`:`<span class="tree-toggle"></span>`;
     html+=`<tr class="partner-row ${kids.length?"open":""}" ${kids.length?`onclick="toggleTree(${p.id})" data-pid="${p.id}"`:""}>
-      <td>${chevron}<span class="strong">${esc(p.name||p.brandName)}</span>${kids.length?` <span class="badge b-info" style="margin-left:6px">${kids.length} ${t("mrch_subcount")}</span>`:""}</td>
+      <td>${chevron}<span class="strong">${esc(p.name||p.brandName)}</span> <span class="badge b-info" style="margin-left:4px">Partenaire</span>${kids.length?` <span class="badge b-info" style="margin-left:6px">${kids.length} ${t("mrch_subcount")}</span>`:""}</td>
       <td>${esc(p.city||"—")}</td><td><span class="mono">${esc(p.phone||"—")}</span></td><td>${badge(p.status)}</td><td style="color:var(--text-2)">${dt(p.createdAt)}</td>${act(p)}</tr>`;
     kids.forEach(k=>{
       html+=`<tr class="child-row show" data-parent="${p.id}">
-        <td><span style="color:var(--muted)">↳</span> ${esc(k.name||k.brandName)}</td>
+        <td><span style="color:var(--muted)">↳</span> ${esc(k.name||k.brandName)} <span class="badge b-muted" style="margin-left:4px">Sous-partenaire</span></td>
         <td>${esc(k.city||"—")}</td><td><span class="mono">${esc(k.phone||"—")}</span></td><td>${badge(k.status)}</td><td style="color:var(--text-2)">${dt(k.createdAt)}</td>${act(k,true)}</tr>`;
     });
   });
@@ -2721,11 +2733,21 @@ async function delMerchant(id,name){
   catch(e){toast(String(e.message||e).slice(0,140),"err");}
 }
 function cashbackLabel(type,value){if(!type||type==="NONE"||value==null||value==="")return "—";return type==="PERCENTAGE"?(num(value)+" %"):money(value);}
+function campaignCriteriaSummary(cm){
+  const bits=[];
+  if(cm.minTransactionAmount!=null)bits.push("Min "+money(cm.minTransactionAmount));
+  if(cm.totalBudget!=null)bits.push("Budget "+money(cm.totalBudget));
+  if(cm.maxCashbackPerClient!=null)bits.push("Plafond "+money(cm.maxCashbackPerClient));
+  if(cm.dailyLimitPerClient!=null)bits.push("Jour "+money(cm.dailyLimitPerClient));
+  if(cm.monthlyLimitPerClient!=null)bits.push("Mois "+money(cm.monthlyLimitPerClient));
+  return bits.length?`<div style="margin-top:3px;color:var(--muted);font-size:10.5px;line-height:1.35">${esc(bits.join(" · "))}</div>`:"";
+}
 async function renderCampaigns(){
   await loadMerchants();
   const c=document.getElementById("content");
   const canManage=ME.role==="ADMIN";  // Only admin creates campaigns; partners submit requests
   c.innerHTML=`<div class="page">${head(t("campaigns"),t("cmp_sub"),(canManage?`<button class="btn btn-primary" onclick="campaignModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${t("new_campaign")}</button>`:(ME.role==="PARTNER"?`<button class="btn btn-primary" onclick="reqModal('CAMPAIGN_REQUEST')">📩 Demander une campagne</button>`:""))+refreshBtn())}
+    ${partnerContextPanel("campaigns")}
     <div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="cmpCp">—</span></div>
     <div class="table-scroll"><table><thead><tr><th>${t("c_campaign")}</th><th>Type</th><th>${t("c_partner")}</th><th>${t("cmp_period")}</th><th>${t("col_cashback")}</th><th>${t("m_status")}</th><th style="text-align:right">${t("col_actions")}</th></tr></thead>
     <tbody id="cmpBody">${rowSkeleton(7,6)}</tbody></table></div></div></div>`;
@@ -2736,11 +2758,12 @@ async function renderCampaigns(){
       const mid=cm.merchant&&cm.merchant.id;
       const expired=cm.endDate&&(new Date(cm.endDate)<today);
       const nm=(cm.name||"").replace(/'/g,"’");
-      return `<tr><td class="strong">${esc(cm.name||"—")}${expired?` <span class="badge b-muted" style="margin-left:6px">${t("cmp_expired")}</span>`:""}</td>
+      const stateBadge=cm.status==="ACTIVE"?`<span class="badge b-ok" style="margin-left:5px">Campagne active</span>`:`<span class="badge b-muted" style="margin-left:5px">Campagne inactive</span>`;
+      return `<tr><td class="strong">${esc(cm.name||"—")}${stateBadge}${expired?` <span class="badge b-muted" style="margin-left:6px">${t("cmp_expired")}</span>`:""}</td>
         <td>${triggerBadge(cm.triggerType)}</td>
         <td>${mid?merchantChain(mid):(cm.merchant&&cm.merchant.name?esc(cm.merchant.name):"—")}</td>
         <td style="white-space:nowrap">${cm.startDate?dt(cm.startDate):"—"} → ${cm.endDate?dt(cm.endDate):"—"}</td>
-        <td>${cashbackLabel(cm.cashbackType,cm.cashbackValue)}</td>
+        <td>${cashbackLabel(cm.cashbackType,cm.cashbackValue)}${campaignCriteriaSummary(cm)}</td>
         <td>${badge(cm.status)}</td>
         <td class="row-actions"><button class="mini-btn" onclick="campaignView(${cm.id})">${t("view")}</button>${canManage?`<button class="mini-btn" onclick="campaignModal(${cm.id})">${t("edit")}</button><button class="mini-btn danger" onclick="delCampaign(${cm.id},'${esc(nm)}')">${t("del")}</button>`:""}</td></tr>`;
     }).join(""):`<tr><td colspan="7">${emptyFull()}</td></tr>`;
@@ -4469,6 +4492,7 @@ async function renderPartnerRequests(){
   const el=document.getElementById("content");
   el.innerHTML=`<div class="page">${head(t("partnerRequests"),t("req_sub"),
     `<button class="btn btn-primary" onclick="reqModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Nouvelle demande</button>${refreshBtn()}`)}
+    ${partnerContextPanel("partnerRequests")}
     <div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="reqCp">—</span></div>
     <div class="table-scroll"><table><thead><tr><th>Sujet</th><th>Type</th><th>Statut</th><th>Envoyée le</th><th>Réponse</th><th style="text-align:right">Actions</th></tr></thead>
     <tbody id="reqBody">${rowSkeleton(6,6)}</tbody></table></div></div></div>`;
@@ -4696,6 +4720,7 @@ async function reqSetStatus(id,status){
 async function renderSubPartners(){
   const c=document.getElementById("content");
   c.innerHTML=`<div class="page">${head(t("subPartners"),t("sub_sub"),`<button class="btn btn-primary" onclick="subPartnerModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${t("new_subpartner")}</button>`+refreshBtn())}
+    ${partnerContextPanel("subPartners")}
     <div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="spCp">—</span></div>
     <div class="table-scroll"><table><thead><tr><th>${t("m_name")}</th><th>${t("m_city")}</th><th>${t("m_phone")}</th><th>${t("m_status")}</th><th>${t("c_created")}</th><th style="text-align:right">${t("col_actions")}</th></tr></thead>
     <tbody id="spBody">${rowSkeleton(6,5)}</tbody></table></div></div></div>`;

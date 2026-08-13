@@ -109,6 +109,12 @@ html[data-theme="dark"] .side-search input:focus{box-shadow:0 0 0 3px rgba(193,1
 .nav::-webkit-scrollbar-thumb{background:var(--border-strong)}
 .nav-group{margin-top:14px}
 .nav-group h4{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--side-muted);font-weight:700;padding:0 12px 6px}
+.nav-group-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;border:0;background:transparent;color:var(--side-muted);font:inherit;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;font-weight:700;padding:8px 12px 4px;cursor:pointer;text-align:left}
+.nav-group-toggle:hover{color:var(--side-strong)}
+.nav-group-toggle .chevron{font-size:13px;letter-spacing:0;transition:transform .18s ease}
+.nav-group.is-closed .chevron{transform:rotate(-90deg)}
+.nav-group.is-closed .nav-group-items{display:none}
+.nav-group-desc{padding:0 12px 7px;color:var(--side-muted);font-size:10px;line-height:1.35}
 .nav-item{
   display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:10px;color:var(--side-text);
   font-size:13.5px;font-weight:500;margin-bottom:1px;position:relative;cursor:pointer
@@ -636,14 +642,19 @@ const IC={
 };
 
 /* ============ NAV MODEL ============ */
-const NAV={
- ADMIN:[{group:"g_principal",items:["dashboard","businessDashboard","security","trends"]},
-        {group:"g_ops",items:["loyalty","loyaltyTiers","points","vouchers","prepaidCards","cloOffers","merchants","products","campaigns","adminInbox","tickets","transactions","claims","review","payments","finance"]},
-        {group:"g_integration",items:["webhooks","apiKeys","ocr","ticketTemplate"]},
-        {group:"g_sys",items:["users","auditLogs"]}],
- PARTNER:[{group:"g_principal",items:["dashboard"]},
-          {group:"g_ops",items:["campaigns","products","vouchers","cloOffers","partnerRequests","claims","payments"]}],
- DEFAULT:[{group:"g_principal",items:["dashboard"]},{group:"g_ops",items:["claims","payments"]}]
+const MENU_GROUPS={
+ dashboards:{label:"TABLEAUX DE BORD",desc:"Vues synthétiques de l’activité.",icon:"dashboard",items:["dashboard","businessDashboard","security","trends"]},
+ cards:{label:"CASHBACK CARTES",desc:"Transactions, réclamations et paiements.",icon:"payments",items:["transactions","payments","claims","review","tickets","ocr"]},
+ partners:{label:"PARTENAIRES & OFFRES",desc:"Commerçants, produits et campagnes.",icon:"merchants",items:["merchants","products","campaigns","partnerRequests","subPartners"]},
+ loyalty:{label:"FIDÉLITÉ AFRILAND",desc:"Clients, points, niveaux et avantages.",icon:"loyalty",items:["loyalty","points","loyaltyTiers","vouchers","prepaidCards","cloOffers"]},
+ control:{label:"CONTRÔLE & AUDIT",desc:"Fraude et traçabilité des actions.",icon:"security",items:["fraud","auditLogs"]},
+ administration:{label:"ADMINISTRATION",desc:"Accès et configuration de la plateforme.",icon:"settings",items:["users","settings","profile","finance","pricing","ticketTemplate","adminInbox"]},
+ integration:{label:"INTÉGRATION",desc:"Connexions avec les systèmes externes.",icon:"integration",items:["webhooks","apiKeys"]}
+};
+const MENU_ROLE_ITEMS={
+ ADMIN:null,
+ PARTNER:new Set(["dashboard","campaigns","products","vouchers","cloOffers","partnerRequests","claims","payments","merchants","subPartners"]),
+ DEFAULT:new Set(["dashboard","claims","payments"])
 };
 
 /* ============ BOOT ============ */
@@ -669,15 +680,26 @@ function renderChrome(){
   buildNav(role); applyI18n();
 }
 function buildNav(role){
-  const model=NAV[role]||NAV.DEFAULT;
-  document.getElementById("nav").innerHTML=model.map(g=>`
-    <div class="nav-group" data-group>
-      <h4>${t(g.group)}</h4>
+  const allowed=Object.prototype.hasOwnProperty.call(MENU_ROLE_ITEMS,role)
+    ? MENU_ROLE_ITEMS[role]
+    : MENU_ROLE_ITEMS.DEFAULT;
+  const groups=Object.entries(MENU_GROUPS).map(([key,g])=>({key,...g,items:g.items.filter(id=>!allowed||allowed.has(id))})).filter(g=>g.items.length);
+  const saved=JSON.parse(localStorage.getItem("t2c_nav_groups")||"{}");
+  document.getElementById("nav").innerHTML=groups.map(g=>{
+    const open=saved[g.key]!==undefined?saved[g.key]:g.items.includes(CURRENT);
+    return `<div class="nav-group ${open?"":"is-closed"}" data-group data-group-key="${g.key}">
+      <button class="nav-group-toggle" type="button" onclick="toggleNavGroup('${g.key}')"><span>${g.label}</span><span class="chevron">⌄</span></button>
+      <div class="nav-group-desc">${g.desc}</div><div class="nav-group-items">
       ${g.items.map(id=>`<a class="nav-item" data-nav="${id}" data-label="${t(id)}" onclick="go('${id}')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[id]||IC.dashboard}</svg>
-        <span>${t(id)}</span></a>`).join("")}
-    </div>`).join("");
+        <span>${t(id)}</span></a>`).join("")}</div>
+    </div>`;
+  }).join("");
   document.querySelectorAll(".nav-item").forEach(n=>n.classList.toggle("active",n.dataset.nav===CURRENT));
+}
+function toggleNavGroup(key){
+  const node=document.querySelector(`[data-group-key="${key}"]`);if(!node)return;
+  node.classList.toggle("is-closed");const state=JSON.parse(localStorage.getItem("t2c_nav_groups")||"{}");state[key]=!node.classList.contains("is-closed");localStorage.setItem("t2c_nav_groups",JSON.stringify(state));
 }
 
 /* ============ ROUTER ============ */
@@ -699,6 +721,7 @@ function go(id,silent){
   if(!ROUTES[id])id="dashboard";
   CURRENT=id; if(!silent)location.hash=id;
   document.querySelectorAll(".nav-item").forEach(n=>n.classList.toggle("active",n.dataset.nav===id));
+  document.querySelectorAll("[data-group-key]").forEach(g=>{if(g.querySelector(`[data-nav="${id}"]`)){g.classList.remove("is-closed");const state=JSON.parse(localStorage.getItem("t2c_nav_groups")||"{}");state[g.dataset.groupKey]=true;localStorage.setItem("t2c_nav_groups",JSON.stringify(state));}});
   document.getElementById("globalSearch").value=""; closeNav(); window.scrollTo(0,0);
   ROUTES[id]();
 }

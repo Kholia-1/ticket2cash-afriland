@@ -1423,6 +1423,15 @@ const TABLES={
  auditLogs:{ep:"/api/audit-logs",title:"auditLogs",sub:"auditLogs_sub",cols:[["action","c_action","strong"],["auditIdentifier","c_username","mono"],["auditDetails","c_details","auditDetails"],["createdAt","c_timestamp","date"]]},
  transactions:{ep:"/api/transactions",title:"transactions",sub:"transactions_sub",cols:[["transactionRef","c_reference","mono"],["maskedCard","c_card","mono"],["amount","c_amount_currency","moneyCurrency"],["merchantName","c_store","strong"],["mccCode","c_mcc","mono"],["channel","c_channel"],["terminalId","c_terminal","mono"],["status","c_status","transactionStatus"],["matched","c_match","matchingStatus"],["transactionDate","c_transaction_date","transactionDate"],["receivedAt","c_received_date","transactionDate"],["cashbackAmount","c_cashback_amount","cashbackMoney"],["cashbackStatus","c_cashback_status","badge"],["campaignName","c_campaign_name","campaign"],["cashbackDecision","c_cashback_decision","badge"],["rejectionReason","c_rejection_reason","text"]]}
 };
+function cashbackContextPanel(key){
+  const panels={
+    transactions:`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-ok">Principal</span><div><strong>Flux principal de cashback basé sur les transactions cartes prépayées Afriland.</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">Chaque transaction importée ou reçue est contrôlée, dédupliquée, rapprochée à une campagne, puis utilisée pour générer un cashback.</div></div></div></div>`,
+    payments:`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-info">Paiement</span><div><strong>Suivi des paiements cashback générés à partir des transactions cartes.</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">Dans cette version, SUCCESS signifie paiement traité avec succès dans le prototype. L’intégration bancaire réelle devra être branchée en production.</div></div></div></div>`,
+    claims:`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-info">Suivi</span><div><strong>Suivi des demandes ou anomalies liées aux cashback.</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">Cette page centralise les réclamations générales.</div></div></div></div>`,
+    tickets:`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-muted">Legacy</span><div><strong>Flux secondaire / Legacy</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">Le flux principal actuel repose sur les transactions cartes prépayées. Tickets/OCR reste disponible comme parcours secondaire.</div></div></div></div>`
+  };
+  return panels[key]||"";
+}
 async function renderTable(key){
   const cfg=TABLES[key],c=document.getElementById("content");
   const EP=(cfg.ep==="__CLAIMS__")?cEP():cfg.ep;
@@ -1432,6 +1441,8 @@ async function renderTable(key){
   const addClick = key==="merchants" ? "merchantModal()" : `toast(t('form_soon')+' ${cfg.ep}','ok')`;
   const actions=(key==="payments"?`<button class="btn btn-primary" onclick="processPendingCashbackPayments()">Traiter les paiements en attente</button>`:"")+(canAdd?`<button class="btn btn-primary" onclick="${addClick}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${t("add")}</button>`:"")+refreshBtn();
    c.innerHTML=`<div class="page">${head(t(cfg.title),t(cfg.sub),actions)}
+    ${cashbackContextPanel(key)}
+    ${key==="review"?`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-warn">Contrôle manuel</span><div><strong>Validation manuelle des réclamations nécessitant un contrôle avant approbation ou rejet.</strong></div></div></div>`:""}
      ${key==="transactions"?transactionImportPanel():key==="payments"?paymentProcessingPanel():""}
     <div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="cp">—</span></div>
     <div class="table-scroll"><table><thead><tr>${cfg.cols.map(col=>`<th>${t(col[1])}</th>`).join("")}</tr></thead>
@@ -2421,6 +2432,7 @@ async function renderFinance(){
 function renderOcr(){
   const c=document.getElementById("content");
   c.innerHTML=`<div class="page">${head(t("ocr"),t("ocr_sub"))}
+    <div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-muted">Legacy</span><div><strong>Flux secondaire / Legacy</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">Le flux principal actuel repose sur les transactions cartes prépayées. Tickets/OCR reste disponible comme parcours secondaire.</div></div></div></div>
     <div class="panel" style="margin-bottom:16px"><div class="panel-body">
       <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
         <label class="btn btn-ghost" style="cursor:pointer">${t("ocr_choose")}<input type="file" accept="image/*" id="ocrFile" style="display:none" onchange="ocrPreview(event)"></label>
@@ -3193,6 +3205,7 @@ async function renderReviewQueue(){
   await loadMerchants();
   const c=document.getElementById("content");
   c.innerHTML=`<div class="page">${head(t("review"),t("review_sub"),refreshBtn())}
+    <div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-warn">Contrôle manuel</span><div><strong>Validation manuelle des réclamations nécessitant un contrôle avant approbation ou rejet.</strong></div></div></div>
     <div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="rqCp">—</span></div>
     <div class="table-scroll"><table><thead><tr><th>${t("c_reference")}</th><th>${t("c_partner")}</th><th>${t("c_cashback")}</th><th>${t("rq_fraud")}</th><th>${t("rq_reason")}</th><th>${t("c_submitted")}</th><th style="text-align:right">${t("col_actions")}</th></tr></thead>
     <tbody id="rqBody">${rowSkeleton(7,6)}</tbody></table></div></div></div>`;

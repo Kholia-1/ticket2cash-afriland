@@ -716,7 +716,7 @@ const ROUTES={
  users:renderUsers,fraud:()=>renderTable("fraud"),auditLogs:()=>renderTable("auditLogs"),
  settings:()=>renderAccount("settings"),profile:()=>renderAccount("profile"),account:renderAccount,
  trends:renderTrends,webhooks:renderWebhooks,apiKeys:renderApiKeys,
- finance:renderFinance,ocr:renderOcr,pricing:()=>renderCrud("pricing"),ticketTemplate:()=>renderCrud("ticketTemplate"),
+  finance:renderFinance,ocr:renderOcr,pricing:()=>renderCrud("pricing"),ticketTemplate:()=>renderCrud("ticketTemplate"),
  subPartners:renderSubPartners,
  adminInbox:renderAdminInbox,partnerRequests:renderPartnerRequests,
  loyaltyTiers:renderLoyaltyTiers,vouchers:renderVouchers,
@@ -1455,7 +1455,7 @@ async function processPendingCashbackPayments(){
 }
 function transactionImportPanel(){
   return `<div class="panel" style="margin-bottom:16px">
-    <div class="panel-head"><div><h3>Importer des transactions cartes</h3><p style="margin:4px 0 0;color:var(--muted);font-size:12px">Importez les transactions prépayées Afriland au format CSV.</p></div></div>
+        <div class="panel-head"><div><h3>Importer des transactions cartes</h3><p style="margin:4px 0 0;color:var(--muted);font-size:12px">Le flux principal actuel repose sur les transactions cartes prépayées. Tickets/OCR reste disponible comme flux secondaire.</p></div></div>
     <div class="panel-body">
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <input type="file" id="transactionsCsvFile" accept=".csv" style="flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text);font-size:14px">
@@ -1763,55 +1763,6 @@ async function renderSecurity(){
   secSwitchTab("overview");
 }
 
-function secSwitchTab(tab){
-  document.querySelectorAll("[data-sectab]").forEach(t => t.classList.toggle("active", t.dataset.sectab === tab));
-  const c = document.getElementById("secContent"); if(!c) return;
-  if(tab==="overview"){
-    c.innerHTML = `<div class="kpi-grid" id="secKpis">${kpiSkeletons(4)}</div>`;
-    api("/api/security-dashboard/summary").then(s=>{
-      const K=[{icon:"users",label:t("sec_failed"),val:num(s.loginFailed||0),sub:""},
-        {icon:"security",label:t("sec_locked"),val:num(s.lockedUsers||0),sub:`${num(s.totalUsers||0)} ${t("total_lc")}`},
-        {icon:"fraud",label:t("sec_disabled")||"Comptes désactivés",val:num(s.disabledUsers||0),sub:`${num(s.activeUsers||0)} ${t("sec_active_lc")||"actifs"}`},
-        {icon:"claims",label:t("sec_success"),val:num(s.loginSuccess||0),sub:""}];
-      document.getElementById("secKpis").innerHTML = K.map(kpiCard).join("");
-      animateCounters();
-    }).catch(()=>{document.getElementById("secKpis").innerHTML=emptyMini(t("err_load"));});
-  } else if(tab==="fraud"){
-    c.innerHTML = `<div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="fCp">—</span></div>
-      <div class="table-scroll"><table><thead><tr><th>${t("f_ref")||"Ref"}</th><th>${t("f_type")||"Type"}</th><th>${t("f_score")||"Score"}</th><th>${t("m_status")}</th><th>${t("c_created")}</th></tr></thead>
-      <tbody id="fBody">${rowSkeleton(5,5)}</tbody></table></div></div>`;
-    api("/api/fraud-alerts").then(rows=>{
-      if(!Array.isArray(rows)) rows=[];
-      document.getElementById("fCp").textContent = rows.length + " " + t("items");
-      document.getElementById("fBody").innerHTML = rows.length ? rows.map(r=>`<tr>
-        <td><span class="mono">${esc(r.reference||r.id||"—")}</span></td>
-        <td>${esc(r.alertType||r.type||"—")}</td>
-        <td class="strong">${esc(r.riskScore||r.score||"—")}</td>
-        <td>${badge(r.status)}</td>
-        <td style="color:var(--text-2);font-size:12px">${dt(r.createdAt)}</td></tr>`).join("")
-        : `<tr><td colspan="5">${emptyFull()}</td></tr>`;
-    }).catch(()=>{document.getElementById("fBody").innerHTML=`<tr><td colspan="5">${emptyMini(t("err_load"))}</td></tr>`;});
-  } else if(tab==="audit"){
-    c.innerHTML = `<div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="aCp">—</span></div>
-      <div class="table-scroll"><table><thead><tr><th>${t("f_action")||"Action"}</th><th>${t("f_module")||"Module"}</th><th>${t("f_actor")||"Utilisateur"}</th><th>${t("m_status")}</th><th>${t("f_message")||"Message"}</th><th>${t("c_created")}</th></tr></thead>
-      <tbody id="aBody">${rowSkeleton(6,8)}</tbody></table></div></div>`;
-    api("/api/audit-logs").then(rows=>{
-      if(!Array.isArray(rows)) rows=[];
-      const recent = rows.slice(-100).reverse();
-      document.getElementById("aCp").textContent = rows.length + " " + t("items");
-      document.getElementById("aBody").innerHTML = recent.length ? recent.map(r=>`<tr>
-        <td class="strong">${esc(r.action||"—")}</td>
-        <td>${esc(r.moduleName||r.module||"—")}</td>
-        <td>${esc(r.actor||"—")}</td>
-        <td>${badge(r.status)}</td>
-        <td style="color:var(--text-2);max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.message||"")}">${esc(r.message||"—")}</td>
-        <td style="color:var(--text-2);font-size:12px">${dt(r.createdAt)}</td></tr>`).join("")
-        : `<tr><td colspan="6">${emptyFull()}</td></tr>`;
-    }).catch(()=>{document.getElementById("aBody").innerHTML=`<tr><td colspan="6">${emptyMini(t("err_load"))}</td></tr>`;});
-  }
-}
-
-
 async function secSwitchTab(tab){
   window.SEC_TAB=tab;
   document.querySelectorAll("[data-sectab]").forEach(t=>t.classList.toggle("active",t.dataset.sectab===tab));
@@ -1836,8 +1787,8 @@ async function secRenderOverview(){
 
 async function secRenderFraud(){
   try{
-    let rows=await api("/api/fraud-alerts").catch(()=>[]);
-    if(!Array.isArray(rows)) rows=[];
+    let rows=await api("/api/fraud/alerts").catch(()=>[]);
+    if(!Array.isArray(rows)) rows=rows&&rows.content?rows.content:[];
     const cp=document.getElementById("fCp"); if(cp) cp.textContent=rows.length+" items";
     const tb=document.getElementById("fBody"); if(!tb) return;
     tb.innerHTML = rows.length ? rows.map(r=>`<tr>
@@ -1853,17 +1804,17 @@ async function secRenderFraud(){
 async function secRenderAudit(){
   try{
     let rows=await api("/api/audit-logs").catch(()=>[]);
-    if(!Array.isArray(rows)) rows=[];
+    if(!Array.isArray(rows)) rows=rows&&rows.content?rows.content:[];
     const cp=document.getElementById("aCp"); if(cp) cp.textContent=rows.length+" items";
     const tb=document.getElementById("aBody"); if(!tb) return;
     tb.innerHTML = rows.length ? rows.slice(0,200).map(r=>`<tr>
       <td><span class="mono">#${esc(r.id)}</span></td>
       <td class="strong">${esc(r.action||"—")}</td>
       <td>${esc(r.moduleName||r.module||"—")}</td>
-      <td>${esc(r.actor||"—")}</td>
+      <td>${esc(r.identifier||r.actor||r.username||"—")}</td>
       <td>${badge(r.status)}</td>
-      <td style="max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${esc(r.message||"—")}</td>
-      <td style="color:var(--text-2);font-size:12px">${dt(r.createdAt)}</td>
+      <td style="max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px" title="${esc(r.details||r.description||r.message||"")}">${esc(r.details||r.description||r.message||"—")}</td>
+      <td style="color:var(--text-2);font-size:12px">${dt(r.timestamp||r.createdAt)}</td>
     </tr>`).join("") : `<tr><td colspan="7">${emptyFull()}</td></tr>`;
   }catch(e){ const tb=document.getElementById("aBody"); if(tb) tb.innerHTML=`<tr><td colspan="7">${emptyMini(t("err_load"))}</td></tr>`; }
 }
@@ -2399,7 +2350,7 @@ async function renderWebhooks(){
   const base=effectiveBase();
   const local=isLocalBase(base)||!saved;
   const url=base+"/api/webhook/transaction";
-  const payload=JSON.stringify({transactionRef:"TX-0001",cardNumber:"4111111111111234",maskedCard:"4XXX XXXX XXXX 1234",merchantName:"Orange Cameroun",amount:15000,currency:"FCFA",transactionDate:"2026-07-08T10:30:00"},null,2);
+  const payload=JSON.stringify({transactionRef:"TX-0001",cardHash:"demo-card-hash",maskedCard:"****1234",merchantName:"Orange Cameroun",amount:15000,currency:"FCFA",transactionDate:"2026-07-08T10:30:00"},null,2);
   c.innerHTML=`<div class="page">${head(t("webhooks"),t("wh_sub"),refreshBtn())}
     <div class="panel" style="margin-bottom:16px"><div class="panel-body">
       <div class="field full"><label>${t("wh_base")}</label>
@@ -2442,26 +2393,6 @@ function miniTxTable(rows){
     <td style="color:var(--muted);font-size:12px">${dt(x.createdAt)}</td></tr>`).join("")}</tbody></table></div>`;
 }
 function copyVal(id){const el=document.getElementById(id);el.select();try{navigator.clipboard.writeText(el.value);}catch(_){document.execCommand("copy");}toast(t("wh_copied"),"ok");}
-
-/* ============ INTÉGRATION ============ */
-async function renderIntegration(){
-  const c=document.getElementById("content");
-  const base=effectiveBase();
-  const eps=[["POST","/api/auth/login","Connexion (session)"],["GET","/api/merchants","Commerçants"],["GET","/api/products","Catalogue produits"],["POST","/api/products","Créer un produit"],["GET","/api/campaigns","Campagnes"],["GET","/api/claims","Réclamations"],["GET","/api/cashback/payments","Paiements cashback"],["POST","/api/webhook/transaction","Webhook transaction POS"],["POST","/api/mobile/ocr","OCR ticket (mobile)"]];
-  c.innerHTML=`<div class="page">${head(t("integration"),t("ig_sub"),`<button class="btn btn-primary" onclick="testConn()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>${t("ig_test")}</button>`)}
-    <div class="panel" style="margin-bottom:16px"><div class="panel-body">
-      <div class="pf-row"><span class="k">${t("ig_base")}</span><span class="v">${esc(base)}</span></div>
-      <div class="pf-row"><span class="k">${t("ig_auth")}</span><span class="v" style="font-family:var(--font-sans);font-weight:500;color:var(--text-2)">${t("ig_auth_v")}</span></div>
-    </div></div>
-    <div class="table-wrap"><div class="table-toolbar"><span class="count-pill">${t("ig_endpoints")}</span><span id="connState"></span></div>
-    <div class="table-scroll"><table><thead><tr><th>Méthode</th><th>Endpoint</th><th>${t("c_details")}</th></tr></thead>
-    <tbody>${eps.map(([m,p,d])=>`<tr><td><span class="badge ${m==="GET"?"b-info":"b-ok"}">${m}</span></td><td><span class="mono">${esc(p)}</span></td><td style="color:var(--text-2)">${esc(d)}</td></tr>`).join("")}</tbody></table></div></div></div>`;
-}
-async function testConn(){
-  const el=document.getElementById("connState");if(el)el.innerHTML='<span class="badge b-muted">…</span>';
-  try{await api("/api/health");if(el)el.innerHTML=`<span class="badge b-ok">${t("ig_ok")}</span>`;toast(t("ig_ok"),"ok");}
-  catch(e){if(el)el.innerHTML=`<span class="badge b-danger">${t("ig_ko")}</span>`;toast(t("ig_ko"),"err");}
-}
 
 /* ============ FINANCE & HISTORIQUE ============ */
 async function renderFinance(){

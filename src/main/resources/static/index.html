@@ -594,12 +594,12 @@ const ST_LABEL={
      SUBMITTED:"Soumis",APPROVED:"Approuvé",PAID:"Payé",SUCCESS:"Payé",FAILED:"Échec",PROCESSING:"En traitement",PENDING:"En attente",
      DRAFT:"Brouillon",PAUSED:"En pause",EXPIRED:"Expiré",CLOSED:"Clôturé",
      OPEN:"Ouvert",UNDER_REVIEW:"En revue",RESOLVED:"Résolu",OCR_PENDING:"OCR en attente",OCR_PROCESSED:"OCR traité",
-     ADMIN:"Admin",OPERATEUR:"Opérateur",LECTEUR:"Lecteur",PARTNER:"Partenaire"},
+     ADMIN:"Admin",SUPERVISEUR:"Superviseur",OPERATEUR:"Opérateur",LECTEUR:"Lecteur",PARTNER:"Partenaire"},
  en:{ACTIVE:"Active",PENDING:"Pending",VALIDATED:"Validated",SUSPENDED:"Suspended",REJECTED:"Rejected",
      SUBMITTED:"Submitted",APPROVED:"Approved",PAID:"Paid",SUCCESS:"Paid",FAILED:"Failed",PROCESSING:"Processing",PENDING:"Pending",
      DRAFT:"Draft",PAUSED:"Paused",EXPIRED:"Expired",CLOSED:"Closed",
      OPEN:"Open",UNDER_REVIEW:"Under review",RESOLVED:"Resolved",OCR_PENDING:"OCR pending",OCR_PROCESSED:"OCR processed",
-     ADMIN:"Admin",OPERATEUR:"Operator",LECTEUR:"Reader",PARTNER:"Partner"}
+     ADMIN:"Admin",SUPERVISEUR:"Supervisor",OPERATEUR:"Operator",LECTEUR:"Reader",PARTNER:"Partner"}
 };
 let LANG=localStorage.getItem("t2c_lang")||"fr";
 function t(k){return (I18N[LANG]&&I18N[LANG][k])||I18N.fr[k]||k;}
@@ -653,6 +653,7 @@ const MENU_GROUPS={
 };
 const MENU_ROLE_ITEMS={
  ADMIN:null,
+ SUPERVISEUR:null,
  PARTNER:new Set(["dashboard","campaigns","products","vouchers","cloOffers","partnerRequests","claims","payments","merchants","subPartners"]),
  DEFAULT:new Set(["dashboard","claims","payments"])
 };
@@ -1488,7 +1489,7 @@ async function renderTable(key){
     ${key==="review"?`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-warn">Contrôle manuel</span><div><strong>Validation manuelle des réclamations nécessitant un contrôle avant approbation ou rejet.</strong></div></div></div>`:""}
      ${key==="transactions"?transactionImportPanel():key==="payments"?paymentProcessingPanel():""}
     <div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="cp">—</span></div>
-    <div class="table-scroll"><table><thead><tr>${cfg.cols.map(col=>`<th>${t(col[1])}</th>`).join("")}</tr></thead>
+     <div class="table-scroll"><table><thead><tr>${cfg.cols.map(col=>`<th>${t(col[1])}</th>`).join("")}${key==="transactions"?"<th>Parcours</th>":""}</tr></thead>
     <tbody id="tbody">${rowSkeleton(cfg.cols.length,6)}</tbody></table></div></div></div>`;
   try{
     let rows=await api(EP);
@@ -1497,6 +1498,26 @@ async function renderTable(key){
   }catch(e){document.getElementById("tbody").innerHTML=`<tr><td colspan="${cfg.cols.length}">${emptyMini(t("err_load"))}</td></tr>`;document.getElementById("cp").textContent="0";}
 }
 function unwrapRows(data){return Array.isArray(data)?data:(data&&Array.isArray(data.content)?data.content:[]);}
+function workflowStatusLabel(s){return ({RECEIVED:"Transaction reçue",CARD_VALIDATED:"Carte vérifiée",MERCHANT_MATCHED:"Commerçant rapproché",CAMPAIGN_MATCHED:"Campagne rapprochée",CASHBACK_CALCULATED:"Cashback calculé",FRAUD_CHECKED:"Contrôle fraude",APPROVED_FOR_PAYMENT:"Paiement autorisé",PAYMENT_GENERATED:"Paiement généré",APPROVED_FOR_CREDIT:"Crédit client autorisé",CREDIT_PENDING:"Crédit en attente",CREDITED:"Client crédité",MANUAL_REVIEW:"Révision manuelle",REJECTED:"Rejetée"}[s]||s||"Non initialisé");}
+function workflowStatusBadge(s){const cls=s==="CURRENT"?"b-warn":s==="COMPLETED"?"b-ok":"b-muted";return `<span class="badge ${cls}">${s==="CURRENT"?"En cours":s==="COMPLETED"?"Terminé":"En attente"}</span>`;}
+async function openTransactionWorkflow(id){
+  if(!id){toast("Identifiant transaction manquant.","err");return;}
+  try{
+    const w=await api(`/api/transactions/${id}/workflow`), rows=(w.timeline||[]);
+    const canApprove=ME&&(ME.role==="ADMIN"||ME.role==="SUPERVISEUR"),canReview=ME&&(canApprove||ME.role==="OPERATEUR");
+    const timeline=rows.map(x=>`<div style="display:grid;grid-template-columns:12px 1fr auto;gap:10px;align-items:start;padding:10px 0;border-bottom:1px solid var(--border)"><div style="width:10px;height:10px;border-radius:50%;margin-top:5px;background:${x.status==="COMPLETED"?"var(--ok)":x.status==="CURRENT"?"var(--warn)":"var(--border)"}"></div><div><strong>${esc(workflowStatusLabel(x.step))}</strong><div style="font-size:11px;color:var(--muted)">${x.date?dt(x.date):"—"}${x.validatedBy?" · "+esc(x.validatedBy):""}</div>${x.comment?`<div style="font-size:12px;white-space:pre-wrap;margin-top:3px">${esc(x.comment)}</div>`:""}</div>${workflowStatusBadge(x.status)}</div>`).join("");
+    const actions=`${canApprove?`<button class="btn btn-primary" onclick="workflowValidate(${id})">Valider étape</button><button class="btn btn-ghost" onclick="workflowApprovePayment(${id})">Autoriser paiement</button><button class="btn btn-ghost" onclick="workflowApproveCredit(${id})">Autoriser crédit</button><button class="btn btn-ghost" onclick="workflowReject(${id})">Rejeter</button>`:""}${canReview?`<button class="btn btn-ghost" onclick="workflowManualReview(${id})">Mettre en révision</button>`:""}<button class="btn btn-ghost" onclick="closeModal()">Fermer</button>`;
+    openModal("Parcours transactionnel",`<div style="margin-bottom:12px"><strong>${esc(w.transactionRef||"—")}</strong> · <span class="mono">${esc(w.maskedCard||"—")}</span><br><span class="badge b-info">${esc(workflowStatusLabel(w.workflowStatus))}</span></div><div>${timeline||emptyMini("Aucune étape")}</div>`,actions);
+  }catch(e){toast(String(e.message||e).slice(0,180),"err");}
+}
+async function workflowAction(id,url,body,message){
+  try{await api(`/api/transactions/${id}/workflow/${url}`,{method:"POST",body:JSON.stringify(body||{})});toast(message,"ok");closeModal();openTransactionWorkflow(id);}catch(e){toast(String(e.message||e).slice(0,180),"err");}
+}
+function workflowValidate(id){const step=prompt("Étape à valider (ex. CARD_VALIDATED)");if(step)workflowAction(id,"validate-step",{step:step,comment:prompt("Commentaire (optionnel)")||""},"Étape validée");}
+function workflowManualReview(id){workflowAction(id,"manual-review",{comment:prompt("Motif de révision")||""},"Transaction mise en révision");}
+function workflowReject(id){const reason=prompt("Motif du rejet");if(reason)workflowAction(id,"reject",{reason:reason},"Transaction rejetée");}
+function workflowApprovePayment(id){workflowAction(id,"approve-for-payment",{comment:prompt("Commentaire (optionnel)")||""},"Paiement autorisé");}
+function workflowApproveCredit(id){workflowAction(id,"approve-for-credit",{comment:prompt("Commentaire (optionnel)")||""},"Crédit client autorisé");}
 function fraudStatusLabel(status){
   const s=String(status||"").toUpperCase();
   return ({OPEN:"Ouverte",UNDER_REVIEW:"En analyse",REVIEWING:"En analyse",RESOLVED:"Résolue",REJECTED:"Rejetée / non retenue",DISMISSED:"Rejetée / non retenue"}[s]||stLabel(s)||"—");
@@ -1633,8 +1654,9 @@ function paintRows(key,rows){
   const cfg=TABLES[key],tb=document.getElementById("tbody"),cp=document.getElementById("cp");if(!tb)return;
   if(key==="auditLogs") rows=rows.map(r=>Object.assign({},r,{auditIdentifier:r.identifier||r.entityId||r.reference||r.actor||null,auditDetails:r.details||r.description||r.message||null}));
   cp.textContent=rows.length+" "+t("items");
-  if(!rows.length){tb.innerHTML=`<tr><td colspan="${cfg.cols.length}">${emptyFull()}</td></tr>`;return;}
-  tb.innerHTML=rows.map(r=>`<tr>${cfg.cols.map(col=>`<td>${cell(r,col)}</td>`).join("")}</tr>`).join("");
+  const extra=key==="transactions"?1:0;
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="${cfg.cols.length+extra}">${emptyFull()}</td></tr>`;return;}
+  tb.innerHTML=rows.map(r=>`<tr>${cfg.cols.map(col=>`<td>${cell(r,col)}</td>`).join("")}${key==="transactions"?`<td><button class="mini-btn" onclick="openTransactionWorkflow(${Number(r.id)||0})">Voir parcours</button></td>`:""}</tr>`).join("");
 }
 
 /* ============ USERS (V9.1 — renderUsers dédié avec diagnostic) ============ */

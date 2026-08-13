@@ -1,0 +1,18 @@
+package com.afriland.ticket2cash.pos;
+
+public enum TransactionWorkflowStatus {
+    RECEIVED,
+    DEDUPLICATED,
+    CARD_VALIDATED,
+    MERCHANT_MATCHED,
+    CAMPAIGN_MATCHED,
+    CASHBACK_CALCULATED,
+    FRAUD_CHECKED,
+    APPROVED_FOR_PAYMENT,
+    PAYMENT_GENERATED,
+    APPROVED_FOR_CREDIT,
+    CREDIT_PENDING,
+    CREDITED,
+    MANUAL_REVIEW,
+    REJECTED
+}

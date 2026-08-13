@@ -38,10 +38,23 @@ public class PosTransaction {
     private boolean matched;            // Has this been matched to a scan?
     private Long matchedClaimId;        // Claim ID if matched
 
+    @Enumerated(EnumType.STRING)
+    private TransactionWorkflowStatus workflowStatus;
+    private String currentStep;
+    private boolean manualReviewRequired;
+    private String validatedBy;
+    private LocalDateTime validatedAt;
+    @Column(length = 500)
+    private String rejectionReason;
+    @Column(length = 1000)
+    private String lastWorkflowComment;
+
     @PrePersist
     public void prePersist() {
         if (receivedAt == null) receivedAt = LocalDateTime.now();
         if (currency == null) currency = "FCFA";
+        if (workflowStatus == null) workflowStatus = TransactionWorkflowStatus.RECEIVED;
+        if (currentStep == null) currentStep = workflowStatus.name();
     }
 
     // Getters
@@ -63,6 +76,13 @@ public class PosTransaction {
     public LocalDateTime getReceivedAt() { return receivedAt; }
     public boolean isMatched() { return matched; }
     public Long getMatchedClaimId() { return matchedClaimId; }
+    public TransactionWorkflowStatus getWorkflowStatus() { return workflowStatus; }
+    public String getCurrentStep() { return currentStep; }
+    public boolean isManualReviewRequired() { return manualReviewRequired; }
+    public String getValidatedBy() { return validatedBy; }
+    public LocalDateTime getValidatedAt() { return validatedAt; }
+    public String getRejectionReason() { return rejectionReason; }
+    public String getLastWorkflowComment() { return lastWorkflowComment; }
 
     // Setters
     public void setId(Long id) { this.id = id; }
@@ -83,4 +103,11 @@ public class PosTransaction {
     public void setReceivedAt(LocalDateTime receivedAt) { this.receivedAt = receivedAt; }
     public void setMatched(boolean matched) { this.matched = matched; }
     public void setMatchedClaimId(Long matchedClaimId) { this.matchedClaimId = matchedClaimId; }
+    public void setWorkflowStatus(TransactionWorkflowStatus workflowStatus) { this.workflowStatus = workflowStatus; }
+    public void setCurrentStep(String currentStep) { this.currentStep = currentStep; }
+    public void setManualReviewRequired(boolean manualReviewRequired) { this.manualReviewRequired = manualReviewRequired; }
+    public void setValidatedBy(String validatedBy) { this.validatedBy = validatedBy; }
+    public void setValidatedAt(LocalDateTime validatedAt) { this.validatedAt = validatedAt; }
+    public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
+    public void setLastWorkflowComment(String lastWorkflowComment) { this.lastWorkflowComment = lastWorkflowComment; }
 }

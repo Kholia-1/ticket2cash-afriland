@@ -768,7 +768,7 @@ function loyaltyInfoPanel(type){
 function adminInfoPanel(type){
   const panels={
     users:{badge:"Accès",title:"Gestion des comptes, rôles, accès et rattachements aux commerçants.",note:"Les modifications de rôle, verrouillage ou désactivation sont des actions sensibles."},
-    settings:{badge:"Système",title:"Configuration des paramètres système et services techniques de la plateforme.",note:"Les paramètres techniques doivent être modifiés uniquement par un administrateur habilité."},
+    settings:{badge:"Système",title:"Configuration des paramètres système et services techniques de la plateforme.",note:"Les valeurs sensibles sont masquées pour des raisons de sécurité."},
     profile:{badge:"Profil",title:"Consultation et mise à jour des informations du compte connecté."},
     finance:{badge:"Finance",title:"Suivi financier des paiements cashback, historiques et transactions non rapprochées.",note:"Ce module sert au contrôle financier et au rapprochement, même s’il reste visible dans Administration."},
     pricing:{badge:"Technique",title:"Gestion des offres, plans tarifaires ou paramètres de facturation de la plateforme.",note:"Module technique à réserver aux administrateurs."},
@@ -779,8 +779,13 @@ function adminInfoPanel(type){
   const cls=type==="ticketTemplate"?"b-muted":"b-info";
   return `<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge ${cls}">${p.badge}</span><div><strong>${p.title}</strong>${p.note?`<div style="margin-top:4px;color:var(--muted);font-size:12px">${p.note}</div>`:""}</div></div></div>`;
 }
-function isSensitiveSetting(key){return /(password|passwd|secret|token|api[_-]?key|private[_-]?key|smtp[_-]?pass)/i.test(String(key||""));}
-function safeSettingValue(key,value){return isSensitiveSetting(key) ? "••••" : (value==null||value===""?"—":String(value));}
+function maskSensitiveSetting(key,value){
+  const name=String(key||"").toLowerCase().replace(/[\s-]/g,"_");
+  const sensitive=/(password|passwd|pwd|secret|token|api[_]?key|apikey|key|credential|smtp[_]?password|bearer|private)/i.test(name);
+  return sensitive ? "••••••••" : (value==null||value===""?"—":String(value));
+}
+function isSensitiveSetting(key){return maskSensitiveSetting(key,"__SENTINEL__")==="••••••••";}
+function safeSettingValue(key,value){return maskSensitiveSetting(key,value);}
 function maskSecret(value){
   const s=String(value||"");
   if(!s) return "••••";
@@ -2098,13 +2103,14 @@ function renderAccount(tab){
   if(tab==="users"&&!isAdmin)tab="profile";
   if(tab==="smtp"&&!isAdmin)tab="profile";
   document.getElementById("content").innerHTML=`<div class="page">${head(t("account"),t("account_sub"))}
+    ${tab==="settings"?adminInfoPanel("settings"):tab==="profile"?adminInfoPanel("profile"):""}
     <div class="tabs">${tabs.map(([k,l])=>`<div class="tab ${k===tab?"active":""}" onclick="renderAccount('${k}')">${t(l)}</div>`).join("")}</div>
     <div id="acctBody"></div></div>`;
   ({profile:acctProfile,security:acctSecurity,users:acctUsers,smtp:acctSmtp,settings:acctSettings}[tab]||acctProfile)();
 }
 function acctProfile(){
   const roleL=stLabel(ME.role),av=getAvatar();
-  document.getElementById("acctBody").innerHTML=`<div class="panel profile-card"><div class="panel-body">
+  document.getElementById("acctBody").innerHTML=`<div class="info-banner" style="margin-bottom:14px"><div>Consultation et mise à jour des informations du compte connecté.</div></div><div class="panel profile-card"><div class="panel-body">
     <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
       <div class="avatar-lg" id="acctBigAvatar">${av?`<img src="${av}" alt="">`:esc((ME.fullName||ME.username||"A")[0].toUpperCase())}</div>
       <div>
@@ -2237,21 +2243,29 @@ async function submitAddUser(){
 }
 async function acctSettings(){
   document.getElementById("acctBody").innerHTML=`<div class="table-wrap"><div class="table-toolbar"><span class="count-pill">${t("settings")}</span></div>
+    <div class="info-banner" style="margin-bottom:14px"><div>Configuration des paramètres système et services techniques de la plateforme.<br><span style="font-size:12px">Les valeurs sensibles sont masquées pour des raisons de sécurité.</span></div></div>
     <div class="table-scroll"><table><thead><tr><th>${t("set_param")}</th><th>${t("set_value")}</th><th>${t("c_details")}</th><th></th></tr></thead>
     <tbody id="setBody">${rowSkeleton(4,5)}</tbody></table></div></div>`;
   try{let s=await api("/api/settings");if(!Array.isArray(s))s=[];
-    document.getElementById("setBody").innerHTML=s.length?s.map(x=>`<tr>
-      <td class="strong">${esc(x.settingKey)}</td><td><span class="mono">${esc(x.settingValue)}</span></td>
+    document.getElementById("setBody").innerHTML=s.length?s.map(x=>{
+      const key=x.settingKey||x.key||x.name||"";
+      const sensitive=isSensitiveSetting(key);
+      const safeKey=esc(key).replace(/'/g,"&#39;");
+      const editArgs=sensitive?`'${safeKey}',null,true`:`'${safeKey}','${esc(String(x.settingValue??"")).replace(/'/g,"")}',false`;
+      return `<tr><td class="strong">${esc(key)}</td><td><span class="mono">${esc(maskSensitiveSetting(key,x.settingValue))}</span></td>
       <td style="color:var(--text-2);font-size:12.5px">${esc(x.description||"—")}</td>
-      <td class="row-actions"><button class="mini-btn" onclick="editSetting('${esc(x.settingKey)}','${esc(String(x.settingValue).replace(/'/g,""))}')">${t("set_edit")}</button></td></tr>`).join(""):`<tr><td colspan="4">${emptyMini(t("empty"))}</td></tr>`;
+      <td class="row-actions"><button class="mini-btn" onclick="editSetting(${editArgs})">${t("set_edit")}</button></td></tr>`;
+    }).join(""):`<tr><td colspan="4">${emptyMini(t("empty"))}</td></tr>`;
   }catch(e){document.getElementById("setBody").innerHTML=`<tr><td colspan="4">${emptyMini(t("err_load"))}</td></tr>`;}
 }
-function editSetting(key,cur){
-  openModal(key,`<div class="field full"><label>${t("set_value")}</label><input id="set_val" value="${esc(cur)}"></div>`,
+function editSetting(key,cur,sensitive){
+  const secure=!!sensitive||isSensitiveSetting(key);
+  openModal(key,`<div class="field full"><label>${t("set_value")}</label><input id="set_val" type="${secure?"password":"text"}" value="${secure?"":esc(cur||"")}" placeholder="${secure?"Valeur masquée — saisissez une nouvelle valeur":""}" autocomplete="${secure?"new-password":"off"}"></div>`,
     `<button class="btn btn-ghost" onclick="closeModal()">${t("cancel")}</button><button class="btn btn-primary" onclick="saveSetting('${esc(key)}')">${t("save")}</button>`);
 }
 async function saveSetting(key){
   const v=val("set_val");
+  if(isSensitiveSetting(key)&&!v){toast("Saisissez une nouvelle valeur sensible ou annulez.","err");return;}
   try{await api(`/api/settings/${encodeURIComponent(key)}?value=${encodeURIComponent(v)}`,{method:"PUT"});
     toast(t("set_saved"),"ok");closeModal();acctSettings();
   }catch(e){toast(String(e.message||e).slice(0,120),"err");}

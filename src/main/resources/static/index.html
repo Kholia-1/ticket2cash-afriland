@@ -759,6 +759,7 @@ function refreshBtn(){return `<button class="btn btn-ghost" onclick="go('${CURRE
 async function renderDashboard(){
   const c=document.getElementById("content");
   c.innerHTML=`<div class="page">${head(t("dashboard"),t("dash_sub"),refreshBtn())}
+    <div class="panel" style="margin-bottom:16px"><div class="panel-body"><span class="badge b-info">Vue générale</span> <strong>Vue générale de l’activité Ticket2Cash : transactions, cashback, commerçants, campagnes et réclamations.</strong></div></div>
     <div class="kpi-grid" id="kpis">${kpiSkeletons(4)}</div>
     <div class="grid-2">
       <div class="panel"><div class="panel-head"><h3>${t("recent_claims")}</h3><span class="link" onclick="go('claims')">${t("view_all")}</span></div><div class="panel-body" id="recentClaims">${skLines(4)}</div></div>
@@ -790,6 +791,7 @@ async function renderDashboard(){
 async function renderBusinessDashboard(){
   const c=document.getElementById("content");
   c.innerHTML=`<div class="page">${head(t("businessDashboard"),t("bd_sub"),refreshBtn())}
+    <div class="panel" style="margin-bottom:16px"><div class="panel-body"><span class="badge b-ok">Métier</span> <strong>Analyse métier des performances commerciales, de la fidélité et de l’activité cashback.</strong></div></div>
     <div class="kpi-grid" id="bdKpis">${kpiSkeletons(4)}</div>
     <div class="grid-2">
       <div class="panel">
@@ -2352,7 +2354,8 @@ function barChart(data,unit){
 }
 async function renderTrends(){
   const c=document.getElementById("content");
-  c.innerHTML=`<div class="page">${head(t("trends"),t("tr_sub"),refreshBtn())}
+  c.innerHTML=`<div class="page">${head("Tendances & évolution","Suivi de l’évolution des paiements, réclamations et indicateurs clés dans le temps.",refreshBtn())}
+    <div class="panel" style="margin-bottom:16px"><div class="panel-body"><span class="badge b-info">Évolution</span> <strong>Lecture des indicateurs dans le temps pour suivre les variations d’activité.</strong></div></div>
     <div class="grid-2">
       <div class="panel"><div class="panel-head"><h3>${t("tr_cashback_time")}</h3></div><div class="panel-body" id="trCash">${skLines(4)}</div></div>
       <div class="panel"><div class="panel-head"><h3>${t("tr_claims_status")}</h3></div><div class="panel-body" id="trClaims">${skLines(4)}</div></div>

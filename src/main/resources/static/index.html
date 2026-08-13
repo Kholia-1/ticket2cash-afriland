@@ -196,6 +196,9 @@ html[data-theme="dark"] .kpi .kpi-icon{background:rgba(193,18,31,.16)}
 .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-sm)}
 .table-toolbar{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap}
 .table-toolbar .count-pill{font-size:12px;color:var(--text-2);background:var(--surface-2);border:1px solid var(--border);padding:4px 11px;border-radius:20px;font-weight:600}
+.transactions-table th:first-child,.transactions-table td:first-child{position:sticky;left:0;z-index:2;background:var(--surface);box-shadow:4px 0 8px rgba(0,0,0,.06);white-space:nowrap}
+.transactions-table th:first-child{z-index:3}
+.transactions-table{min-width:920px}
 .table-scroll{overflow-x:auto}
 table{width:100%;border-collapse:collapse;min-width:640px}
 thead th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:12px 18px;background:var(--surface-2);border-bottom:1px solid var(--border);white-space:nowrap}
@@ -593,12 +596,12 @@ const ST_LABEL={
  fr:{ACTIVE:"Actif",PENDING:"En attente",VALIDATED:"Validé",SUSPENDED:"Suspendu",REJECTED:"Rejeté",
      SUBMITTED:"Soumis",APPROVED:"Approuvé",PAID:"Payé",SUCCESS:"Payé",FAILED:"Échec",PROCESSING:"En traitement",PENDING:"En attente",
      DRAFT:"Brouillon",PAUSED:"En pause",EXPIRED:"Expiré",CLOSED:"Clôturé",
-     OPEN:"Ouvert",UNDER_REVIEW:"En revue",RESOLVED:"Résolu",OCR_PENDING:"OCR en attente",OCR_PROCESSED:"OCR traité",
+     OPEN:"Ouvert",UNDER_REVIEW:"En revue",RESOLVED:"Résolu",RECEIVED:"Reçue",OCR_PENDING:"OCR en attente",OCR_PROCESSED:"OCR traité",
      ADMIN:"Admin",SUPERVISEUR:"Superviseur",OPERATEUR:"Opérateur",LECTEUR:"Lecteur",PARTNER:"Partenaire"},
  en:{ACTIVE:"Active",PENDING:"Pending",VALIDATED:"Validated",SUSPENDED:"Suspended",REJECTED:"Rejected",
      SUBMITTED:"Submitted",APPROVED:"Approved",PAID:"Paid",SUCCESS:"Paid",FAILED:"Failed",PROCESSING:"Processing",PENDING:"Pending",
      DRAFT:"Draft",PAUSED:"Paused",EXPIRED:"Expired",CLOSED:"Closed",
-     OPEN:"Open",UNDER_REVIEW:"Under review",RESOLVED:"Resolved",OCR_PENDING:"OCR pending",OCR_PROCESSED:"OCR processed",
+     OPEN:"Open",UNDER_REVIEW:"Under review",RESOLVED:"Resolved",RECEIVED:"Received",OCR_PENDING:"OCR pending",OCR_PROCESSED:"OCR processed",
      ADMIN:"Admin",SUPERVISEUR:"Supervisor",OPERATEUR:"Operator",LECTEUR:"Reader",PARTNER:"Partner"}
 };
 ST_LABEL.fr.CREDIT_PENDING="Crédit en attente"; ST_LABEL.fr.CREDITED="Crédité"; ST_LABEL.fr.REVERSED="Annulé";
@@ -606,6 +609,8 @@ ST_LABEL.en.CREDIT_PENDING="Credit pending"; ST_LABEL.en.CREDITED="Credited"; ST
 let LANG=localStorage.getItem("t2c_lang")||"fr";
 function t(k){return (I18N[LANG]&&I18N[LANG][k])||I18N.fr[k]||k;}
 function stLabel(s){const u=String(s||"").toUpperCase();return (ST_LABEL[LANG]&&ST_LABEL[LANG][u])||s||"—";}
+function cashbackStatusLabel(s){return ({APPROVED:"Approuvé",REJECTED:"Rejeté",PENDING:"En attente",SUCCESS:"Traité",FAILED:"Rejeté"}[String(s||"").toUpperCase()]||stLabel(s)||"—");}
+function transactionStatusLabel(s){return ({SUCCESS:"Traité",PENDING:"En attente",FAILED:"Échec",RECEIVED:"Reçue"}[String(s||"").toUpperCase()]||stLabel(s)||"—");}
 
 /* ============ ICONS ============ */
 const IC={
@@ -1465,7 +1470,7 @@ payments:{ep:"/api/cashback/payments",title:"payments",sub:"payments_sub",cols:[
  users:{ep:"/api/auth/users",title:"users",sub:"users_sub",cols:[["username","c_username","strong"],["fullName","c_fullname"],["email","c_email","mono"],["role","c_role","badge"],["accountLocked","c_locked","lock"],["lastLoginAt","c_lastlogin","date"]]},
  fraud:{ep:"/api/fraud/alerts",title:"fraud",sub:"fraud_sub",cols:[["alertReference","c_alertref","mono"],["reason","c_reason","strong"],["riskScore","c_score","risk"],["userId","c_user","mono"],["status","c_status","badge"],["createdAt","c_created","date"]]},
  auditLogs:{ep:"/api/audit-logs",title:"auditLogs",sub:"auditLogs_sub",cols:[["action","c_action","strong"],["auditIdentifier","c_username","mono"],["auditDetails","c_details","auditDetails"],["createdAt","c_timestamp","date"]]},
- transactions:{ep:"/api/transactions",title:"transactions",sub:"transactions_sub",cols:[["transactionRef","c_reference","mono"],["maskedCard","c_card","mono"],["amount","c_amount_currency","moneyCurrency"],["merchantName","c_store","strong"],["mccCode","c_mcc","mono"],["channel","c_channel"],["terminalId","c_terminal","mono"],["status","c_status","transactionStatus"],["matched","c_match","matchingStatus"],["transactionDate","c_transaction_date","transactionDate"],["receivedAt","c_received_date","transactionDate"],["cashbackAmount","c_cashback_amount","cashbackMoney"],["cashbackStatus","c_cashback_status","badge"],["campaignName","c_campaign_name","campaign"],["cashbackDecision","c_cashback_decision","badge"],["workflowStatus","Workflow","workflowBadge"],["currentStep","Étape","workflowStep"],["manualReviewRequired","Révision manuelle","bool"],["rejectionReason","c_rejection_reason","text"]]}
+ transactions:{ep:"/api/transactions",title:"transactions",sub:"transactions_sub",cols:[["transactionRef","c_reference","mono"],["maskedCard","c_card","mono"],["amount","c_amount_currency","moneyCurrency"],["merchantName","c_store","strong"],["cashbackAmount","Montant cashback","cashbackMoney"],["cashbackDecision","Décision cashback","badge"],["workflowStatus","Workflow","workflowBadge"],["currentStep","Étape","workflowStep"]]}
 };
 function cashbackContextPanel(key){
   const panels={
@@ -1484,6 +1489,7 @@ async function renderTable(key){
   const needsMap=cfg.cols.some(col=>col[2]==="chain"||col[2]==="parentname");
   if(needsMap||key==="merchants")await loadMerchants();
   const canAdd=["merchants","products","campaigns","users"].includes(key)&&ME.role!=="PARTNER";
+  const transactionFilters=key==="transactions"?`<div class="table-toolbar" style="margin-bottom:10px"><input id="txSearch" placeholder="Rechercher une référence…" oninput="filterTransactionRows()" style="flex:1;min-width:180px"><select id="txCashbackFilter" onchange="filterTransactionRows()"><option value="">Tous les statuts cashback</option><option value="APPROVED">Approuvé</option><option value="PENDING">En attente</option><option value="SUCCESS">Traité</option><option value="FAILED">Rejeté</option></select><select id="txWorkflowFilter" onchange="filterTransactionRows()"><option value="">Tous les workflows</option><option value="RECEIVED">Reçue</option><option value="MANUAL_REVIEW">En révision</option><option value="APPROVED_FOR_PAYMENT">Paiement autorisé</option><option value="APPROVED_FOR_CREDIT">Crédit autorisé</option></select><label style="font-size:12px;color:var(--muted);display:flex;gap:5px;align-items:center"><input id="txReviewFilter" type="checkbox" onchange="filterTransactionRows()"> Révision manuelle</label></div>`:"";
   const addClick = key==="merchants" ? "merchantModal()" : `toast(t('form_soon')+' ${cfg.ep}','ok')`;
   const actions=(key==="payments"?`<button class="btn btn-primary" onclick="processPendingCashbackPayments()">Traiter les paiements en attente</button><button class="btn btn-ghost" onclick="creditPendingCashbacks()">Créditer les cashback validés</button>`:"")+(canAdd?`<button class="btn btn-primary" onclick="${addClick}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${t("add")}</button>`:"")+refreshBtn();
   const displayTitle=key==="claims"?"Réclamations clients":t(cfg.title);
@@ -1493,8 +1499,8 @@ async function renderTable(key){
     ${key==="payments"?`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="font-size:12px;color:var(--muted)">Dans le prototype, le crédit client est simulé. En production, cette étape devra être connectée au système cartes prépayées ou au core banking.</div></div>`:""}
     ${key==="review"?`<div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;gap:10px;align-items:flex-start"><span class="badge b-warn">Contrôle manuel</span><div><strong>Validation manuelle des réclamations nécessitant un contrôle avant approbation ou rejet.</strong></div></div></div>`:""}
      ${key==="transactions"?transactionImportPanel():key==="payments"?paymentProcessingPanel():""}
-    <div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="cp">—</span></div>
-     <div class="table-scroll"><table><thead><tr>${cfg.cols.map(col=>`<th>${t(col[1])}</th>`).join("")}${key==="transactions"?"<th>Parcours</th>":""}</tr></thead>
+    ${transactionFilters}<div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="cp">—</span></div>
+     <div class="table-scroll"><table class="${key==="transactions"?"transactions-table":""}"><thead><tr>${key==="transactions"?"<th>Action</th>":""}${cfg.cols.map(col=>`<th>${t(col[1])}</th>`).join("")}</tr></thead>
     <tbody id="tbody">${rowSkeleton(cfg.cols.length,6)}</tbody></table></div></div></div>`;
   try{
     let rows=await api(EP);
@@ -1648,7 +1654,7 @@ function cell(row,col){
     case "badge":return badge(v);
     case "workflowBadge":return `<span class="badge ${v==="MANUAL_REVIEW"||v==="REJECTED"?"b-danger":v==="APPROVED_FOR_CREDIT"||v==="CREDITED"?"b-ok":"b-info"}">${esc(workflowStatusLabel(v))}</span>`;
     case "workflowStep":return esc(v||row.workflowStatus||"—");
-    case "transactionStatus":return badge(v|| (row.matched?"Rapprochée":"Non rapprochée"));
+    case "transactionStatus":return `<span class="badge b-info">${esc(transactionStatusLabel(v|| (row.matched?"Rapprochée":"Non rapprochée")))}</span>`;
     case "matchingStatus":return badge(v?"Rapprochée":"Non rapprochée");
     case "transactionDate":return `<span style="color:var(--text-2)">${dt(v||row.receivedAt)}</span>`;
     case "bool":return v?`<span class="badge b-ok">${t("yes")}</span>`:`<span class="badge b-muted">${t("no")}</span>`;
@@ -1660,13 +1666,26 @@ function cell(row,col){
     default:return esc(v==null?"—":v);
   }
 }
+function transactionDetails(row){
+  const items=[['MCC',row.mccCode],['Canal',row.channel],['Terminal',row.terminalId],['Statut transaction',row.status],['Rapprochement',row.matched?'Rapprochée':'Non rapprochée'],['Date transaction',row.transactionDate],['Date réception',row.receivedAt],['Campagne',row.campaignName||row.campaignId],['Statut cashback',row.cashbackStatus],['Motif rejet',row.rejectionReason],['Révision manuelle',row.manualReviewRequired?'Oui':'Non']];
+  return items.map(([label,value])=>`<div class="pf-row"><span class="k">${esc(label)}</span><span class="v">${label==="Statut cashback"?`<span class="badge b-info">${esc(cashbackStatusLabel(value))}</span>`:label==="Statut transaction"?`<span class="badge b-info">${esc(transactionStatusLabel(value))}</span>`:label.includes('Date')?dt(value):esc(value==null||value===''?'—':value)}</span></div>`).join('');
+}
+function openTransactionDetails(row){
+  openModal('Détails transaction',`<div class="panel-body" style="padding:0"><div class="pf-row"><span class="k">Référence</span><span class="v mono">${esc(row.transactionRef||'—')}</span></div><div class="pf-row"><span class="k">Carte</span><span class="v mono">${esc(row.maskedCard||'—')}</span></div>${transactionDetails(row)}</div>`, `<button class="btn btn-ghost" onclick="closeModal()">Fermer</button><button class="btn btn-primary" onclick="closeModal();openTransactionWorkflow(${Number(row.id)||0})">Voir parcours</button>`);
+}
+function openTransactionDetailsById(id){const row=(CACHE.transactions||[]).find(x=>Number(x.id)===Number(id));if(row)openTransactionDetails(row);}
+function filterTransactionRows(){
+  const q=String(document.getElementById('txSearch')?.value||'').toLowerCase(), cashback=String(document.getElementById('txCashbackFilter')?.value||''), workflow=String(document.getElementById('txWorkflowFilter')?.value||''), review=!!document.getElementById('txReviewFilter')?.checked;
+  const rows=(CACHE.transactions||[]).filter(r=>(!q||String(r.transactionRef||'').toLowerCase().includes(q))&&(!cashback||String(r.cashbackStatus||'').toUpperCase()===cashback)&&(!workflow||String(r.workflowStatus||'').toUpperCase()===workflow)&&(!review||!!r.manualReviewRequired));
+  paintRows('transactions',rows);
+}
 function paintRows(key,rows){
   const cfg=TABLES[key],tb=document.getElementById("tbody"),cp=document.getElementById("cp");if(!tb)return;
   if(key==="auditLogs") rows=rows.map(r=>Object.assign({},r,{auditIdentifier:r.identifier||r.entityId||r.reference||r.actor||null,auditDetails:r.details||r.description||r.message||null}));
   cp.textContent=rows.length+" "+t("items");
   const extra=key==="transactions"?1:0;
   if(!rows.length){tb.innerHTML=`<tr><td colspan="${cfg.cols.length+extra}">${emptyFull()}</td></tr>`;return;}
-  tb.innerHTML=rows.map(r=>`<tr>${cfg.cols.map(col=>`<td>${cell(r,col)}</td>`).join("")}${key==="transactions"?`<td><button class="mini-btn" onclick="openTransactionWorkflow(${Number(r.id)||0})">Voir parcours</button></td>`:""}</tr>`).join("");
+  tb.innerHTML=rows.map(r=>`<tr>${key==="transactions"?`<td><button class="mini-btn" onclick="openTransactionWorkflow(${Number(r.id)||0})">Voir parcours</button><button class="mini-btn" onclick="openTransactionDetailsById(${Number(r.id)||0})">Détails</button></td>`:""}${cfg.cols.map(col=>`<td>${cell(r,col)}</td>`).join("")}</tr>`).join("");
 }
 
 /* ============ USERS (V9.1 — renderUsers dédié avec diagnostic) ============ */

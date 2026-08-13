@@ -2398,8 +2398,10 @@ async function renderWebhooks(){
   const base=effectiveBase();
   const local=isLocalBase(base)||!saved;
   const url=base+"/api/webhook/transaction";
-  const payload=JSON.stringify({transactionRef:"TX-0001",cardHash:"demo-card-hash",maskedCard:"****1234",merchantName:"Orange Cameroun",amount:15000,currency:"FCFA",transactionDate:"2026-07-08T10:30:00"},null,2);
+  const payload=JSON.stringify({transactionRef:"TX-0001",cardHash:"HASH_DEMO_1234",maskedCard:"****1234",cardBin:"411111",merchantName:"Orange Cameroun",amount:15000,currency:"FCFA",transactionDate:"2026-07-08T10:30:00"},null,2);
   c.innerHTML=`<div class="page">${head(t("webhooks"),t("wh_sub"),refreshBtn())}
+    <div class="panel" style="margin-bottom:16px"><div class="panel-body"><span class="badge b-info">Webhook</span> <strong>Suivi des transactions reçues depuis les systèmes externes : POS, supermarchés ou plateformes partenaires.</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">Les webhooks permettent de recevoir automatiquement les transactions cartes et de les intégrer au parcours cashback.</div></div></div>
+    <div class="panel" style="margin-bottom:16px"><div class="panel-body" style="font-size:12px;color:var(--text-2)"><strong>Webhook</strong> = réception automatique d’événements envoyés par un système externe.</div></div>
     <div class="panel" style="margin-bottom:16px"><div class="panel-body">
       <div class="field full"><label>${t("wh_base")}</label>
         <div style="display:flex;gap:8px"><input id="whBaseInput" placeholder="${t("wh_base_ph")}" value="${esc(saved)}"><button class="btn btn-primary" onclick="saveWebhookBase()">${t("save")}</button></div>
@@ -3199,7 +3201,8 @@ async function renderApiKeys(){
   await loadMerchants();
   const c=document.getElementById("content");
   const base=effectiveBase();
-  c.innerHTML=`<div class="page">${head(t("apiKeys"),t("ak_sub"),`<button class="btn btn-primary" onclick="apiKeyModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${t("ak_new")}</button>`+refreshBtn())}
+  c.innerHTML=`<div class="page">${head(t("apiKeys"),"Gestion des clés d’accès utilisées par les partenaires pour se connecter aux API Ticket2Cash.",`<button class="btn btn-primary" onclick="apiKeyModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${t("ak_new")}</button>`+refreshBtn())}
+    <div class="panel" style="margin-bottom:16px"><div class="panel-body"><span class="badge b-info">API</span> <span class="badge b-ok">Partenaire</span> <strong>Les clés complètes ne doivent être visibles qu’à la création.</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">Ensuite, seuls les préfixes ou identifiants masqués doivent être affichés.</div><div style="margin-top:6px;color:var(--muted);font-size:12px"><strong>API partenaire</strong> = accès contrôlé permettant à un partenaire d’interroger ou d’envoyer des données.</div></div></div>
     <div class="panel" style="margin-bottom:16px"><div class="panel-body">
       <div class="field full"><label>${t("ak_endpoint")}</label>
         <div style="display:flex;gap:8px"><input readonly id="akEp" value="${esc(base)}/api/v1/transactions"><button class="btn btn-ghost" onclick="copyVal('akEp')">${t("wh_copy")}</button></div></div>

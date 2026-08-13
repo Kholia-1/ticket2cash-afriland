@@ -441,8 +441,8 @@ const I18N={
   payments_sub:"Versements de cashback traités.",
   users_sub:"Comptes ayant accès à la plateforme.",
   fraud_sub:"Détections de risque et doublons de tickets.",
-  auditLogs_sub:"Traçabilité des actions sensibles.",
-  sec_sub:"Connexions, comptes verrouillés et alertes de fraude.",
+  auditLogs_sub:"Registre détaillé des actions sensibles : connexions, imports, paiements, modifications et opérations administratives.",
+  sec_sub:"Vue de supervision des risques : connexions, comptes verrouillés, alertes fraude et indicateurs critiques.",
   sec_failed:"Tentatives échouées",sec_locked:"Comptes verrouillés",sec_open:"Alertes ouvertes",sec_success:"Connexions réussies",sec_disabled:"Comptes désactivés",sec_active_lc:"actifs",sec_total_lc:"total",sec_overview:"Vue d\'ensemble",sec_fraud:"Alertes fraude",sec_audit:"Journaux d\'audit",
   set_sub:"Configuration système et pool de cashback.",set_param:"Paramètre",set_value:"Valeur",
   pf_sub:"Informations de l'utilisateur connecté.",pf_account:"Compte",pf_fullname:"Nom complet",
@@ -544,8 +544,8 @@ const I18N={
   payments_sub:"Processed cashback payouts.",
   users_sub:"Accounts with access to the platform.",
   fraud_sub:"Risk detections and duplicate receipts.",
-  auditLogs_sub:"Audit trail of sensitive actions.",
-  sec_sub:"Logins, locked accounts and fraud alerts.",
+  auditLogs_sub:"Detailed register of sensitive actions: logins, imports, payments, changes and administrative operations.",
+  sec_sub:"Risk supervision view: logins, locked accounts, fraud alerts and critical indicators.",
   sec_failed:"Failed attempts",sec_locked:"Locked accounts",sec_open:"Open alerts",sec_success:"Successful logins",sec_disabled:"Disabled accounts",sec_active_lc:"active",sec_total_lc:"total",sec_overview:"Vue d\'ensemble",sec_fraud:"Alertes fraude",sec_audit:"Journaux d\'audit",
   set_sub:"System configuration and cashback pool.",set_param:"Setting",set_value:"Value",
   pf_sub:"Details of the signed-in user.",pf_account:"Account",pf_fullname:"Full name",
@@ -1800,6 +1800,7 @@ async function usrDelete(id, username){
 async function renderSecurity(){
   const el=document.getElementById("content");
   el.innerHTML=`<div class="page">${head(t("security"),t("sec_sub"),refreshBtn())}
+    <div class="panel" style="margin-bottom:16px"><div class="panel-body" style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><span><span class="badge b-danger">Supervision</span> Vue de supervision des risques : connexions, comptes verrouillés, alertes fraude et indicateurs critiques.</span><button class="btn btn-ghost" onclick="go('auditLogs')">Voir tous les journaux d’audit</button></div></div>
     <div class="tabs" id="secTabs">
       <div class="tab active" data-sectab="overview" onclick="secSwitchTab('overview')">${t("sec_overview")||"Vue d'ensemble"}</div>
       <div class="tab" data-sectab="fraud" onclick="secSwitchTab('fraud')">${t("sec_fraud")||"Alertes fraude"}</div>
@@ -1816,7 +1817,7 @@ async function secSwitchTab(tab){
   if(!el) return;
   if(tab==="overview"){ el.innerHTML=`<div class="kpi-grid" id="kpis">${kpiSkeletons(4)}</div>`; await secRenderOverview(); }
   else if(tab==="fraud"){ el.innerHTML=`<div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="fCp">—</span></div><div class="table-scroll"><table><thead><tr><th>#</th><th>Type</th><th>Score</th><th>Statut</th><th>Créé</th></tr></thead><tbody id="fBody">${rowSkeleton(5,5)}</tbody></table></div></div>`; await secRenderFraud(); }
-  else if(tab==="audit"){ el.innerHTML=`<div class="table-wrap"><div class="table-toolbar"><span class="count-pill" id="aCp">—</span></div><div class="table-scroll"><table><thead><tr><th>#</th><th>Action</th><th>Module</th><th>Acteur</th><th>Statut</th><th>Message</th><th>Créé</th></tr></thead><tbody id="aBody">${rowSkeleton(7,8)}</tbody></table></div></div>`; await secRenderAudit(); }
+  else if(tab==="audit"){ el.innerHTML=`<div class="panel"><div class="panel-body" style="color:var(--text-2);font-size:12px">Synthèse des derniers événements d’audit. Pour le registre complet, utilisez <button class="btn btn-ghost" style="padding:4px 8px;font-size:11px" onclick="go('auditLogs')">Voir tous les journaux</button>.</div></div><div class="table-wrap" style="margin-top:12px"><div class="table-toolbar"><span class="count-pill" id="aCp">—</span></div><div class="table-scroll"><table><thead><tr><th>Action</th><th>Acteur</th><th>Détails</th><th>Horodatage</th></tr></thead><tbody id="aBody">${rowSkeleton(4,5)}</tbody></table></div></div>`; await secRenderAudit(); }
 }
 
 async function secRenderOverview(){
@@ -1853,15 +1854,12 @@ async function secRenderAudit(){
     if(!Array.isArray(rows)) rows=rows&&rows.content?rows.content:[];
     const cp=document.getElementById("aCp"); if(cp) cp.textContent=rows.length+" items";
     const tb=document.getElementById("aBody"); if(!tb) return;
-    tb.innerHTML = rows.length ? rows.slice(0,200).map(r=>`<tr>
-      <td><span class="mono">#${esc(r.id)}</span></td>
-      <td class="strong">${esc(r.action||"—")}</td>
-      <td>${esc(r.moduleName||r.module||"—")}</td>
+    tb.innerHTML = rows.length ? rows.slice(0,20).map(r=>`<tr>
+      <td>${auditCategoryBadge(r.action)}<div class="strong">${esc(auditActionLabel(r.action))}</div><div style="font-size:10px;color:var(--muted)">${esc(r.action||"—")}</div></td>
       <td>${esc(r.identifier||r.actor||r.username||"—")}</td>
-      <td>${badge(r.status)}</td>
-      <td style="max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px" title="${esc(r.details||r.description||r.message||"")}">${esc(r.details||r.description||r.message||"—")}</td>
+      <td style="max-width:400px;white-space:pre-wrap;font-size:12px">${esc(r.details||r.description||r.message||"—")}</td>
       <td style="color:var(--text-2);font-size:12px">${dt(r.timestamp||r.createdAt)}</td>
-    </tr>`).join("") : `<tr><td colspan="7">${emptyFull()}</td></tr>`;
+    </tr>`).join("") : `<tr><td colspan="4">${emptyFull()}</td></tr>`;
   }catch(e){ const tb=document.getElementById("aBody"); if(tb) tb.innerHTML=`<tr><td colspan="7">${emptyMini(t("err_load"))}</td></tr>`; }
 }
 async function renderSettings(){

@@ -17,6 +17,11 @@ public class CashbackDecision {
     private Long campaignId;
     private Long merchantId;
     private Long ticketId;
+    private BigDecimal campaignCashbackAmount;
+    private boolean loyaltyBonusEnabled;
+    private String loyaltyTierName;
+    private BigDecimal loyaltyBonusPercent;
+    private BigDecimal loyaltyBonusAmount;
 
     public static CashbackDecision approved(CashbackDecisionCode code, String message,
                                             BigDecimal ticketAmount, BigDecimal calculatedCashback,
@@ -29,6 +34,9 @@ public class CashbackDecision {
         decision.ticketAmount = ticketAmount;
         decision.calculatedCashback = calculatedCashback;
         decision.finalCashback = calculatedCashback;
+        decision.campaignCashbackAmount = calculatedCashback;
+        decision.loyaltyBonusAmount = BigDecimal.ZERO;
+        decision.loyaltyBonusPercent = BigDecimal.ZERO;
         decision.fraudScore = fraudScore;
         decision.campaignId = campaignId;
         decision.merchantId = merchantId;
@@ -46,6 +54,9 @@ public class CashbackDecision {
         decision.ticketAmount = ticketAmount;
         decision.calculatedCashback = BigDecimal.ZERO;
         decision.finalCashback = BigDecimal.ZERO;
+        decision.campaignCashbackAmount = BigDecimal.ZERO;
+        decision.loyaltyBonusAmount = BigDecimal.ZERO;
+        decision.loyaltyBonusPercent = BigDecimal.ZERO;
         decision.fraudScore = fraudScore;
         decision.campaignId = campaignId;
         decision.merchantId = merchantId;
@@ -79,4 +90,16 @@ public class CashbackDecision {
     public void setMerchantId(Long merchantId) { this.merchantId = merchantId; }
     public Long getTicketId() { return ticketId; }
     public void setTicketId(Long ticketId) { this.ticketId = ticketId; }
+    public BigDecimal getCampaignCashbackAmount() { return campaignCashbackAmount; }
+    public void setCampaignCashbackAmount(BigDecimal v) { this.campaignCashbackAmount = v; }
+    public boolean isLoyaltyBonusEnabled() { return loyaltyBonusEnabled; }
+    public void setLoyaltyBonusEnabled(boolean v) { this.loyaltyBonusEnabled = v; }
+    public String getLoyaltyTierName() { return loyaltyTierName; }
+    public void setLoyaltyTierName(String v) { this.loyaltyTierName = v; }
+    public BigDecimal getLoyaltyBonusPercent() { return loyaltyBonusPercent; }
+    public void setLoyaltyBonusPercent(BigDecimal v) { this.loyaltyBonusPercent = v; }
+    public BigDecimal getLoyaltyBonusAmount() { return loyaltyBonusAmount; }
+    public void setLoyaltyBonusAmount(BigDecimal v) { this.loyaltyBonusAmount = v; }
+    public BigDecimal getFinalCashbackAmount() { return finalCashback; }
+    public void setFinalCashbackAmount(BigDecimal v) { this.finalCashback = v; }
 }

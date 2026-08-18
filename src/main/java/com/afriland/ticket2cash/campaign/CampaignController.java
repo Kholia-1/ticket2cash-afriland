@@ -263,6 +263,7 @@ public class CampaignController {
 
         campaign.setCashbackType(request.getCashbackType() != null ? request.getCashbackType() : CashbackType.NONE);
         campaign.setCashbackValue(request.getCashbackValue() != null ? request.getCashbackValue() : BigDecimal.ZERO);
+        campaign.setLoyaltyBonusEnabled(Boolean.TRUE.equals(request.getLoyaltyBonusEnabled()));
         campaign.setDailyLimitPerClient(request.getDailyLimitPerClient());
         campaign.setMonthlyLimitPerClient(request.getMonthlyLimitPerClient());
         campaign.setTotalBudget(request.getTotalBudget());
@@ -327,6 +328,7 @@ public class CampaignController {
         if (patch.getTriggerType() != null) existing.setTriggerType(patch.getTriggerType());
 
         if (patch.getCashbackType() != null) existing.setCashbackType(patch.getCashbackType());
+        if (patch.getLoyaltyBonusEnabled() != null) existing.setLoyaltyBonusEnabled(patch.getLoyaltyBonusEnabled());
         if (patch.getCashbackValue() != null) {
             CashbackType ct = existing.getCashbackType() != null ? existing.getCashbackType() : CashbackType.NONE;
             String err = (ct == CashbackType.PERCENTAGE)

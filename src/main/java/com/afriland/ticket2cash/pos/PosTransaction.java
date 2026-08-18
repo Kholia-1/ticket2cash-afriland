@@ -88,7 +88,13 @@ public class PosTransaction {
     public void setId(Long id) { this.id = id; }
     public void setTransactionRef(String transactionRef) { this.transactionRef = transactionRef; }
     public void setCardHash(String cardHash) { this.cardHash = cardHash; }
-    public void setMaskedCard(String maskedCard) { this.maskedCard = maskedCard; }
+    public void setMaskedCard(String maskedCard) {
+        if (maskedCard != null) {
+            String compact = maskedCard.replaceAll("[ -]", "");
+            if (compact.matches("\\d{13,19}")) maskedCard = "****" + compact.substring(compact.length() - 4);
+        }
+        this.maskedCard = maskedCard;
+    }
     public void setCardBin(String cardBin) { this.cardBin = cardBin; }
     public void setMerchantName(String merchantName) { this.merchantName = merchantName; }
     public void setMerchantId(Long merchantId) { this.merchantId = merchantId; }

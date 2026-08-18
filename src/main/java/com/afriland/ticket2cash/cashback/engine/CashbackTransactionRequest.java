@@ -16,6 +16,7 @@ public class CashbackTransactionRequest {
     private String mccCode;
     private String channel;
     private String source;
+    private String customerRef;
 
     public String getTransactionRef() { return transactionRef; }
     public void setTransactionRef(String transactionRef) { this.transactionRef = transactionRef; }
@@ -41,4 +42,6 @@ public class CashbackTransactionRequest {
     public void setChannel(String channel) { this.channel = channel; }
     public String getSource() { return source; }
     public void setSource(String source) { this.source = source; }
+    public String getCustomerRef() { return customerRef; }
+    public void setCustomerRef(String customerRef) { this.customerRef = customerRef; }
 }

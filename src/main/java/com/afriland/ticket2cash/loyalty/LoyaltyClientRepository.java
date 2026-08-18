@@ -12,6 +12,7 @@ public interface LoyaltyClientRepository extends JpaRepository<LoyaltyClient, Lo
     Optional<LoyaltyClient> findByAccountNumber(String accountNumber);
 
     List<LoyaltyClient> findByTierIgnoreCase(String tier);
+    Optional<LoyaltyClient> findByCardHash(String cardHash);
 
     long countByTierIgnoreCase(String tier);
 

@@ -70,6 +70,8 @@ public class CashbackController {
         private String campaignName;
         private LocalDateTime processedAt;
         private CashbackCreditStatus creditStatus; private String creditReference; private LocalDateTime creditedAt; private String creditFailureReason;
+        private BigDecimal campaignCashbackAmount; private Boolean loyaltyBonusEnabled; private String loyaltyTierName;
+        private BigDecimal loyaltyBonusPercent; private BigDecimal loyaltyBonusAmount; private BigDecimal finalCashbackAmount;
 
         static PaymentDto from(CashbackPayment payment, CampaignRepository campaigns,
                                MerchantRepository merchants) {
@@ -80,6 +82,9 @@ public class CashbackController {
             dto.status = payment.getStatus(); dto.campaignId = payment.getCampaignId();
             dto.processedAt = payment.getProcessedAt();
             dto.creditStatus=payment.getCreditStatus(); dto.creditReference=payment.getCreditReference(); dto.creditedAt=payment.getCreditedAt(); dto.creditFailureReason=payment.getCreditFailureReason();
+            dto.campaignCashbackAmount=payment.getCampaignCashbackAmount(); dto.loyaltyBonusEnabled=payment.getLoyaltyBonusEnabled();
+            dto.loyaltyTierName=payment.getLoyaltyTierName(); dto.loyaltyBonusPercent=payment.getLoyaltyBonusPercent();
+            dto.loyaltyBonusAmount=payment.getLoyaltyBonusAmount(); dto.finalCashbackAmount=payment.getFinalCashbackAmount();
             if (payment.getMerchantId() != null) dto.merchantName = merchants.findById(payment.getMerchantId()).map(m -> m.getName()).orElse(null);
             if (payment.getCampaignId() != null) dto.campaignName = campaigns.findById(payment.getCampaignId()).map(c -> c.getName()).orElse(null);
             return dto;
@@ -91,6 +96,9 @@ public class CashbackController {
         public Long getCampaignId(){return campaignId;} public String getCampaignName(){return campaignName;}
         public LocalDateTime getProcessedAt(){return processedAt;}
         public CashbackCreditStatus getCreditStatus(){return creditStatus;} public String getCreditReference(){return creditReference;} public LocalDateTime getCreditedAt(){return creditedAt;} public String getCreditFailureReason(){return creditFailureReason;}
+        public BigDecimal getCampaignCashbackAmount(){return campaignCashbackAmount;} public Boolean getLoyaltyBonusEnabled(){return loyaltyBonusEnabled;}
+        public String getLoyaltyTierName(){return loyaltyTierName;} public BigDecimal getLoyaltyBonusPercent(){return loyaltyBonusPercent;}
+        public BigDecimal getLoyaltyBonusAmount(){return loyaltyBonusAmount;} public BigDecimal getFinalCashbackAmount(){return finalCashbackAmount;}
     }
 
     @PostMapping("/payments/process-pending")

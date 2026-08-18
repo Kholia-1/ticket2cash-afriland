@@ -592,6 +592,8 @@ const I18N={
   group_info:"A group links several products via the same group key. Set this key to attach items to a product campaign."
  }
 };
+I18N.fr.rewards="Avantages clients";
+I18N.en.rewards="Customer benefits";
 const ST_LABEL={
  fr:{ACTIVE:"Actif",PENDING:"En attente",VALIDATED:"Validé",SUSPENDED:"Suspendu",REJECTED:"Rejeté",
      SUBMITTED:"Soumis",APPROVED:"Approuvé",PAID:"Payé",SUCCESS:"Payé",FAILED:"Échec",PROCESSING:"En traitement",PENDING:"En attente",
@@ -626,6 +628,7 @@ const IC={
  users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M17 8.5a3 3 0 0 1 0 5"/><path d="M22 20a5.5 5.5 0 0 0-4-5"/>',
  fraud:'<path d="M12 2 3 7v5c0 5 3.8 8.5 9 10 5.2-1.5 9-5 9-10V7l-9-5Z"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
  auditLogs:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/>',
+ rewards:'<path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="M2 7h20v5H2z"/><path d="M12 7v15"/><path d="M12 7H7.5a2.5 2.5 0 1 1 2.5-2.5C10 6 12 7 12 7Zm0 0h4.5A2.5 2.5 0 1 0 14 4.5C14 6 12 7 12 7Z"/>',
  review:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.77.65 1.65 1.65 0 0 0-1 1.51V22a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8 20.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.6 15a1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 8 4.6h.05a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v.05a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>',
  profile:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
@@ -658,6 +661,8 @@ const MENU_GROUPS={
  administration:{label:"ADMINISTRATION",desc:"Accès et configuration de la plateforme.",icon:"settings",items:["users","settings","profile","finance","pricing","ticketTemplate","adminInbox"]},
  integration:{label:"INTÉGRATION",desc:"Connexions avec les systèmes externes.",icon:"integration",items:["webhooks","apiKeys"]}
 };
+// Cross-module synthesis remains separate from the Cashback and Loyalty pages.
+MENU_GROUPS.dashboards.items.splice(1,0,"rewards");
 const MENU_ROLE_ITEMS={
  ADMIN:null,
  SUPERVISEUR:null,
@@ -730,6 +735,7 @@ const ROUTES={
  loyaltyTiers:renderLoyaltyTiers,vouchers:renderVouchers,
  points:renderPoints,prepaidCards:renderPrepaidCards,cloOffers:renderCloOffers
 };
+ROUTES.rewards=renderRewards;
 function go(id,silent){
   if(!ROUTES[id])id="dashboard";
   CURRENT=id; if(!silent)location.hash=id;
@@ -800,6 +806,37 @@ function maskSecret(value){
   return s.length>8 ? `${s.slice(0,4)}••••${s.slice(-4)}` : "••••";
 }
 function refreshBtn(){return `<button class="btn btn-ghost" onclick="go('${CURRENT}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>${t("refresh")}</button>`;}
+
+/* ============ COMMON CUSTOMER BENEFITS ============ */
+function rewardTypeLabel(value){
+  return ({CASHBACK_PERCENT:"Cashback (%)",CASHBACK_FIXED:"Cashback fixe",LOYALTY_POINTS:"Points fidélité",VOUCHER:"Voucher",TIER_BONUS:"Bonus de niveau"}[String(value||"").toUpperCase()]||value||"—");
+}
+function rewardDecisionLabel(value){
+  return ({APPROVED:"Approuvé",REJECTED_DUPLICATE:"Doublon",REJECTED_INVALID_AMOUNT:"Montant invalide"}[String(value||"").toUpperCase()]||value||"—");
+}
+async function renderRewards(){
+  const c=document.getElementById("content");
+  c.innerHTML=`<div class="page">${head("Avantages clients","Vue consolidée des avantages calculés pour les clients : cashback, points, vouchers et statuts de traitement.",refreshBtn())}
+    <div class="panel" style="margin-bottom:16px"><div class="panel-body"><span class="badge b-info">Synthèse</span> <strong>Cette vue consolide les avantages issus du cashback cartes et de la fidélité Afriland.</strong><div style="margin-top:4px;color:var(--muted);font-size:12px">Les parcours opérationnels restent séparés dans leurs modules respectifs.</div></div></div>
+    <div class="kpi-grid" id="rewardKpis">${kpiSkeletons(6)}</div>
+    <div class="panel"><div class="panel-head"><h3>Dernières entrées du registre des avantages</h3></div><div class="panel-body"><div class="table-scroll"><table><thead><tr><th>Source</th><th>Référence</th><th>Client</th><th>Carte masquée</th><th>Type avantage</th><th>Montant cashback</th><th>Points</th><th>Voucher</th><th>Statut</th><th>Décision</th><th>Date calcul</th></tr></thead><tbody id="rewardRows"><tr><td colspan="11">${rowSkeleton(1,6)}</td></tr></tbody></table></div></div></div></div>`;
+  let data={};
+  try{data=await api("/api/rewards/summary")||{};}catch(e){data={};}
+  const kpis=[
+    {label:"Cashback calculé",val:money(data.cashbackCalculated||0),icon:"payments"},
+    {label:"Cashback crédité",val:money(data.cashbackCredited||0),icon:"payments"},
+    {label:"Points fidélité générés",val:num(data.loyaltyPointsGenerated||0),icon:"points"},
+    {label:"Vouchers émis",val:num(data.vouchersIssued||0),icon:"vouchers"},
+    {label:"Avantages en attente",val:num(data.pendingRewards||0),icon:"review"},
+    {label:"Avantages rejetés",val:num(data.rejectedRewards||0),icon:"fraud"}
+  ];
+  document.getElementById("rewardKpis").innerHTML=kpis.map(kpiCard).join("");
+  const rows=Array.isArray(data.latestEntries)?data.latestEntries:[];
+  document.getElementById("rewardRows").innerHTML=rows.length?rows.map(r=>`<tr>
+    <td>${esc(r.sourceType||"—")}</td><td class="mono">${esc(r.sourceRef||"—")}</td><td>${esc(r.customerRef||"—")}</td><td class="mono">${esc(r.maskedCard||"—")}</td>
+    <td>${esc(rewardTypeLabel(r.benefitType))}</td><td>${money(r.cashbackAmount)}</td><td>${num(r.pointsAmount||0)}</td><td class="mono">${esc(r.voucherCode||"—")}</td>
+    <td>${badge(r.status)}</td><td>${esc(rewardDecisionLabel(r.decisionCode))}</td><td>${dt(r.calculatedAt)}</td></tr>`).join(""):`<tr><td colspan="11">${emptyMini("Aucun avantage client enregistré pour le moment.")}</td></tr>`;
+}
 
 /* ============ DASHBOARD ============ */
 async function renderDashboard(){
@@ -1466,7 +1503,7 @@ const TABLES={
  campaigns:{ep:"/api/campaigns",title:"campaigns",sub:"campaigns_sub",cols:[["name","c_campaign","strong"],["cashbackType","c_type"],["cashbackValue","c_value","numval"],["totalBudget","c_budget","money"],["endDate","c_end","date"],["status","c_status","badge"]]},
  tickets:{ep:"/api/tickets",title:"tickets",sub:"tickets_sub",cols:[["ticketNumber","c_ticketno","mono"],["storeName","c_store","strong"],["totalAmount","c_amount","money"],["ticketDateTime","c_date","date"],["fraudScore","c_risk","risk"],["status","c_status","badge"]]},
  claims:{ep:"__CLAIMS__",title:"claims",sub:"claims_sub",cols:[["claimReference","c_reference","mono"],["merchantId","c_partner","chain"],["maskedCard","c_card","mono"],["cashbackAmount","c_cashback","money"],["status","c_status","badge"],["submittedAt","c_submitted","date"]]},
-payments:{ep:"/api/cashback/payments",title:"payments",sub:"payments_sub",cols:[["paymentReference","c_payref","mono"],["userId","c_beneficiary","mono"],["amount","c_amount","money"],["currency","c_currency"],["status","c_status","badge"],["creditStatus","Crédit client","badge"],["creditReference","Référence crédit","mono"],["creditedAt","Date crédit","date"],["creditFailureReason","Motif crédit","text"],["processedAt","c_processed","date"]]},
+payments:{ep:"/api/cashback/payments",title:"payments",sub:"payments_sub",cols:[["paymentReference","c_payref","mono"],["userId","c_beneficiary","mono"],["amount","c_amount","money"],["campaignCashbackAmount","Montant campagne","money"],["loyaltyBonusAmount","Bonus fidélité","money"],["loyaltyTierName","Niveau fidélité","text"],["loyaltyBonusEnabled","Bonus activé","bool"],["finalCashbackAmount","Cashback final","money"],["currency","c_currency"],["status","c_status","badge"],["creditStatus","Crédit client","badge"],["creditReference","Référence crédit","mono"],["creditedAt","Date crédit","date"],["creditFailureReason","Motif crédit","text"],["processedAt","c_processed","date"]]},
  users:{ep:"/api/auth/users",title:"users",sub:"users_sub",cols:[["username","c_username","strong"],["fullName","c_fullname"],["email","c_email","mono"],["role","c_role","badge"],["accountLocked","c_locked","lock"],["lastLoginAt","c_lastlogin","date"]]},
  fraud:{ep:"/api/fraud/alerts",title:"fraud",sub:"fraud_sub",cols:[["alertReference","c_alertref","mono"],["reason","c_reason","strong"],["riskScore","c_score","risk"],["userId","c_user","mono"],["status","c_status","badge"],["createdAt","c_created","date"]]},
  auditLogs:{ep:"/api/audit-logs",title:"auditLogs",sub:"auditLogs_sub",cols:[["action","c_action","strong"],["auditIdentifier","c_username","mono"],["auditDetails","c_details","auditDetails"],["createdAt","c_timestamp","date"]]},
@@ -2875,6 +2912,7 @@ async function delMerchant(id,name){
 function cashbackLabel(type,value){if(!type||type==="NONE"||value==null||value==="")return "—";return type==="PERCENTAGE"?(num(value)+" %"):money(value);}
 function campaignCriteriaSummary(cm){
   const bits=[];
+  if(cm.loyaltyBonusEnabled===true)bits.push("Bonus fidélité Afriland activé");
   if(cm.minTransactionAmount!=null)bits.push("Min "+money(cm.minTransactionAmount));
   if(cm.totalBudget!=null)bits.push("Budget "+money(cm.totalBudget));
   if(cm.maxCashbackPerClient!=null)bits.push("Plafond "+money(cm.maxCashbackPerClient));
@@ -3116,6 +3154,11 @@ function cmpOpenForm(){
         <input id="cmp_cbval" type="number" step="0.01" min="0" value="${cm.cashbackValue||""}">
         <div id="cmp_cbval_hint" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
       </div>
+      <div class="field full" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px">
+        <input id="cmp_loyaltyBonusEnabled" type="checkbox" ${cm.loyaltyBonusEnabled===true?"checked":""} style="width:auto">
+        <div><label for="cmp_loyaltyBonusEnabled" style="margin:0;font-weight:600">Autoriser le bonus fidélité Afriland</label>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">Si activé, le niveau fidélité du client peut majorer le cashback calculé par cette campagne.</div></div>
+      </div>
       <div class="field"><label>Budget total (FCFA)</label>
         <input id="cmp_budget" type="number" min="0" step="1000" value="${cm.totalBudget||""}" placeholder="Ex: 5000000">
       </div>
@@ -3228,6 +3271,7 @@ async function saveCampaign(){
     endDate:val("cmp_end")||null,
     cashbackType:document.getElementById("cmp_cbtype").value,
     cashbackValue:val("cmp_cbval")?parseFloat(val("cmp_cbval")):null,
+    loyaltyBonusEnabled:!!document.getElementById("cmp_loyaltyBonusEnabled")?.checked,
     totalBudget:val("cmp_budget")?parseFloat(val("cmp_budget")):null,
     status:document.getElementById("cmp_status").value,
     entityTypeFilter:val("cmp_entityFilter")||null,

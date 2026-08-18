@@ -108,6 +108,9 @@ public class Campaign {
     @Column(precision = 18, scale = 6)
     private BigDecimal cashbackValue;
 
+    /** Whether this campaign may add the customer's active loyalty-tier bonus. */
+    private Boolean loyaltyBonusEnabled;
+
     private BigDecimal dailyLimitPerClient;
     private BigDecimal monthlyLimitPerClient;
     private BigDecimal totalBudget;
@@ -201,6 +204,7 @@ public class Campaign {
         if (status == null) status = CampaignStatus.DRAFT;
         if (triggerType == null) triggerType = CampaignTriggerType.MERCHANT_TRANSACTION;
         if (ownerType == null) ownerType = CampaignOwnerType.MERCHANT;
+        if (loyaltyBonusEnabled == null) loyaltyBonusEnabled = false;
     }
 
     @PreUpdate
@@ -240,6 +244,8 @@ public class Campaign {
     public void setCashbackType(CashbackType cashbackType) { this.cashbackType = cashbackType; }
     public BigDecimal getCashbackValue() { return cashbackValue; }
     public void setCashbackValue(BigDecimal cashbackValue) { this.cashbackValue = cashbackValue; }
+    public Boolean getLoyaltyBonusEnabled() { return loyaltyBonusEnabled; }
+    public void setLoyaltyBonusEnabled(Boolean loyaltyBonusEnabled) { this.loyaltyBonusEnabled = loyaltyBonusEnabled; }
     public BigDecimal getDailyLimitPerClient() { return dailyLimitPerClient; }
     public void setDailyLimitPerClient(BigDecimal v) { this.dailyLimitPerClient = v; }
     public BigDecimal getMonthlyLimitPerClient() { return monthlyLimitPerClient; }

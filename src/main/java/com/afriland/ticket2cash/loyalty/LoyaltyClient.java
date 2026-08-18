@@ -35,6 +35,10 @@ public class LoyaltyClient {
     @Column(length = 20)
     private String cardNumber;
 
+    /** Optional non-reversible card identifier used for cashback/loyalty matching. */
+    @Column(length = 255)
+    private String cardHash;
+
     /** Segmentation tier — CLASSIC / SILVER / GOLD / PLATINUM. */
     @Column(length = 20)
     private String tier;
@@ -92,6 +96,8 @@ public class LoyaltyClient {
     public void setEmail(String email) { this.email = email; }
     public String getCardNumber() { return cardNumber; }
     public void setCardNumber(String cardNumber) { this.cardNumber = cardNumber; }
+    public String getCardHash() { return cardHash; }
+    public void setCardHash(String cardHash) { this.cardHash = cardHash; }
     public String getTier() { return tier; }
     public void setTier(String tier) { this.tier = tier; }
     public String getEntityType() { return entityType; }

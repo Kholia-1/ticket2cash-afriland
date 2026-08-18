@@ -1,11 +1,19 @@
 package com.afriland.ticket2cash.loyalty;
 
+import com.afriland.ticket2cash.rewards.RewardBenefitType;
+import com.afriland.ticket2cash.rewards.RewardCalculationContext;
+import com.afriland.ticket2cash.rewards.RewardEngineService;
+import com.afriland.ticket2cash.rewards.RewardSourceType;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 /**
@@ -37,17 +45,30 @@ public class LoyaltyCalculatorService {
     private final LoyaltyTransactionRepository transactionRepository;
     private final LoyaltyResultRepository resultRepository;
     private final LoyaltyClientRepository clientRepository;
+    private final RewardEngineService rewardEngineService;
 
+    /** Kept for source compatibility with callers that construct this service directly. */
     public LoyaltyCalculatorService(LoyaltyBatchRepository batchRepository,
                                     LoyaltyRuleRepository ruleRepository,
                                     LoyaltyTransactionRepository transactionRepository,
                                     LoyaltyResultRepository resultRepository,
                                     LoyaltyClientRepository clientRepository) {
+        this(batchRepository, ruleRepository, transactionRepository, resultRepository, clientRepository, null);
+    }
+
+    @Autowired
+    public LoyaltyCalculatorService(LoyaltyBatchRepository batchRepository,
+                                    LoyaltyRuleRepository ruleRepository,
+                                    LoyaltyTransactionRepository transactionRepository,
+                                    LoyaltyResultRepository resultRepository,
+                                    LoyaltyClientRepository clientRepository,
+                                    RewardEngineService rewardEngineService) {
         this.batchRepository = batchRepository;
         this.ruleRepository = ruleRepository;
         this.transactionRepository = transactionRepository;
         this.resultRepository = resultRepository;
         this.clientRepository = clientRepository;
+        this.rewardEngineService = rewardEngineService;
     }
 
     @Transactional
@@ -245,6 +266,28 @@ public class LoyaltyCalculatorService {
                     clientVolume, cashback, rate);
             resultRepository.save(result);
 
+            // Progressive consolidation: retain the existing LoyaltyResult and
+            // batch totals, while recording the same monetary benefit in the
+            // common ledger. A ledger failure must not break the legacy batch.
+            if (rewardEngineService != null && cashback.signum() > 0) {
+                try {
+                    RewardCalculationContext reward = new RewardCalculationContext();
+                    reward.setSourceType(RewardSourceType.LOYALTY_BATCH);
+                    String customerRef = safeCustomerReference(account);
+                    reward.setSourceRef("BATCH-" + batch.getId() + "-CLIENT-"
+                            + customerRef.substring(0, Math.min(16, customerRef.length())));
+                    reward.setCustomerRef(customerRef);
+                    reward.setAmount(clientVolume);
+                    reward.setCurrency("FCFA");
+                    reward.setTransactionDate(LocalDateTime.now());
+                    reward.setBenefitType(RewardBenefitType.CASHBACK_FIXED);
+                    reward.setBenefitValue(cashback);
+                    rewardEngineService.calculate(reward);
+                } catch (RuntimeException ignored) {
+                    // Existing loyalty calculation remains authoritative during migration.
+                }
+            }
+
             totalVolume = totalVolume.add(clientVolume);
             totalCashback = totalCashback.add(cashback);
             qualifiedRowCount += clientQualified;
@@ -266,6 +309,20 @@ public class LoyaltyCalculatorService {
                 totalCashback.toPlainString()));
 
         return batchRepository.save(batch);
+    }
+
+    /** Keep account/card-like identifiers out of the common ledger and audit details. */
+    private String safeCustomerReference(String value) {
+        if (value == null || value.isBlank()) return "UNKNOWN";
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder out = new StringBuilder(digest.length * 2);
+            for (byte b : digest) out.append(String.format(Locale.ROOT, "%02x", b));
+            return out.toString();
+        } catch (NoSuchAlgorithmException impossible) {
+            return Integer.toHexString(value.hashCode());
+        }
     }
 
     // ---------- helpers ----------

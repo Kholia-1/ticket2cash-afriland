@@ -44,6 +44,14 @@ public class CashbackPayment {
     private String prepaidAccountRef;
     private String customerRef;
 
+    /** Decomposition of the final amount for audit and reconciliation. */
+    private BigDecimal campaignCashbackAmount;
+    private Boolean loyaltyBonusEnabled;
+    private String loyaltyTierName;
+    private BigDecimal loyaltyBonusPercent;
+    private BigDecimal loyaltyBonusAmount;
+    private BigDecimal finalCashbackAmount;
+
     public CashbackPayment() {
     }
 
@@ -86,6 +94,12 @@ public class CashbackPayment {
     public String getCreditFailureReason() { return creditFailureReason; }
     public String getPrepaidAccountRef() { return prepaidAccountRef; }
     public String getCustomerRef() { return customerRef; }
+    public BigDecimal getCampaignCashbackAmount() { return campaignCashbackAmount; }
+    public Boolean getLoyaltyBonusEnabled() { return loyaltyBonusEnabled; }
+    public String getLoyaltyTierName() { return loyaltyTierName; }
+    public BigDecimal getLoyaltyBonusPercent() { return loyaltyBonusPercent; }
+    public BigDecimal getLoyaltyBonusAmount() { return loyaltyBonusAmount; }
+    public BigDecimal getFinalCashbackAmount() { return finalCashbackAmount; }
 
     public void setId(Long id) { this.id = id; }
     public void setPaymentReference(String paymentReference) { this.paymentReference = paymentReference; }
@@ -99,7 +113,13 @@ public class CashbackPayment {
     public void setStatus(CashbackPaymentStatus status) { this.status = status; }
     public void setProcessedAt(LocalDateTime processedAt) { this.processedAt = processedAt; }
     public void setCardHash(String cardHash) { this.cardHash = cardHash; }
-    public void setMaskedCard(String maskedCard) { this.maskedCard = maskedCard; }
+    public void setMaskedCard(String maskedCard) {
+        if (maskedCard != null) {
+            String compact = maskedCard.replaceAll("[ -]", "");
+            if (compact.matches("\\d{13,19}")) maskedCard = "****" + compact.substring(compact.length() - 4);
+        }
+        this.maskedCard = maskedCard;
+    }
     public void setCardBin(String cardBin) { this.cardBin = cardBin; }
     public void setTransactionDateTime(LocalDateTime transactionDateTime) { this.transactionDateTime = transactionDateTime; }
     public void setCreditStatus(CashbackCreditStatus creditStatus) { this.creditStatus = creditStatus; }
@@ -108,4 +128,10 @@ public class CashbackPayment {
     public void setCreditFailureReason(String creditFailureReason) { this.creditFailureReason = creditFailureReason; }
     public void setPrepaidAccountRef(String prepaidAccountRef) { this.prepaidAccountRef = prepaidAccountRef; }
     public void setCustomerRef(String customerRef) { this.customerRef = customerRef; }
+    public void setCampaignCashbackAmount(BigDecimal value) { this.campaignCashbackAmount = value; }
+    public void setLoyaltyBonusEnabled(Boolean value) { this.loyaltyBonusEnabled = value; }
+    public void setLoyaltyTierName(String value) { this.loyaltyTierName = value; }
+    public void setLoyaltyBonusPercent(BigDecimal value) { this.loyaltyBonusPercent = value; }
+    public void setLoyaltyBonusAmount(BigDecimal value) { this.loyaltyBonusAmount = value; }
+    public void setFinalCashbackAmount(BigDecimal value) { this.finalCashbackAmount = value; }
 }

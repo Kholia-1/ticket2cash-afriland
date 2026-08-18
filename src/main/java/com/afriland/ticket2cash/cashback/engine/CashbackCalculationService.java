@@ -4,6 +4,9 @@ import com.afriland.ticket2cash.campaign.Campaign;
 import com.afriland.ticket2cash.campaign.CampaignStatus;
 import com.afriland.ticket2cash.product.CashbackType;
 import com.afriland.ticket2cash.cashback.CashbackPaymentRepository;
+import com.afriland.ticket2cash.audit.AuditLogService;
+import com.afriland.ticket2cash.loyalty.LoyaltyBonusResult;
+import com.afriland.ticket2cash.loyalty.LoyaltyBonusService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,14 +19,24 @@ import java.time.LocalDateTime;
 public class CashbackCalculationService {
 
     private final CashbackPaymentRepository paymentRepository;
+    private final LoyaltyBonusService loyaltyBonusService;
+    private final AuditLogService auditLogService;
 
     public CashbackCalculationService() {
-        this.paymentRepository = null;
+        this(null, null, null);
+    }
+
+    public CashbackCalculationService(CashbackPaymentRepository paymentRepository) {
+        this(paymentRepository, null, null);
     }
 
     @Autowired
-    public CashbackCalculationService(CashbackPaymentRepository paymentRepository) {
+    public CashbackCalculationService(CashbackPaymentRepository paymentRepository,
+                                      LoyaltyBonusService loyaltyBonusService,
+                                      AuditLogService auditLogService) {
         this.paymentRepository = paymentRepository;
+        this.loyaltyBonusService = loyaltyBonusService;
+        this.auditLogService = auditLogService;
     }
 
     public CashbackDecision calculate(Campaign campaign, CashbackCalculationRequest request) {
@@ -149,7 +162,23 @@ public class CashbackCalculationService {
         CashbackDecision decision = calculate(campaign, calculationRequest);
         if (!decision.isEligible()) return decision;
 
-        BigDecimal finalCashback = decision.getCalculatedCashback();
+        BigDecimal campaignCashback = decision.getCalculatedCashback();
+        decision.setCampaignCashbackAmount(campaignCashback);
+        BigDecimal loyaltyBonus = BigDecimal.ZERO;
+        if (loyaltyBonusService != null) {
+            LoyaltyBonusResult bonus = loyaltyBonusService.resolve(campaign,
+                    request.getCustomerRef(), request.getCardHash(), request.getAmount(),
+                    request.getTransactionRef(), request.getMaskedCard());
+            decision.setLoyaltyBonusEnabled(Boolean.TRUE.equals(campaign.getLoyaltyBonusEnabled()));
+            decision.setLoyaltyTierName(bonus.getTierName());
+            decision.setLoyaltyBonusPercent(bonus.getBonusPercent());
+            loyaltyBonus = bonus.getBonusAmount() == null ? BigDecimal.ZERO : bonus.getBonusAmount();
+            decision.setLoyaltyBonusAmount(loyaltyBonus);
+            if (bonus.getDecisionCode() == com.afriland.ticket2cash.loyalty.LoyaltyBonusDecisionCode.APPLIED) {
+                auditLoyaltyBonus(request, campaign, bonus);
+            }
+        }
+        BigDecimal finalCashback = campaignCashback.add(loyaltyBonus);
         BigDecimal budgetRemaining = remainingBudget(campaign);
         if (campaign.getTotalBudget() != null) {
             decision.setCampaignBudgetRemaining(budgetRemaining.max(BigDecimal.ZERO));
@@ -190,8 +219,46 @@ public class CashbackCalculationService {
         decision.setFinalCashback(finalCashback.max(BigDecimal.ZERO));
         decision.setDailyRemaining(dailyRemaining);
         decision.setMonthlyRemaining(monthlyRemaining);
+        auditCombinedDecision(request, campaign, decision, decision.getFinalCashback());
         return decision;
     }
+
+    private void auditLoyaltyBonus(CashbackTransactionRequest request, Campaign campaign,
+                                   LoyaltyBonusResult bonus) {
+        if (auditLogService == null) return;
+        try {
+            auditLogService.log("LOYALTY_BONUS_APPLIED", "CASHBACK", "Campaign",
+                    campaign.getId(), request.getTransactionRef(), "SUCCESS",
+                    "transactionRef=" + safe(request.getTransactionRef())
+                            + " | maskedCard=" + safe(request.getMaskedCard())
+                            + " | customerRef=" + safe(request.getCustomerRef())
+                            + " | campaignName=" + safe(campaign.getName())
+                            + " | tierName=" + safe(bonus.getTierName())
+                            + " | loyaltyBonusPercent=" + bonus.getBonusPercent()
+                            + " | loyaltyBonusAmount=" + bonus.getBonusAmount());
+        } catch (RuntimeException ignored) { }
+    }
+
+    private void auditCombinedDecision(CashbackTransactionRequest request, Campaign campaign,
+                                       CashbackDecision decision, BigDecimal finalCashback) {
+        if (auditLogService == null) return;
+        try {
+            auditLogService.log("CASHBACK_WITH_LOYALTY_CONTEXT_CALCULATED", "CASHBACK", "Campaign",
+                    campaign.getId(), request.getTransactionRef(), "SUCCESS",
+                    "transactionRef=" + safe(request.getTransactionRef())
+                            + " | maskedCard=" + safe(request.getMaskedCard())
+                            + " | customerRef=" + safe(request.getCustomerRef())
+                            + " | campaignName=" + safe(campaign.getName())
+                            + " | loyaltyBonusEnabled=" + decision.isLoyaltyBonusEnabled()
+                            + " | loyaltyBonusPercent=" + decision.getLoyaltyBonusPercent()
+                            + " | campaignCashbackAmount=" + decision.getCampaignCashbackAmount()
+                            + " | loyaltyBonusAmount=" + decision.getLoyaltyBonusAmount()
+                            + " | finalCashbackAmount=" + finalCashback
+                            + " | tier=" + safe(decision.getLoyaltyTierName()));
+        } catch (RuntimeException ignored) { }
+    }
+
+    private String safe(String value) { return value == null ? "" : value.replaceAll("[\\r\\n]", " "); }
 
     private BigDecimal remainingBudget(Campaign campaign) {
         if (campaign.getTotalBudget() == null || paymentRepository == null) return BigDecimal.ZERO;

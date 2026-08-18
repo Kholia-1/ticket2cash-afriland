@@ -41,6 +41,7 @@ public class CampaignRequest {
     // Cashback config
     private CashbackType cashbackType;
     private BigDecimal cashbackValue;
+    private Boolean loyaltyBonusEnabled;
     private BigDecimal dailyLimitPerClient;
     private BigDecimal monthlyLimitPerClient;
     private BigDecimal totalBudget;
@@ -87,6 +88,8 @@ public class CampaignRequest {
     public void setCashbackType(CashbackType cashbackType) { this.cashbackType = cashbackType; }
     public BigDecimal getCashbackValue() { return cashbackValue; }
     public void setCashbackValue(BigDecimal cashbackValue) { this.cashbackValue = cashbackValue; }
+    public Boolean getLoyaltyBonusEnabled() { return loyaltyBonusEnabled; }
+    public void setLoyaltyBonusEnabled(Boolean loyaltyBonusEnabled) { this.loyaltyBonusEnabled = loyaltyBonusEnabled; }
     public BigDecimal getDailyLimitPerClient() { return dailyLimitPerClient; }
     public void setDailyLimitPerClient(BigDecimal v) { this.dailyLimitPerClient = v; }
     public BigDecimal getMonthlyLimitPerClient() { return monthlyLimitPerClient; }

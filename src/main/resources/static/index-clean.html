@@ -1655,7 +1655,7 @@
 
                     <div>
                         <label>Carte prepayee</label>
-                        <input id="posCardNumber" value="4578123412349876">
+                        <input id="posCardNumber" value="****9876" placeholder="****9876">
                     </div>
 
                     <div>
@@ -3544,7 +3544,7 @@
     function readPayload() {
         return {
             clientReference: document.getElementById("posClientReference").value || "CLIENT-DEMO-001",
-            cardNumber: document.getElementById("posCardNumber").value || "4578123412349876",
+            cardNumber: document.getElementById("posCardNumber").value || "****9876",
             merchantId: Number(document.getElementById("posMerchantId").value || 1),
             merchantName: document.getElementById("posMerchantName").value || "Supermarche Demo",
             totalAmount: Number(document.getElementById("posTotalAmount").value || 0),

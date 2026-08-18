@@ -16,6 +16,8 @@ public interface PosTransactionRepository extends JpaRepository<PosTransaction, 
 
     List<PosTransaction> findAllByOrderByReceivedAtDesc();
 
+    List<PosTransaction> findByWorkflowStatusInOrderByReceivedAtDesc(List<TransactionWorkflowStatus> statuses);
+
     List<PosTransaction> findTop100ByOrderByReceivedAtDesc();
 
     Optional<PosTransaction> findByTransactionRef(String transactionRef);

@@ -45,6 +45,7 @@ public class LoyaltyCalculatorService {
     private final LoyaltyTransactionRepository transactionRepository;
     private final LoyaltyResultRepository resultRepository;
     private final LoyaltyClientRepository clientRepository;
+    private final LoyaltyTierRepository tierRepository;
     private final RewardEngineService rewardEngineService;
 
     /** Kept for source compatibility with callers that construct this service directly. */
@@ -53,7 +54,16 @@ public class LoyaltyCalculatorService {
                                     LoyaltyTransactionRepository transactionRepository,
                                     LoyaltyResultRepository resultRepository,
                                     LoyaltyClientRepository clientRepository) {
-        this(batchRepository, ruleRepository, transactionRepository, resultRepository, clientRepository, null);
+        this(batchRepository, ruleRepository, transactionRepository, resultRepository, clientRepository, null, null);
+    }
+
+    public LoyaltyCalculatorService(LoyaltyBatchRepository batchRepository,
+                                    LoyaltyRuleRepository ruleRepository,
+                                    LoyaltyTransactionRepository transactionRepository,
+                                    LoyaltyResultRepository resultRepository,
+                                    LoyaltyClientRepository clientRepository,
+                                    RewardEngineService rewardEngineService) {
+        this(batchRepository, ruleRepository, transactionRepository, resultRepository, clientRepository, rewardEngineService, null);
     }
 
     @Autowired
@@ -62,13 +72,15 @@ public class LoyaltyCalculatorService {
                                     LoyaltyTransactionRepository transactionRepository,
                                     LoyaltyResultRepository resultRepository,
                                     LoyaltyClientRepository clientRepository,
-                                    RewardEngineService rewardEngineService) {
+                                    RewardEngineService rewardEngineService,
+                                    LoyaltyTierRepository tierRepository) {
         this.batchRepository = batchRepository;
         this.ruleRepository = ruleRepository;
         this.transactionRepository = transactionRepository;
         this.resultRepository = resultRepository;
         this.clientRepository = clientRepository;
         this.rewardEngineService = rewardEngineService;
+        this.tierRepository = tierRepository;
     }
 
     @Transactional
@@ -76,6 +88,15 @@ public class LoyaltyCalculatorService {
         LoyaltyBatch batch = batchRepository.findById(batchId)
                 .orElseThrow(() -> new IllegalArgumentException("Batch not found: " + batchId));
 
+        if (batch.getStatus() == LoyaltyBatchStatus.CALCULATED) {
+            // A calculated batch is immutable from the calculation endpoint.
+            // This prevents a second click from applying the same business
+            // operation again and gives the caller an idempotent result.
+            if (batch.getTotalVolume() == null || batch.getTotalVolume().signum() == 0) {
+                repairMissingBatchVolume(batch);
+            }
+            return batch;
+        }
         if (batch.getStatus() == LoyaltyBatchStatus.CREDITED
                 || batch.getStatus() == LoyaltyBatchStatus.APPROVED) {
             throw new IllegalStateException("Cannot recalculate a batch that is " + batch.getStatus());
@@ -96,6 +117,13 @@ public class LoyaltyCalculatorService {
         resultRepository.deleteByBatchId(batchId);
 
         List<LoyaltyTransaction> txs = transactionRepository.findByBatchId(batchId);
+
+        // The batch volume is the volume imported in this file, independently
+        // of whether a loyalty rule later qualifies a row for cashback.
+        // Keeping this separate from the eligible/cashback volume prevents the
+        // import report from showing 0 when clients were updated but a rule
+        // filtered out their cashback.
+        BigDecimal importedBatchVolume = sumImportedVolume(txs);
 
         // Also reset per-tx qualified flag / cashback so a rerun with a different
         // rule gives clean data on the transaction rows.
@@ -297,8 +325,15 @@ public class LoyaltyCalculatorService {
         // Persist tx updates in one shot
         transactionRepository.saveAll(txs);
 
+        // Refresh cumulative client metrics from all persisted transactions. This
+        // makes recalculation idempotent and keeps the client screen consistent
+        // with the imported volume instead of leaving aggregates at zero.
+        for (String account : byClient.keySet()) {
+            refreshClientAggregates(account);
+        }
+
         batch.setQualifiedRows(qualifiedRowCount);
-        batch.setTotalVolume(totalVolume);
+        batch.setTotalVolume(importedBatchVolume);
         batch.setTotalCashback(totalCashback);
         batch.setClientCount(byClient.size());
         batch.setCalculatedAt(LocalDateTime.now());
@@ -309,6 +344,17 @@ public class LoyaltyCalculatorService {
                 totalCashback.toPlainString()));
 
         return batchRepository.save(batch);
+    }
+
+    private BigDecimal sumImportedVolume(List<LoyaltyTransaction> transactions) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (LoyaltyTransaction tx : transactions) {
+            if (tx == null || tx.getAmount() == null) continue;
+            // Imported rows are validated as positive amounts.  abs also keeps
+            // legacy signed exports compatible without touching client totals.
+            total = total.add(tx.getAmount().abs());
+        }
+        return total;
     }
 
     /** Keep account/card-like identifiers out of the common ledger and audit details. */
@@ -339,6 +385,64 @@ public class LoyaltyCalculatorService {
         }
         c.setTier("CLASSIC");
         return clientRepository.save(c);
+    }
+
+    private void refreshClientAggregates(String account) {
+        if (account == null || account.isBlank()) return;
+        LoyaltyClient client = clientRepository.findByAccountNumber(account).orElse(null);
+        if (client == null) return;
+        List<LoyaltyTransaction> all = transactionRepository.findByAccountNumber(account);
+        BigDecimal volume = BigDecimal.ZERO;
+        int count = 0;
+        LocalDateTime last = null;
+        for (LoyaltyTransaction tx : all) {
+            if (tx.getAmount() == null) continue;
+            BigDecimal spend = tx.getAmount().signum() < 0 ? tx.getAmount().abs() : tx.getAmount();
+            if (spend.signum() <= 0) continue;
+            volume = volume.add(spend);
+            count++;
+            if (last == null || (tx.getTransactionDate() != null && tx.getTransactionDate().atStartOfDay().isAfter(last))) {
+                last = tx.getTransactionDate() == null ? last : tx.getTransactionDate().atStartOfDay();
+            }
+        }
+        client.setLifetimeVolume(volume);
+        client.setTransactionCount(count);
+        if (last != null) client.setLastActivityAt(last);
+        client.setTier(resolveTier(volume, count, client.getTier()));
+        clientRepository.save(client);
+    }
+
+    /** Repairs legacy calculated batches persisted before totalVolume was populated. */
+    private void repairMissingBatchVolume(LoyaltyBatch batch) {
+        List<LoyaltyTransaction> rows = transactionRepository.findByBatchId(batch.getId());
+        BigDecimal volume = BigDecimal.ZERO;
+        Set<String> accounts = new HashSet<>();
+        for (LoyaltyTransaction tx : rows) {
+            if (tx.getAccountNumber() != null) accounts.add(tx.getAccountNumber());
+            if (tx.getAmount() != null && tx.getAmount().signum() > 0) volume = volume.add(tx.getAmount());
+            else if (tx.getAmount() != null && tx.getAmount().signum() < 0) volume = volume.add(tx.getAmount().abs());
+        }
+        if (volume.signum() > 0) {
+            batch.setTotalVolume(volume);
+            if (batch.getClientCount() == null || batch.getClientCount() == 0) batch.setClientCount(accounts.size());
+            batchRepository.save(batch);
+        }
+    }
+
+    private String resolveTier(BigDecimal volume, int transactionCount, String current) {
+        if (tierRepository == null) return normalizeLegacyTier(current);
+        String selected = "ESSENTIEL";
+        for (LoyaltyTier tier : tierRepository.findByActiveTrueOrderBySortOrderAsc()) {
+            BigDecimal minVolume = tier.getMinCumulativeSpend() == null ? BigDecimal.ZERO : tier.getMinCumulativeSpend();
+            int minTx = tier.getMinTransactionCount() == null ? 0 : tier.getMinTransactionCount();
+            if (volume.compareTo(minVolume) >= 0 && transactionCount >= minTx) selected = tier.getName();
+        }
+        return selected;
+    }
+
+    private String normalizeLegacyTier(String tier) {
+        if (tier == null || tier.isBlank() || "CLASSIC".equalsIgnoreCase(tier)) return "Essentiel";
+        return tier;
     }
 
     private boolean qualifies(LoyaltyTransaction tx, LoyaltyRule rule) {

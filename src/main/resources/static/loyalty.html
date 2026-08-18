@@ -511,7 +511,7 @@ async function openBatchDetails(id){
       api(`/api/loyalty/batches/${id}/results`)
     ]);
     const topResults = results.slice(0, 100);
-    openModal(`Batch #${batch.id} — ${esc(batch.name)}`, `
+    openModal(`Batch ${batch.id} — ${esc(batch.name)}`, `
       <div class="stat-row"><div class="k">Statut</div><div class="v">${statusBadge(batch.status)}</div></div>
       <div class="stat-row"><div class="k">Fichier source</div><div class="v mono">${esc(batch.sourceFilename||"—")}</div></div>
       <div class="stat-row"><div class="k">Règle appliquée</div><div class="v">${esc(batch.ruleNameSnapshot||"—")}</div></div>

@@ -10,6 +10,7 @@ import java.util.List;
 public interface LoyaltyTransactionRepository extends JpaRepository<LoyaltyTransaction, Long> {
 
     List<LoyaltyTransaction> findByBatchId(Long batchId);
+    List<LoyaltyTransaction> findByAccountNumber(String accountNumber);
 
     List<LoyaltyTransaction> findByBatchIdAndAccountNumber(Long batchId, String accountNumber);
 

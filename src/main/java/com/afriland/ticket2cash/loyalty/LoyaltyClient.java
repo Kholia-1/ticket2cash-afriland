@@ -73,6 +73,9 @@ public class LoyaltyClient {
     private LocalDateTime createdAt;
     private LocalDateTime lastActivityAt;
 
+    /** Number of imported qualifying/observed transactions used for tier evaluation. */
+    private Integer transactionCount = 0;
+
     public LoyaltyClient() {}
 
     @PrePersist
@@ -80,6 +83,7 @@ public class LoyaltyClient {
         if (createdAt == null) createdAt = LocalDateTime.now();
         if (lifetimeCashback == null) lifetimeCashback = BigDecimal.ZERO;
         if (lifetimeVolume == null) lifetimeVolume = BigDecimal.ZERO;
+        if (transactionCount == null) transactionCount = 0;
         if (tier == null || tier.isBlank()) tier = "CLASSIC";
         if (entityType == null || entityType.isBlank()) entityType = "INDIVIDUAL";
     }
@@ -116,4 +120,6 @@ public class LoyaltyClient {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getLastActivityAt() { return lastActivityAt; }
     public void setLastActivityAt(LocalDateTime lastActivityAt) { this.lastActivityAt = lastActivityAt; }
+    public Integer getTransactionCount() { return transactionCount; }
+    public void setTransactionCount(Integer transactionCount) { this.transactionCount = transactionCount; }
 }

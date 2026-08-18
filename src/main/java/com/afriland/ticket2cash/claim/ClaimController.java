@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Claims read/write with role-based scoping:
@@ -63,6 +64,11 @@ public class ClaimController {
         return "PARTNER".equalsIgnoreCase(currentRole(http));
     }
 
+    private boolean canProcessClaims(HttpServletRequest http) {
+        String role = currentRole(http);
+        return "ADMIN".equalsIgnoreCase(role) || "SUPERVISEUR".equalsIgnoreCase(role);
+    }
+
     // ---------------------------------------------------------------- READ
 
     @GetMapping
@@ -72,13 +78,15 @@ public class ClaimController {
         if (isPartner(http)) {
             Long me = currentMerchantId(http);
             if (me == null) return Collections.emptyList();
-            return claimRepository.findByMerchantId(me);
+            return claimRepository.findByMerchantId(me).stream()
+                    .map(ClaimResponse::from).collect(Collectors.toList());
         }
         // ADMIN / OPERATEUR / LECTEUR see everything
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 200);
-        return claimRepository.findAllByOrderBySubmittedAtDesc(
+        Page<Claim> claims = claimRepository.findAllByOrderBySubmittedAtDesc(
                 PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "submittedAt")));
+        return claims.map(ClaimResponse::from);
     }
 
     @GetMapping("/merchant/{merchantId}")
@@ -90,20 +98,22 @@ public class ClaimController {
                 return ResponseEntity.status(403).body("Not your merchant");
             }
         }
-        return ResponseEntity.ok(claimRepository.findByMerchantId(merchantId));
+        return ResponseEntity.ok(claimRepository.findByMerchantId(merchantId).stream()
+                .map(ClaimResponse::from).collect(Collectors.toList()));
     }
 
     @GetMapping("/status/{status}")
-    public List<Claim> getClaimsByStatus(@PathVariable ClaimStatus status,
+    public List<ClaimResponse> getClaimsByStatus(@PathVariable ClaimStatus status,
                                           HttpServletRequest http) {
         if (isPartner(http)) {
             Long me = currentMerchantId(http);
             if (me == null) return Collections.emptyList();
             return claimRepository.findByMerchantId(me).stream()
                     .filter(c -> c.getStatus() == status)
-                    .toList();
+                    .map(ClaimResponse::from).toList();
         }
-        return claimRepository.findByStatus(status);
+        return claimRepository.findByStatus(status).stream()
+                .map(ClaimResponse::from).toList();
     }
 
     // ---------------------------------------------------------------- WRITE
@@ -112,6 +122,9 @@ public class ClaimController {
     public ResponseEntity<?> updateClaimStatus(@PathVariable Long id,
                                                 @RequestParam ClaimStatus status,
                                                 HttpServletRequest http) {
+        if (!canProcessClaims(http)) {
+            return ResponseEntity.status(403).body("Role non autorisé pour traiter une réclamation");
+        }
         return claimRepository.findById(id)
                 .map(claim -> {
                     // Partners can only touch their own claims
@@ -126,7 +139,7 @@ public class ClaimController {
                     auditLogService.log("UPDATE_CLAIM_STATUS", "CLAIM", "Claim",
                             updated.getId(), currentUser(http), "SUCCESS",
                             "Status → " + status);
-                    return ResponseEntity.ok((Object) updated);
+                    return ResponseEntity.ok((Object) ClaimResponse.from(updated));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

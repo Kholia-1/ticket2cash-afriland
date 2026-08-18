@@ -1,6 +1,8 @@
 package com.afriland.ticket2cash.pos;
 
 import com.afriland.ticket2cash.audit.AuditLogService;
+import com.afriland.ticket2cash.cashback.CashbackPayment;
+import com.afriland.ticket2cash.cashback.CashbackPaymentRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,6 +13,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
+import java.util.List;
+import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -23,6 +27,7 @@ import static org.mockito.Mockito.lenient;
 class TransactionWorkflowServiceTest {
     @Mock PosTransactionRepository repository;
     @Mock AuditLogService auditLogService;
+    @Mock CashbackPaymentRepository cashbackPaymentRepository;
     @Mock HttpServletRequest request;
     @Mock HttpSession session;
     private TransactionWorkflowService service;
@@ -72,6 +77,11 @@ class TransactionWorkflowServiceTest {
     @Test
     void paymentAndCreditApprovalsAdvanceWorkflow() {
         when(session.getAttribute("AUTH_ROLE")).thenReturn("ADMIN");
+        service.validateStep(7L, "CARD_VALIDATED", "Carte contrôlée", request);
+        service.validateStep(7L, "MERCHANT_MATCHED", "Commerçant confirmé", request);
+        service.validateStep(7L, "CAMPAIGN_MATCHED", "Campagne confirmée", request);
+        service.validateStep(7L, "CASHBACK_CALCULATED", "Cashback vérifié", request);
+        service.validateStep(7L, "FRAUD_CHECKED", "Fraude contrôlée", request);
         service.approveForPayment(7L, "OK paiement", request);
         assertEquals(TransactionWorkflowStatus.APPROVED_FOR_PAYMENT, transaction.getWorkflowStatus());
         service.approveForCredit(7L, "OK crédit", request);
@@ -93,5 +103,39 @@ class TransactionWorkflowServiceTest {
         assertEquals("Non initialisé", result.getTimeline().stream()
                 .filter(step -> "RECEIVED".equals(step.get("step")))
                 .findFirst().map(step -> "Non initialisé").orElse(""));
+    }
+
+    @Test
+    void batchPrepaymentCheckApprovesValidTransactionAndSkipsReadyOnes() {
+        when(session.getAttribute("AUTH_ROLE")).thenReturn("ADMIN");
+        transaction.setAmount(new BigDecimal("25000"));
+        transaction.setCardHash("HASH-DEMO");
+        transaction.setWorkflowStatus(TransactionWorkflowStatus.CASHBACK_CALCULATED);
+        CashbackPayment payment = new CashbackPayment();
+        payment.setTransactionRef("TX-WF-001");
+        payment.setCampaignId(8L);
+        payment.setAmount(new BigDecimal("1250"));
+        when(repository.findAllByOrderByReceivedAtDesc()).thenReturn(List.of(transaction));
+        when(cashbackPaymentRepository.findByTransactionRef("TX-WF-001")).thenReturn(Optional.of(payment));
+
+        var result = new TransactionWorkflowService(repository, auditLogService, cashbackPaymentRepository)
+                .validateCashbackBeforePayment(request);
+
+        assertEquals(1, result.get("totalChecked"));
+        assertEquals(1, result.get("approvedForPayment"));
+        assertEquals(TransactionWorkflowStatus.APPROVED_FOR_PAYMENT, transaction.getWorkflowStatus());
+    }
+
+    @Test
+    void batchPrepaymentCheckRejectsInvalidTransactionWithoutStartingPaymentOrCredit() {
+        when(session.getAttribute("AUTH_ROLE")).thenReturn("ADMIN");
+        transaction.setAmount(BigDecimal.ZERO);
+        when(repository.findAllByOrderByReceivedAtDesc()).thenReturn(List.of(transaction));
+        var result = new TransactionWorkflowService(repository, auditLogService, cashbackPaymentRepository)
+                .validateCashbackBeforePayment(request);
+
+        assertEquals(1, result.get("rejected"));
+        assertEquals(TransactionWorkflowStatus.REJECTED, transaction.getWorkflowStatus());
+        org.mockito.Mockito.verifyNoInteractions(cashbackPaymentRepository);
     }
 }

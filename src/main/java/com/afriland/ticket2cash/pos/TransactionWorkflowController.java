@@ -39,5 +39,10 @@ public class TransactionWorkflowController {
         return service.approveForCredit(id, value(body,"comment"), request);
     }
 
+    @PostMapping("/workflow/validate-cashback-before-payment")
+    public Map<String, Object> validateCashbackBeforePayment(HttpServletRequest request) {
+        return service.validateCashbackBeforePayment(request);
+    }
+
     private String value(Map<String,String> body, String key) { return body == null ? null : body.get(key); }
 }

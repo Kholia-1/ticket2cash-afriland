@@ -67,23 +67,60 @@ public class TransactionImportController {
             transactions = transactionRepository.findReviewQueue(TransactionWorkflowStatus.MANUAL_REVIEW, "MANUAL_REVIEW");
         }
         return transactions
-                .stream().map(ReviewQueueDto::from).collect(Collectors.toList());
+                .stream()
+                .map(transaction -> ReviewQueueDto.from(transaction,
+                        paymentRepository.findByTransactionRef(transaction.getTransactionRef()).orElse(null),
+                        campaignRepository))
+                .collect(Collectors.toList());
     }
 
     public static class ReviewQueueDto {
         private Long id; private String transactionRef; private String maskedCard; private BigDecimal amount;
-        private String currency; private String merchantName; private TransactionWorkflowStatus workflowStatus;
+        private String currency; private String merchantName; private Long merchantId; private String transactionStatus;
+        private Long campaignId; private String campaignName; private BigDecimal cashbackAmount;
+        private String cashbackStatus; private BigDecimal loyaltyBonusAmount; private String loyaltyTierName;
+        private Boolean loyaltyBonusEnabled; private String paymentReference; private String creditStatus;
+        private String creditReference; private java.time.LocalDateTime creditedAt;
+        private TransactionWorkflowStatus workflowStatus;
         private String currentStep; private String lastWorkflowComment; private String rejectionReason;
-        static ReviewQueueDto from(PosTransaction tx) {
+        private boolean manualReviewRequired; private String validatedBy; private java.time.LocalDateTime validatedAt;
+        static ReviewQueueDto from(PosTransaction tx, CashbackPayment payment, CampaignRepository campaignRepository) {
             ReviewQueueDto dto = new ReviewQueueDto(); dto.id=tx.getId(); dto.transactionRef=tx.getTransactionRef();
             dto.maskedCard=tx.getMaskedCard(); dto.amount=tx.getAmount(); dto.currency=tx.getCurrency();
-            dto.merchantName=tx.getMerchantName(); dto.workflowStatus=tx.getWorkflowStatus(); dto.currentStep=tx.getCurrentStep();
-            dto.lastWorkflowComment=tx.getLastWorkflowComment(); dto.rejectionReason=tx.getRejectionReason(); return dto;
+            dto.merchantName=tx.getMerchantName(); dto.merchantId=tx.getMerchantId(); dto.transactionStatus=tx.getStatus();
+            dto.workflowStatus=tx.getWorkflowStatus() == null ? TransactionWorkflowStatus.RECEIVED : tx.getWorkflowStatus();
+            dto.currentStep=tx.getCurrentStep() == null ? dto.workflowStatus.name() : tx.getCurrentStep();
+            dto.lastWorkflowComment=tx.getLastWorkflowComment(); dto.rejectionReason=tx.getRejectionReason();
+            dto.manualReviewRequired=tx.isManualReviewRequired(); dto.validatedBy=tx.getValidatedBy(); dto.validatedAt=tx.getValidatedAt();
+            if (payment != null) {
+                dto.paymentReference = payment.getPaymentReference();
+                dto.cashbackAmount = payment.getFinalCashbackAmount() != null ? payment.getFinalCashbackAmount() : payment.getAmount();
+                dto.cashbackStatus = payment.getStatus() == null ? null : payment.getStatus().name();
+                dto.loyaltyBonusAmount = payment.getLoyaltyBonusAmount();
+                dto.loyaltyTierName = payment.getLoyaltyTierName();
+                dto.loyaltyBonusEnabled = payment.getLoyaltyBonusEnabled();
+                dto.creditStatus = payment.getCreditStatus() == null ? null : payment.getCreditStatus().name();
+                dto.creditReference = payment.getCreditReference(); dto.creditedAt = payment.getCreditedAt();
+                dto.campaignId = payment.getCampaignId();
+                if (dto.campaignId != null && campaignRepository != null) {
+                    dto.campaignName = campaignRepository.findById(dto.campaignId).map(c -> c.getName()).orElse(null);
+                }
+            }
+            return dto;
         }
         public Long getId(){return id;} public String getTransactionRef(){return transactionRef;} public String getMaskedCard(){return maskedCard;}
         public BigDecimal getAmount(){return amount;} public String getCurrency(){return currency;} public String getMerchantName(){return merchantName;}
+        public Long getMerchantId(){return merchantId;} public String getTransactionStatus(){return transactionStatus;}
+        public Long getCampaignId(){return campaignId;} public String getCampaignName(){return campaignName;}
+        public BigDecimal getCashbackAmount(){return cashbackAmount;} public String getCashbackStatus(){return cashbackStatus;}
+        public BigDecimal getLoyaltyBonusAmount(){return loyaltyBonusAmount;} public String getLoyaltyTierName(){return loyaltyTierName;}
+        public Boolean getLoyaltyBonusEnabled(){return loyaltyBonusEnabled;} public String getPaymentReference(){return paymentReference;}
+        public String getCreditStatus(){return creditStatus;} public String getCreditReference(){return creditReference;}
+        public java.time.LocalDateTime getCreditedAt(){return creditedAt;}
         public TransactionWorkflowStatus getWorkflowStatus(){return workflowStatus;} public String getCurrentStep(){return currentStep;}
         public String getLastWorkflowComment(){return lastWorkflowComment;} public String getRejectionReason(){return rejectionReason;}
+        public boolean isManualReviewRequired(){return manualReviewRequired;} public String getValidatedBy(){return validatedBy;}
+        public java.time.LocalDateTime getValidatedAt(){return validatedAt;}
     }
 
     public static class TransactionDto {

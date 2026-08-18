@@ -203,6 +203,7 @@ public class AuthSessionInterceptor implements HandlerInterceptor {
         if ("GET".equalsIgnoreCase(method)) return true;
         if ("POST".equalsIgnoreCase(method)
                 && (uri.matches("/api/transactions/[0-9]+/workflow/(validate-step|reject|manual-review|approve-for-payment|approve-for-credit)")
+                || uri.equals("/api/transactions/workflow/validate-cashback-before-payment")
                 || uri.equals("/api/cashback/payments/process-pending")
                 || uri.equals("/api/cashback/payments/credit-pending")
                 || uri.matches("/api/cashback/payments/[0-9]+/credit"))) {

@@ -1,5 +1,6 @@
 package com.afriland.ticket2cash.claim;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -61,6 +62,8 @@ public class Claim {
     public ClaimStatus getStatus() { return status; }
     public LocalDateTime getSubmittedAt() { return submittedAt; }
     public String getMaskedCard() { return maskedCard; }
+    /** Internal correlation value; never serialize it in API responses. */
+    @JsonIgnore
     public String getCardHash() { return cardHash; }
 
     public void setId(Long id) { this.id = id; }

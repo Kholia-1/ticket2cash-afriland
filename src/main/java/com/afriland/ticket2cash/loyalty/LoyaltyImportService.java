@@ -54,14 +54,14 @@ public class LoyaltyImportService {
 
     private static final Map<String, Set<String>> HEADER_ALIASES = new HashMap<>();
     static {
-        HEADER_ALIASES.put("accountNumber", Set.of("compte", "account", "numero_compte", "n_compte", "account_no", "accountnumber", "no_compte", "acc"));
-        HEADER_ALIASES.put("clientName",    Set.of("nom", "client", "name", "fullname", "nom_client", "clientname", "beneficiaire"));
-        HEADER_ALIASES.put("transactionDate", Set.of("date", "date_operation", "tx_date", "operation_date", "transactiondate", "date_op"));
-        HEADER_ALIASES.put("amount",        Set.of("montant", "amount", "debit", "credit", "valeur", "value", "mnt"));
+        HEADER_ALIASES.put("accountNumber", Set.of("compte", "account", "accountnumber", "account_no", "customerref", "clientref", "numero_compte", "n_compte", "no_compte", "acc"));
+        HEADER_ALIASES.put("clientName",    Set.of("nom", "name", "client", "clientname", "customername", "fullname", "nom_client", "beneficiaire"));
+        HEADER_ALIASES.put("transactionDate", Set.of("date", "operationdate", "transactiondate", "date_operation", "tx_date", "operation_date", "date_op"));
+        HEADER_ALIASES.put("amount",        Set.of("montant", "amount", "volume", "debit", "credit", "valeur", "value", "mnt"));
         HEADER_ALIASES.put("description",   Set.of("libelle", "description", "motif", "memo", "narration", "designation"));
         HEADER_ALIASES.put("category",      Set.of("categorie", "category", "type", "type_operation", "categorie_op", "cat"));
         HEADER_ALIASES.put("referenceNumber", Set.of("reference", "ref", "transaction_id", "tx_ref", "numero", "reference_op", "id"));
-        HEADER_ALIASES.put("entityType",    Set.of("entitytype", "type_entite", "type_client", "entrepriseouparticulier", "particulier_entreprise", "client_type", "typeclient"));
+        HEADER_ALIASES.put("entityType",    Set.of("entitytype", "type", "clienttype", "entity_type", "type_entite", "type_client", "entrepriseouparticulier", "particulier_entreprise", "client_type", "typeclient"));
     }
 
     private final LoyaltyTransactionRepository transactionRepository;
@@ -99,14 +99,17 @@ public class LoyaltyImportService {
         int total = rows.size();
         int parsed = 0;
         int failed = 0;
+        List<String> errors = new ArrayList<>();
 
         // Step 1: sync clients with entityType hints from the file, before persisting txs
         syncClientsFromRows(rows);
 
-        for (LoyaltyTransaction row : rows) {
-            if (row.getAccountNumber() == null || row.getAccountNumber().isBlank()
-                    || row.getAmount() == null || row.getTransactionDate() == null) {
+        for (int index = 0; index < rows.size(); index++) {
+            LoyaltyTransaction row = rows.get(index);
+            String error = validationError(row);
+            if (error != null) {
                 failed++;
+                errors.add("Ligne " + (index + 2) + " : " + error);
                 continue;
             }
             row.setBatchId(batch.getId());
@@ -117,11 +120,22 @@ public class LoyaltyImportService {
         batch.setTotalRows(total);
         batch.setParsedRows(parsed);
         batch.setFailedRows(failed);
-        batch.setStatus(LoyaltyBatchStatus.IMPORTED);
-        batch.setNote(String.format("Parsed %d of %d rows (%d skipped for missing required fields).",
-                parsed, total, failed));
+        batch.setStatus(parsed == 0 ? LoyaltyBatchStatus.FAILED : LoyaltyBatchStatus.IMPORTED);
+        String prefix = parsed == 0 ? "Import rejeté" : (failed > 0 ? "Import partiel" : "Import validé");
+        String note = String.format("%s : %d/%d lignes valides (%d rejetées).", prefix, parsed, total, failed);
+        if (!errors.isEmpty()) note += " " + String.join(" | ", errors.subList(0, Math.min(errors.size(), 10)));
+        batch.setNote(note);
 
         return batchRepository.save(batch);
+    }
+
+    private String validationError(LoyaltyTransaction row) {
+        if (row.getAccountNumber() == null || row.getAccountNumber().isBlank()) return "champ compte manquant";
+        if (row.getAmount() == null) return "montant invalide ou manquant";
+        if (row.getAmount().signum() <= 0) return "montant doit être supérieur à 0";
+        if (row.getTransactionDate() == null) return "date invalide ou manquante";
+        if (row.getImportedEntityType() == null) return "entityType invalide, valeurs acceptées : INDIVIDUAL, COMPANY";
+        return null;
     }
 
     // ---------- CSV ----------
@@ -265,7 +279,7 @@ public class LoyaltyImportService {
         if (s == null) return "";
         String n = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD)
                 .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-        return n.toLowerCase(Locale.ROOT).trim().replaceAll("\\s+", "_").replace('-', '_');
+        return n.replace("\uFEFF", "").toLowerCase(Locale.ROOT).trim().replaceAll("\\s+", "_").replace('-', '_');
     }
 
     private LoyaltyTransaction rowToTransaction(String[] cells, Map<String, Integer> colIndex) {

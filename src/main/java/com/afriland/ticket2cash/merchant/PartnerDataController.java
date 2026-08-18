@@ -1,6 +1,7 @@
 package com.afriland.ticket2cash.merchant;
 
 import com.afriland.ticket2cash.claim.Claim;
+import com.afriland.ticket2cash.claim.ClaimResponse;
 import com.afriland.ticket2cash.claim.ClaimRepository;
 import com.afriland.ticket2cash.product.CashbackType;
 import com.afriland.ticket2cash.product.Product;
@@ -82,7 +83,7 @@ public class PartnerDataController {
         Set<Long> scope = myScope(me);
         List<Claim> out = new ArrayList<>();
         for (Long id : scope) out.addAll(claimRepository.findByMerchantId(id));
-        return ResponseEntity.ok(out);
+        return ResponseEntity.ok(out.stream().map(ClaimResponse::from).toList());
     }
 
     /** Only my products (and my sub-partners'). */

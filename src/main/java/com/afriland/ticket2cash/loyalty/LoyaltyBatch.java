@@ -111,4 +111,8 @@ public class LoyaltyBatch {
     public void setCreditedAt(LocalDateTime creditedAt) { this.creditedAt = creditedAt; }
     public String getNote() { return note; }
     public void setNote(String note) { this.note = note; }
+
+    /** Stable API aliases used by the import screen. */
+    @Transient public Integer getImportedRows() { return parsedRows; }
+    @Transient public Integer getClientsUpdated() { return clientCount; }
 }

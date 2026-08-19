@@ -6,6 +6,8 @@ import com.afriland.ticket2cash.claim.ClaimRepository;
 import com.afriland.ticket2cash.claim.ClaimStatus;
 import com.afriland.ticket2cash.campaign.CampaignRepository;
 import com.afriland.ticket2cash.merchant.MerchantRepository;
+import com.afriland.ticket2cash.pos.PosTransaction;
+import com.afriland.ticket2cash.pos.PosTransactionRepository;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
@@ -30,6 +32,7 @@ public class CashbackController {
     private final CampaignRepository campaignRepository;
     private final MerchantRepository merchantRepository;
     private final CashbackCreditService creditService;
+    private final PosTransactionRepository transactionRepository;
 
     public CashbackController(CashbackPaymentRepository paymentRepository,
                               ClaimRepository claimRepository,
@@ -37,7 +40,8 @@ public class CashbackController {
                               CashbackPaymentProcessingService paymentProcessingService,
                               CampaignRepository campaignRepository,
                               MerchantRepository merchantRepository,
-                              CashbackCreditService creditService) {
+                              CashbackCreditService creditService,
+                              PosTransactionRepository transactionRepository) {
         this.paymentRepository = paymentRepository;
         this.claimRepository = claimRepository;
         this.auditLogService = auditLogService;
@@ -45,6 +49,7 @@ public class CashbackController {
         this.campaignRepository = campaignRepository;
         this.merchantRepository = merchantRepository;
         this.creditService = creditService;
+        this.transactionRepository = transactionRepository;
     }
 
     @GetMapping("/payments")
@@ -54,13 +59,17 @@ public class CashbackController {
         int safeSize = Math.min(Math.max(size, 1), 200);
         return paymentRepository.findAllByOrderByIdDesc(
                 PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "id")))
-                .map(payment -> PaymentDto.from(payment, campaignRepository, merchantRepository));
+                .map(payment -> PaymentDto.from(payment, campaignRepository, merchantRepository, transactionRepository));
     }
 
     public static class PaymentDto {
         private Long id;
         private String paymentReference;
         private String transactionRef;
+        private Long transactionId;
+        private Long sourceTransactionId;
+        private String workflowStatus;
+        private String currentStep;
         private String maskedCard;
         private String merchantName;
         private BigDecimal amount;
@@ -74,10 +83,12 @@ public class CashbackController {
         private BigDecimal loyaltyBonusPercent; private BigDecimal loyaltyBonusAmount; private BigDecimal finalCashbackAmount;
 
         static PaymentDto from(CashbackPayment payment, CampaignRepository campaigns,
-                               MerchantRepository merchants) {
+                               MerchantRepository merchants, PosTransactionRepository transactions) {
             PaymentDto dto = new PaymentDto();
             dto.id = payment.getId(); dto.paymentReference = payment.getPaymentReference();
             dto.transactionRef = payment.getTransactionRef(); dto.maskedCard = payment.getMaskedCard();
+            PosTransaction source = payment.getTransactionRef() == null ? null : transactions.findByTransactionRef(payment.getTransactionRef()).orElse(null);
+            if (source != null) { dto.transactionId = source.getId(); dto.sourceTransactionId = source.getId(); dto.workflowStatus = source.getWorkflowStatus() == null ? null : source.getWorkflowStatus().name(); dto.currentStep = source.getCurrentStep(); }
             dto.amount = payment.getAmount(); dto.currency = payment.getCurrency();
             dto.status = payment.getStatus(); dto.campaignId = payment.getCampaignId();
             dto.processedAt = payment.getProcessedAt();
@@ -91,6 +102,8 @@ public class CashbackController {
         }
         public Long getId(){return id;} public String getPaymentReference(){return paymentReference;}
         public String getTransactionRef(){return transactionRef;} public String getMaskedCard(){return maskedCard;}
+        public Long getTransactionId(){return transactionId;} public Long getSourceTransactionId(){return sourceTransactionId;}
+        public String getWorkflowStatus(){return workflowStatus;} public String getCurrentStep(){return currentStep;}
         public String getMerchantName(){return merchantName;} public BigDecimal getAmount(){return amount;}
         public String getCurrency(){return currency;} public CashbackPaymentStatus getStatus(){return status;}
         public Long getCampaignId(){return campaignId;} public String getCampaignName(){return campaignName;}

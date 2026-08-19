@@ -48,7 +48,8 @@ public class CashbackCreditService {
         if (payment.getCreditStatus() == CashbackCreditStatus.CREDITED) { summary.skipped++; return; }
         PosTransaction transaction = payment.getTransactionRef() == null ? null : transactionRepository.findByTransactionRef(payment.getTransactionRef()).orElse(null);
         String reason = null;
-        if (transaction == null) reason = "Transaction liée introuvable";
+        if (payment.getStatus() != CashbackPaymentStatus.SUCCESS) reason = "Paiement non traité : le paiement doit être SUCCESS avant le crédit client";
+        else if (transaction == null) reason = "Transaction liée introuvable";
         else if (!(transaction.getWorkflowStatus() == TransactionWorkflowStatus.APPROVED_FOR_CREDIT || "APPROVED_FOR_CREDIT".equalsIgnoreCase(transaction.getCurrentStep()))) reason = "Transaction non approuvée pour crédit";
         else if (payment.getAmount() == null || payment.getAmount().signum() <= 0) reason = "Montant cashback invalide";
         else if ((transaction.getMaskedCard() == null || transaction.getMaskedCard().isBlank()) && (transaction.getCardHash() == null || transaction.getCardHash().isBlank())) reason = "Référence carte absente";

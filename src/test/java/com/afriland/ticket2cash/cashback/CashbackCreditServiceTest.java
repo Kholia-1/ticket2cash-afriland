@@ -63,6 +63,18 @@ class CashbackCreditServiceTest {
     }
 
     @Test
+    void unprocessedPaymentIsSkippedWithExplicitReason() {
+        CashbackPayment payment = payment(15L, CashbackCreditStatus.CREDIT_PENDING);
+        payment.setStatus(CashbackPaymentStatus.PENDING);
+        authorized();
+        when(paymentRepository.findByCreditStatusOrderByIdAsc(CashbackCreditStatus.CREDIT_PENDING)).thenReturn(List.of(payment));
+        CashbackCreditService.CreditSummary summary = service().creditPending(request);
+        assertEquals(0, summary.getCredited());
+        assertEquals(1, summary.getSkipped());
+        verify(auditLogService).log(eq("CASHBACK_CREDIT_SKIPPED"), anyString(), anyString(), eq(15L), eq("admin"), eq("SKIPPED"), contains("non traité"));
+    }
+
+    @Test
     void invalidAmountAndMissingTransactionAreSkipped() {
         CashbackPayment invalid = payment(12L, CashbackCreditStatus.CREDIT_PENDING);
         invalid.setAmount(BigDecimal.ZERO);
@@ -109,7 +121,7 @@ class CashbackCreditServiceTest {
     }
 
     private CashbackPayment payment(Long id, CashbackCreditStatus status) {
-        CashbackPayment p = new CashbackPayment(); p.setId(id); p.setCreditStatus(status); p.setAmount(new BigDecimal("1250")); p.setCurrency("FCFA"); p.setTransactionRef("TX-" + id); p.setMaskedCard("****1234"); return p;
+        CashbackPayment p = new CashbackPayment(); p.setId(id); p.setCreditStatus(status); p.setStatus(CashbackPaymentStatus.SUCCESS); p.setAmount(new BigDecimal("1250")); p.setCurrency("FCFA"); p.setTransactionRef("TX-" + id); p.setMaskedCard("****1234"); return p;
     }
 
     private PosTransaction transaction(String ref, TransactionWorkflowStatus status) {

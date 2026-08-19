@@ -898,35 +898,21 @@ async function renderRewards(){
 /* ============ DASHBOARD ============ */
 async function renderDashboard(){
   const c=document.getElementById("content");
-  c.innerHTML=`<div class="page">${head(t("dashboard"),t("dash_sub"),refreshBtn())}
-    <div class="panel" style="margin-bottom:16px"><div class="panel-body"><span class="badge b-info">Vue générale</span> <strong>Vue générale de l’activité Ticket2Cash : transactions, cashback, commerçants, campagnes et réclamations.</strong></div></div>
-    <div class="kpi-grid" id="kpis">${kpiSkeletons(4)}</div>
-    <div class="grid-2">
-      <div class="panel"><div class="panel-head"><h3>${t("recent_claims")}</h3><span class="link" onclick="go('claims')">${t("view_all")}</span></div><div class="panel-body" id="recentClaims">${skLines(4)}</div></div>
-      <div class="panel"><div class="panel-head"><h3>${t("claim_dist")}</h3></div><div class="panel-body" id="claimChart">${skLines(4)}</div></div>
-    </div></div>`;
+  const isPartner=ME&&ME.role==="PARTNER";
+  if(isPartner){
+    c.innerHTML=`<div class="page">${head(t("dashboard"),t("dash_sub"),refreshBtn())}<div class="panel" style="margin-bottom:16px"><div class="panel-body"><span class="badge b-info">Vue générale</span> <strong>Vue générale de l’activité de votre activité partenaire.</strong></div></div><div class="kpi-grid" id="kpis">${kpiSkeletons(4)}</div><div class="grid-2"><div class="panel"><div class="panel-head"><h3>${t("recent_claims")}</h3></div><div class="panel-body" id="recentClaims">${skLines(4)}</div></div><div class="panel"><div class="panel-head"><h3>${t("claim_dist")}</h3></div><div class="panel-body" id="claimChart">${skLines(4)}</div></div></div></div>`;
+    try{const s=await api("/api/partner/dashboard");const K=[{icon:"payments",label:t("pk_cashback"),val:money(s.totalCashbackPaid||0),sub:""},{icon:"claims",label:t("pk_claims"),val:num(s.totalClaims||0),sub:`${num(s.approvedClaims||0)} ${t("leg_approved").toLowerCase()}`},{icon:"products",label:t("pk_products"),val:num(s.totalProducts||0),sub:""},{icon:"campaigns",label:t("pk_campaigns"),val:num(s.activeCampaigns||0),sub:""}];document.getElementById("kpis").innerHTML=K.map(kpiCard).join("");animateCounters();}catch(e){toast(t("err_dash"),"err");}return;
+  }
+  c.innerHTML=`<div class="page">${head(t("dashboard"),"Vue opérationnelle du parcours Cashback Cartes.",refreshBtn())}<div class="panel" style="margin-bottom:16px"><div class="panel-body"><span class="badge b-info">Vue générale</span> <strong>Transactions cartes, cashback, paiements, crédits clients, fidélité et contrôles.</strong></div></div><div class="kpi-grid" id="kpis">${kpiSkeletons(6)}</div><div class="panel" style="margin-bottom:16px"><div class="panel-head"><h3>Parcours opérationnel</h3></div><div class="panel-body" id="operationalFlow">${skLines(2)}</div></div><div class="grid-2"><div class="panel"><div class="panel-head"><h3>Risques et contrôles</h3></div><div class="panel-body" id="riskBlock">${skLines(4)}</div></div><div class="panel"><div class="panel-head"><h3>Fidélité Afriland</h3><span class="link" onclick="go('loyalty')">Voir le module</span></div><div class="panel-body" id="loyaltyBlock">${skLines(3)}</div></div></div><div class="grid-2" style="margin-top:16px"><div class="panel"><div class="panel-head"><h3>Dernières transactions cartes</h3><span class="link" onclick="go('transactions')">Voir tout</span></div><div class="panel-body" id="recentTransactions">${skLines(4)}</div></div><div class="panel"><div class="panel-head"><h3>Derniers paiements</h3><span class="link" onclick="go('payments')">Voir tout</span></div><div class="panel-body" id="recentPayments">${skLines(4)}</div></div></div></div>`;
   try{
-    const isPartner=ME.role==="PARTNER";
-    await loadMerchants();
-    const s=await api(isPartner?"/api/partner/dashboard":"/api/business-dashboard/summary");
-    const K=isPartner?[
-      {icon:"payments",label:t("pk_cashback"),val:money(s.totalCashbackPaid||s.totalCashback||0),sub:""},
-      {icon:"claims",label:t("pk_claims"),val:num(s.totalClaims||0),sub:`${num(s.approvedClaims||0)} ${t("leg_approved").toLowerCase()}`},
-      {icon:"products",label:t("pk_products"),val:num(s.totalProducts||0),sub:""},
-      {icon:"campaigns",label:t("pk_campaigns"),val:num(s.activeCampaigns||0),sub:""}
-    ]:[
-      {icon:"payments",label:t("kpi_cashback"),val:money(s.totalCashbackPaid),sub:`${num(s.totalPayments)} ${t("payments_lc")}`},
-      {icon:"merchants",label:t("kpi_merchants"),val:num(s.activeMerchants),sub:`${num(s.totalMerchants)} ${t("total_lc")}`},
-      {icon:"campaigns",label:t("kpi_campaigns"),val:num(s.activeCampaigns),sub:`${num(s.totalCampaigns)} ${t("total_lc")}`},
-      {icon:"fraud",label:t("kpi_fraud"),val:num(s.openFraudAlerts),sub:`${num(s.totalFraudAlerts)} ${t("total_lc")}`}
-    ];
-    document.getElementById("kpis").innerHTML=K.map(kpiCard).join(""); animateCounters();
-    const claims=s.recentClaims||await api("/api/claims").catch(()=>[]);
-    renderRecentClaims(claims);
-    const dist=[{k:t("leg_submitted"),v:s.submittedClaims||0,c:"#1553B8"},{k:t("leg_approved"),v:s.approvedClaims||0,c:"#127A45"},
-      {k:t("leg_paid"),v:s.paidClaims||0,c:"#0E9F6E"},{k:t("leg_rejected"),v:s.rejectedClaims||0,c:"#B42318"}];
-    document.getElementById("claimChart").innerHTML=donut(dist);
-  }catch(e){toast(t("err_dash"),"err");console.error(e);}
+    const s=await api("/api/dashboard/operational-summary")||{};
+    const K=[{icon:"transactions",label:"Transactions cartes",val:num(s.totalTransactionsCartes||0),sub:"Importées"},{icon:"payments",label:"Cashback calculé",val:money(s.cashbackCalcule||0),sub:"Montant final"},{icon:"payments",label:"Paiements traités",val:num(s.paiementsTraites||0),sub:money(s.cashbackTraite||0)},{icon:"credit",label:"Crédits clients effectués",val:num(s.creditsClientsEffectues||0),sub:money(s.montantCredite||0)},{icon:"review",label:"Contrôles en attente",val:num(s.controlesEnAttente||0),sub:"À contrôler"},{icon:"claims",label:"Réclamations ouvertes",val:num(s.reclamationsOuvertes||0),sub:"À traiter"}];
+    document.getElementById("kpis").innerHTML=K.map(kpiCard).join("");animateCounters();
+    const flow=["Transactions importées|"+(s.transactionsImportees||0),"Cashback calculé|"+money(s.cashbackCalcule||0),"Prêtes pour paiement|"+(s.transactionsPretesPaiement||0),"Paiements générés|"+(s.paiementsGeneres||0),"Crédits en attente|"+(s.creditsEnAttente||0),"Crédits effectués|"+(s.creditsEffectues||0)];document.getElementById("operationalFlow").innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px">${flow.map(x=>{const p=x.split("|");return `<div class="panel" style="padding:10px"><div style="font-size:12px;color:var(--muted)">${p[0]}</div><strong>${p[1]}</strong></div>`;}).join("")}</div>`;
+    document.getElementById("riskBlock").innerHTML=`<div class="pf-row"><span class="k">Transactions en révision</span><span class="v">${num(s.transactionsEnRevision||0)}</span></div><div class="pf-row"><span class="k">Transactions rejetées</span><span class="v">${num(s.transactionsRejetees||0)}</span></div><div class="pf-row"><span class="k">Risques élevés</span><span class="v">${num(s.risquesEleves||0)}</span></div><div class="pf-row"><span class="k">Échecs paiement / crédit</span><span class="v">${num((s.paiementsEnEchec||0)+(s.creditsEnEchec||0))}</span></div>`;
+    const tiers=s.repartitionNiveaux||{};document.getElementById("loyaltyBlock").innerHTML=`<div class="pf-row"><span class="k">Clients fidélité actifs</span><span class="v">${num(s.clientsFideliteActifs||0)}</span></div><div class="pf-row"><span class="k">Volume cumulé</span><span class="v">${money(s.volumeFideliteCumule||0)}</span></div><div class="pf-row"><span class="k">Bonus appliqués</span><span class="v">${money(s.bonusFideliteAppliques||0)}</span></div><div style="font-size:12px;color:var(--muted);margin-top:8px">Essentiel ${num(tiers.Essentiel||0)} · Premium ${num(tiers.Premium||0)} · Prestige ${num(tiers.Prestige||0)} · Elite ${num(tiers.Elite||0)}</div>`;
+    const tx=s.dernieresTransactions||[],py=s.derniersPaiements||[];document.getElementById("recentTransactions").innerHTML=tx.length?tx.map(x=>`<div class="pf-row"><span class="mono">${esc(x.transactionRef||"Non renseigné")}</span><span>${esc(x.maskedCard||"Non renseigné")} · ${esc(moneyWithCurrency(x.amount,"FCFA"))}</span></div>`).join(""):emptyMini("Aucun élément récent");document.getElementById("recentPayments").innerHTML=py.length?py.map(x=>`<div class="pf-row"><span class="mono">${esc(x.paymentReference||"Non renseigné")}</span><span>${esc(paymentTreatmentLabel(x.status))} · ${esc(moneyWithCurrency(x.amount,"FCFA"))}</span></div>`).join(""):emptyMini("Aucun élément récent");
+  }catch(e){toast(String(e.message||e).slice(0,180),"err");document.getElementById("kpis").innerHTML=kpiSkeletons(6);}
 }
 async function renderBusinessDashboard(){
   const c=document.getElementById("content");

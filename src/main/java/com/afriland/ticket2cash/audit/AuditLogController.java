@@ -21,32 +21,32 @@ public class AuditLogController {
     }
 
     @GetMapping
-    public Page<AuditLog> getAllLogs(@RequestParam(defaultValue = "0") int page,
+    public Page<AuditLogResponse> getAllLogs(@RequestParam(defaultValue = "0") int page,
                                     @RequestParam(defaultValue = "50") int size) {
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 200);
         return auditLogRepository.findAllByOrderByCreatedAtDesc(
-                PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt")));
+                PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt"))).map(AuditLogResponse::from);
     }
 
     @GetMapping("/module/{moduleName}")
-    public List<AuditLog> getLogsByModule(@PathVariable String moduleName) {
-        return auditLogRepository.findByModuleName(moduleName);
+    public List<AuditLogResponse> getLogsByModule(@PathVariable String moduleName) {
+        return auditLogRepository.findByModuleName(moduleName).stream().map(AuditLogResponse::from).toList();
     }
 
     @GetMapping("/action/{action}")
-    public List<AuditLog> getLogsByAction(@PathVariable String action) {
-        return auditLogRepository.findByAction(action);
+    public List<AuditLogResponse> getLogsByAction(@PathVariable String action) {
+        return auditLogRepository.findByAction(action).stream().map(AuditLogResponse::from).toList();
     }
 
     @GetMapping("/status/{status}")
-    public List<AuditLog> getLogsByStatus(@PathVariable String status) {
-        return auditLogRepository.findByStatus(status);
+    public List<AuditLogResponse> getLogsByStatus(@PathVariable String status) {
+        return auditLogRepository.findByStatus(status).stream().map(AuditLogResponse::from).toList();
     }
 
     @PostMapping("/test")
-    public AuditLog createTestLog() {
-        return auditLogService.log(
+    public AuditLogResponse createTestLog() {
+        return AuditLogResponse.from(auditLogService.log(
                 "TEST_AUDIT",
                 "AUDIT",
                 "SYSTEM",
@@ -54,6 +54,6 @@ public class AuditLogController {
                 "ADMIN_DEMO",
                 "SUCCESS",
                 "Test audit log created from API"
-        );
+        ));
     }
 }

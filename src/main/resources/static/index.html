@@ -427,7 +427,7 @@ const API=""; let ME=null, CURRENT="dashboard", CACHE={};
 /* ============ FULL I18N ============ */
 const I18N={
  fr:{
-  logout:"Déconnexion",refresh:"Actualiser",add:"Ajouter",view_all:"Voir tout →'",
+  logout:"Déconnexion",refresh:"Actualiser",add:"Ajouter",view_all:"Voir tout →",
   search_menu:"Rechercher un menu…",search_page:"Rechercher dans la page…",
   connected:"Connecté",items:"élément(s)",total_lc:"au total",payments_lc:"paiements",claims_lc:"réclamations",
   g_principal:"Principal",g_ops:"Opérations",g_sys:"Système",g_integration:"Intégration",
@@ -435,7 +435,7 @@ const I18N={
   prod_updated:"Produit mis à jour.",
   tr_sub:"Analyses calculées à partir de vos données réelles.",
   tr_cashback_time:"Cashback par mois",tr_claims_status:"Réclamations par statut",tr_top_cat:"Top catégories (produits)",tr_no_data:"Pas encore assez de données pour cette analyse.",
-  wh_sub:"Recevez les transactions POS en temps réel.",wh_url:"URL du webhook (POS →' Ticket2Cash)",wh_payload:"Exemple de charge utile (POST JSON)",wh_recent:"Transactions reçues",wh_unmatched:"Transactions non rapprochées",wh_copy:"Copier",wh_copied:"Copié !",
+  wh_sub:"Recevez les transactions POS en temps réel.",wh_url:"URL du webhook (POS → Ticket2Cash)",wh_payload:"Exemple de charge utile (POST JSON)",wh_recent:"Transactions reçues",wh_unmatched:"Transactions non rapprochées",wh_copy:"Copier",wh_copied:"Copié !",
   wh_base:"URL publique de base",wh_base_hint:"Adresse joignable par le système externe (votre URL ngrok ou votre domaine). Laissez vide pour l'adresse locale — utilisable uniquement pour des tests sur ce PC.",
   wh_base_ph:"https://votre-domaine.com ou https://xxxx.ngrok-free.app",wh_local:"local uniquement — non joignable de l'extérieur",wh_public:"URL publique enregistrée",
   ig_sub:"Comment connecter un système externe à la plateforme.",ig_base:"URL de base de l'API",ig_auth:"Authentification",ig_auth_v:"Session (cookie) après connexion à /api/auth/login.",ig_endpoints:"Principaux endpoints",ig_test:"Tester la connexion",ig_ok:"Connexion OK",ig_ko:"Connexion impossible",
@@ -530,7 +530,7 @@ const I18N={
   group_info:"Un groupe regroupe plusieurs produits via la même clé groupe. Renseignez cette clé pour rattacher les articles à une campagne « produit »."
  },
  en:{
-  logout:"Log out",refresh:"Refresh",add:"Add",view_all:"View all →'",
+  logout:"Log out",refresh:"Refresh",add:"Add",view_all:"View all →",
   search_menu:"Search menu…",search_page:"Search this page…",
   connected:"Connected",items:"item(s)",total_lc:"total",payments_lc:"payments",claims_lc:"claims",
   g_principal:"Main",g_ops:"Operations",g_sys:"System",g_integration:"Integration",
@@ -538,7 +538,7 @@ const I18N={
   prod_updated:"Product updated.",
   tr_sub:"Analytics computed from your real data.",
   tr_cashback_time:"Cashback by month",tr_claims_status:"Claims by status",tr_top_cat:"Top categories (products)",tr_no_data:"Not enough data yet for this analysis.",
-  wh_sub:"Receive POS transactions in real time.",wh_url:"Webhook URL (POS →' Ticket2Cash)",wh_payload:"Sample payload (POST JSON)",wh_recent:"Received transactions",wh_unmatched:"Unmatched transactions",wh_copy:"Copy",wh_copied:"Copied!",
+  wh_sub:"Receive POS transactions in real time.",wh_url:"Webhook URL (POS → Ticket2Cash)",wh_payload:"Sample payload (POST JSON)",wh_recent:"Received transactions",wh_unmatched:"Unmatched transactions",wh_copy:"Copy",wh_copied:"Copied!",
   wh_base:"Public base URL",wh_base_hint:"Address reachable by the external system (your ngrok URL or your domain). Leave empty to use the local address — only usable for tests on this PC.",
   wh_base_ph:"https://your-domain.com or https://xxxx.ngrok-free.app",wh_local:"local only — not reachable from outside",wh_public:"Public URL saved",
   ig_sub:"How to connect an external system to the platform.",ig_base:"API base URL",ig_auth:"Authentication",ig_auth_v:"Session (cookie) after signing in at /api/auth/login.",ig_endpoints:"Key endpoints",ig_test:"Test connection",ig_ok:"Connection OK",ig_ko:"Connection failed",
@@ -749,7 +749,7 @@ function buildNav(role){
     const defaultOpen=!mobile&&CURRENT==="dashboard"&&g.key==="dashboards";
     const open=isActive||(!isActive&&(savedGroup? savedGroup===g.key:defaultOpen));
     return `<div class="nav-group ${open?"":"is-closed"}" data-group data-group-key="${g.key}">
-      <button class="nav-group-toggle" type="button" onclick="toggleNavGroup('${g.key}')"><span>${g.label}</span><span class="chevron">›"</span></button>
+      <button class="nav-group-toggle" type="button" onclick="toggleNavGroup('${g.key}')"><span>${g.label}</span><span class="chevron" aria-hidden="true">›</span></button>
       <div class="nav-group-desc">${g.desc}</div><div class="nav-group-items">
       ${g.items.map(id=>{const label=id==="review"?"Contrôles manuels":id==="claims"?"Réclamations clients":t(id);return `<a class="nav-item" data-nav="${id}" data-label="${label}" onclick="go('${id}')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[id]||IC.dashboard}</svg>
@@ -1449,7 +1449,7 @@ function loyRenderRules(){
 
 function loyRenderTiers(json){
   if (!json) return "—";
-  try{ const arr = JSON.parse(json); return arr.map(t => `${money(t.minVolume)} →' ${t.percentage}%`).join("<br>"); }
+  try{ const arr = JSON.parse(json); return arr.map(t => `${money(t.minVolume)} → ${t.percentage}%`).join("<br>"); }
   catch(_){ return "<em style='color:var(--danger)'>Format invalide</em>"; }
 }
 
@@ -2217,10 +2217,10 @@ async function renderUsers(){
       catch(_) { try { details = "\n" + (await resp.text()).slice(0, 400); } catch(_) {} }
       const diag = document.getElementById("uDiag");
       let msg = `⚠ Erreur HTTP ${resp.status} sur GET /api/auth/users`;
-      if (resp.status === 401) msg += "\n→' Session expirée ou non authentifié. Reconnectez-vous.";
-      else if (resp.status === 403) msg += "\n→' Rôle insuffisant (seul ADMIN peut voir cette page).";
-      else if (resp.status === 404) msg += "\n→' L'endpoint /api/auth/users n'existe pas côté backend.\n→' Vérifier AuthController.java ou consulter les logs serveur.";
-      else if (resp.status >= 500) msg += "\n→' Erreur serveur. Consulter /var/log/ticket2cash.log";
+      if (resp.status === 401) msg += "\n→ Session expirée ou non authentifié. Reconnectez-vous.";
+      else if (resp.status === 403) msg += "\n→ Rôle insuffisant (seul ADMIN peut voir cette page).";
+      else if (resp.status === 404) msg += "\n→ L'endpoint /api/auth/users n'existe pas côté backend.\n→ Vérifier AuthController.java ou consulter les logs serveur.";
+      else if (resp.status >= 500) msg += "\n→ Erreur serveur. Consulter /var/log/ticket2cash.log";
       msg += details;
       diag.textContent = msg;
       diag.style.display = "block";
@@ -2231,7 +2231,7 @@ async function renderUsers(){
     rows = await resp.json();
   } catch(e) {
     const diag = document.getElementById("uDiag");
-    diag.textContent = `⚠ Erreur réseau lors du chargement:\n${e.message || e}\n→' Vérifiez que le serveur est démarré.`;
+    diag.textContent = `⚠ Erreur réseau lors du chargement:\n${e.message || e}\n→ Vérifiez que le serveur est démarré.`;
     diag.style.display = "block";
     document.getElementById("uBody").innerHTML = `<tr><td colspan="7" style="padding:40px;text-align:center;color:var(--muted)">Consultez le diagnostic ci-dessus</td></tr>`;
     document.getElementById("uCp").textContent = "0";
@@ -2254,7 +2254,7 @@ async function renderUsers(){
       <td>${esc(u.fullName || "—")}</td>
       <td><span class="mono" style="font-size:12px">${esc(u.email || "—")}</span></td>
       <td>${usrRoleBadge(u.role)}</td>
-      <td>${u.accountLocked ? '<span class="badge b-danger">• Verrouillé</span>' : '<span class="badge b-ok">�o" Actif</span>'}</td>
+      <td>${u.accountLocked ? '<span class="badge b-danger">• Verrouillé</span>' : '<span class="badge b-ok">• Actif</span>'}</td>
       <td style="color:var(--text-2);font-size:12px">${u.lastLoginAt ? dt(u.lastLoginAt) : "—"}</td>
       <td class="row-actions">${canManage ? `
         ${u.accountLocked
@@ -2270,7 +2270,7 @@ function usrRoleBadge(role){
   const map = {
     ADMIN: {lbl:"• Admin", cls:"b-danger"},
     PARTNER: {lbl:"• Partenaire", cls:"b-info"},
-    OPERATEUR: {lbl:"�sT️ Opérateur", cls:"b-warn"},
+    OPERATEUR: {lbl:"• Opérateur", cls:"b-warn"},
     LECTEUR: {lbl:"• Lecteur", cls:"b-muted"}
   };
   const m = map[role] || {lbl: role, cls: "b-muted"};
@@ -2947,7 +2947,7 @@ async function importMass(e){
   let ok=0,fail=0;
   for(const line of lines){const cells=line.split(",");const row={};hdr.forEach((h,i)=>row[h]=(cells[i]||"").trim());
     try{await api(pEP(),{method:"POST",body:JSON.stringify({merchantId:Number(mid),sku:row.sku,name:row.name,category:row.category,brand:row.brand,price:row.price?Number(row.price):null,groupKey:row.groupKey,cashbackType:row.cashbackType||"NONE",cashbackValue:row.cashbackValue?Number(row.cashbackValue):0})});ok++;}catch(_){fail++;}}
-  toast(`${t("import_done")} ${ok} �o" / ${fail} �o-`,"ok");renderProducts();
+  toast(`${t("import_done")} ${ok} réussi(s) / ${fail} échec(s)`,"ok");renderProducts();
 }
 
 /* ============ TENDANCES (analytics from real data) ============ */
@@ -3303,7 +3303,7 @@ function showPartnerCredentials(name,username,password,opts){
   opts=opts||{};LAST_CREDS={name:name,username:username,password:password,email:opts.email||""};
   const url=effectiveBase()+"/login.html";
   const msg=`${LANG==="fr"?"Bonjour, votre espace partenaire Ticket2Cash":"Hello, your Ticket2Cash partner space"} (${name}) ${LANG==="fr"?"est prêt.":"is ready."}\n${t("cp_loginurl")}: ${url}\n${t("cp_username")}: ${username}\n${t("cp_password")}: ${maskSecret(password)}\n${LANG==="fr"?"Le mot de passe complet est transmis séparément de manière sécurisée.":"The full password is shared separately through a secure channel."}`;
-  const emailLine=opts.emailSent?`<div class="cred-box" style="border-color:var(--ok)"><span class="k">${t("cp_email_status")}</span><span class="v" style="color:var(--ok);font-family:var(--font-sans)">�o? ${t("cp_email_sent")} ${esc(opts.email||"")}</span></div>`:"";
+  const emailLine=opts.emailSent?`<div class="cred-box" style="border-color:var(--ok)"><span class="k">${t("cp_email_status")}</span><span class="v" style="color:var(--ok);font-family:var(--font-sans)">• ${t("cp_email_sent")} ${esc(opts.email||"")}</span></div>`:"";
   const sendBtn=(!opts.emailSent&&opts.email&&opts.canSend)?`<button class="btn btn-ghost" onclick="sendCredsEmail()">${t("cp_send_email")}</button>`:"";
   openModal(t("cp_created_title"),
     `<p style="color:var(--text-2);margin-bottom:16px">${t("cp_created_msg")}</p>
@@ -3414,7 +3414,7 @@ async function renderCampaigns(){
       return `<tr><td class="strong">${esc(cm.name||"—")}${stateBadge}${expired?` <span class="badge b-muted" style="margin-left:6px">${t("cmp_expired")}</span>`:""}</td>
         <td>${triggerBadge(cm.triggerType)}</td>
         <td>${mid?merchantChain(mid):(cm.merchant&&cm.merchant.name?esc(cm.merchant.name):"—")}</td>
-        <td style="white-space:nowrap">${cm.startDate?dt(cm.startDate):"—"} →' ${cm.endDate?dt(cm.endDate):"—"}</td>
+        <td style="white-space:nowrap">${cm.startDate?dt(cm.startDate):"—"} → ${cm.endDate?dt(cm.endDate):"—"}</td>
         <td>${cashbackLabel(cm.cashbackType,cm.cashbackValue)}${campaignCriteriaSummary(cm)}</td>
         <td>${badge(cm.status)}</td>
         <td class="row-actions"><button class="mini-btn" onclick="campaignView(${cm.id})">${t("view")}</button>${canManage?`<button class="mini-btn" onclick="campaignModal(${cm.id})">${t("edit")}</button><button class="mini-btn danger" onclick="delCampaign(${cm.id},'${esc(nm)}')">${t("del")}</button>`:""}</td></tr>`;
@@ -3434,7 +3434,22 @@ function triggerBadge(tt){
 }
 /* ============ CAMPAIGN MODAL (Phase 1 — unified trigger engine) ============ */
 
-function campaignModal(id){
+async function loadCampaignMerchants(){
+  try{
+    const response=await api("/api/merchants");
+    const all=Array.isArray(response)?response:(Array.isArray(response?.content)?response.content:[]);
+    const active=all.filter(m=>String(m.status||"").toUpperCase()==="ACTIVE");
+    window.__campaignMerchants=active.length?active:all;
+    window.__campaignMerchantLoadError="";
+  }catch(error){
+    console.error("Impossible de charger les commerçants pour le formulaire campagne",error);
+    window.__campaignMerchants=[];
+    window.__campaignMerchantLoadError="Impossible de charger les commerçants.";
+  }
+  return window.__campaignMerchants;
+}
+async function campaignModal(id){
+  await loadCampaignMerchants();
   const cm=id?(window.__campaigns||[]).find(x=>x.id===id):null;
   window.__cmpDraft={
     id: cm?cm.id:null,
@@ -3484,19 +3499,21 @@ function cmpOpenForm(){
   const triggerLabels={
     MERCHANT_TRANSACTION:"• Cashback marchand",
     PRODUCT_PURCHASE:"• Cashback produit",
-    VOLUME_THRESHOLD:"•S Cashback volume",
+    VOLUME_THRESHOLD:"Cashback volume",
     POS_WEBHOOK_EVENT:"⚠ Cashback événement POS"
   };
-  const merchantOptions=(window.__merchants||[]).map(m=>`<option value="${m.id}" ${cm&&cm.merchant&&cm.merchant.id===m.id?"selected":""}>${esc(m.brandName||m.name)}</option>`).join("");
+  const selectedMerchantId=cm?.merchant?.id??cm?.merchantId??"";
+  const campaignMerchants=window.__campaignMerchants||[];
+  const merchantOptions=campaignMerchants.map(m=>`<option value="${m.id}" ${String(selectedMerchantId)===String(m.id)?"selected":""}>${esc(m.name||m.brandName||("Commerçant #"+m.id))}</option>`).join("");
   const isAdmin=ME.role==="ADMIN";
 
   const merchantField=isAdmin?`
     <div class="field full"><label>Commerçant cible *</label>
-      <select id="cmp_merchant">
-        <option value="">— choisir un commerçant —"</option>
+      <select id="campaignMerchantId">
+        <option value="">Sélectionner un commerçant</option>
         ${merchantOptions}
       </select>
-      <div style="font-size:11px;color:var(--muted);margin-top:4px">Le commerçant Afriland dont les clients recevront le cashback</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">${window.__campaignMerchantLoadError||"Le commerçant Afriland dont les clients recevront le cashback"}</div>
     </div>`:'';
 
   // Trigger-specific fields
@@ -3532,7 +3549,7 @@ function cmpOpenForm(){
     triggerFields=`
       <div class="field"><label>Code MCC (catégorie marchand)</label>
         <select id="cmp_mccCode">
-          <option value="">— Aucun filtre MCC —"</option>
+          <option value="">— Aucun filtre MCC —</option>
           ${mccOptions}
         </select>
         <div style="font-size:11px;color:var(--muted);margin-top:4px">Ne cible que les transactions dans cette catégorie</div>
@@ -3540,19 +3557,19 @@ function cmpOpenForm(){
       <div class="field"><label>Canal de paiement</label>
         <select id="cmp_channelFilter">
           <option value="ALL" ${!cm.channelFilter||cm.channelFilter==="ALL"?"selected":""}>Tous canaux</option>
-          <option value="ECOMM" ${cm.channelFilter==="ECOMM"?"selected":""}>•O� E-commerce</option>
-          <option value="F2F" ${cm.channelFilter==="F2F"?"selected":""}>• En magasin (F2F)</option>
-          <option value="MOBILE_WALLET" ${cm.channelFilter==="MOBILE_WALLET"?"selected":""}>• Mobile Wallet</option>
-          <option value="CNP" ${cm.channelFilter==="CNP"?"selected":""}>•z CNP (téléphone/mail)</option>
-          <option value="ATM" ${cm.channelFilter==="ATM"?"selected":""}>• DAB / ATM</option>
+          <option value="ECOMM" ${cm.channelFilter==="ECOMM"?"selected":""}>E-commerce</option>
+          <option value="F2F" ${cm.channelFilter==="F2F"?"selected":""}>En magasin (F2F)</option>
+          <option value="MOBILE_WALLET" ${cm.channelFilter==="MOBILE_WALLET"?"selected":""}>Mobile Wallet</option>
+          <option value="CNP" ${cm.channelFilter==="CNP"?"selected":""}>CNP (téléphone/mail)</option>
+          <option value="ATM" ${cm.channelFilter==="ATM"?"selected":""}>DAB / ATM</option>
         </select>
       </div>
       <div class="field"><label>Corridor géographique</label>
         <select id="cmp_corridorFilter">
           <option value="ALL" ${!cm.corridorFilter||cm.corridorFilter==="ALL"?"selected":""}>Tous corridors</option>
-          <option value="DOMESTIC" ${cm.corridorFilter==="DOMESTIC"?"selected":""}>•Y?� Domestique</option>
-          <option value="INTERNATIONAL" ${cm.corridorFilter==="INTERNATIONAL"?"selected":""}>•O� International</option>
-          <option value="CROSS_BORDER" ${cm.corridorFilter==="CROSS_BORDER"?"selected":""}>•O� CEMEA transfrontalier</option>
+          <option value="DOMESTIC" ${cm.corridorFilter==="DOMESTIC"?"selected":""}>Domestique</option>
+          <option value="INTERNATIONAL" ${cm.corridorFilter==="INTERNATIONAL"?"selected":""}>International</option>
+          <option value="CROSS_BORDER" ${cm.corridorFilter==="CROSS_BORDER"?"selected":""}>CEMAC transfrontalier</option>
         </select>
       </div>
       <div class="field"><label>Plage BIN carte (optionnel)</label>
@@ -3646,19 +3663,19 @@ function cmpOpenForm(){
 
       <!-- Advanced filters (collapsible) -->
       <details class="field full" style="border:1px solid var(--border);border-radius:8px;padding:8px 14px;background:var(--surface-2)">
-        <summary style="cursor:pointer;font-weight:600;font-size:13px;color:var(--text-2)">�sT️ Filtres avancés (segments, plafonds)</summary>
+        <summary style="cursor:pointer;font-weight:600;font-size:13px;color:var(--text-2)">Filtres avancés (segments, plafonds)</summary>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
           <div>
             <label style="font-size:12px;color:var(--text-2);font-weight:600">Segment cible</label>
             <select id="cmp_entityFilter" style="width:100%;margin-top:4px">
-              <option value="" ${!cm.entityTypeFilter?"selected":""}>•Z� Tous</option>
-              <option value="INDIVIDUAL" ${cm.entityTypeFilter==="INDIVIDUAL"?"selected":""}>• Particuliers</option>
-              <option value="COMPANY" ${cm.entityTypeFilter==="COMPANY"?"selected":""}>• Entreprises</option>
+              <option value="" ${!cm.entityTypeFilter?"selected":""}>Tous</option>
+              <option value="INDIVIDUAL" ${cm.entityTypeFilter==="INDIVIDUAL"?"selected":""}>Particuliers</option>
+              <option value="COMPANY" ${cm.entityTypeFilter==="COMPANY"?"selected":""}>Entreprises</option>
             </select>
           </div>
           <div>
             <label style="font-size:12px;color:var(--text-2);font-weight:600">Tiers clients</label>
-            <input id="cmp_tierFilter" value="${esc(cm.tierFilter||"")}" placeholder="Ex: GOLD,PLATINUM" style="width:100%;margin-top:4px">
+            <input id="cmp_tierFilter" value="${esc(cm.tierFilter||"")}" placeholder="Ex: Premium, Prestige" style="width:100%;margin-top:4px">
           </div>
           <div>
             <label style="font-size:12px;color:var(--text-2);font-weight:600">Min. par transaction (FCFA)</label>
@@ -3667,6 +3684,14 @@ function cmpOpenForm(){
           <div>
             <label style="font-size:12px;color:var(--text-2);font-weight:600">Cap cashback par client (FCFA)</label>
             <input id="cmp_maxCb" type="number" min="0" step="100" value="${cm.maxCashbackPerClient||""}" style="width:100%;margin-top:4px">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-2);font-weight:600">Plafond journalier par client (FCFA)</label>
+            <input id="cmp_dailyLimit" type="number" min="0" step="100" value="${cm.dailyLimitPerClient??""}" style="width:100%;margin-top:4px">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-2);font-weight:600">Plafond mensuel par client (FCFA)</label>
+            <input id="cmp_monthlyLimit" type="number" min="0" step="100" value="${cm.monthlyLimitPerClient??""}" style="width:100%;margin-top:4px">
           </div>
         </div>
       </details>
@@ -3747,6 +3772,8 @@ async function saveCampaign(){
     cashbackValue:val("cmp_cbval")?parseFloat(val("cmp_cbval")):null,
     loyaltyBonusEnabled:!!document.getElementById("cmp_loyaltyBonusEnabled")?.checked,
     totalBudget:val("cmp_budget")?parseFloat(val("cmp_budget")):null,
+    dailyLimitPerClient:val("cmp_dailyLimit")?parseFloat(val("cmp_dailyLimit")):null,
+    monthlyLimitPerClient:val("cmp_monthlyLimit")?parseFloat(val("cmp_monthlyLimit")):null,
     status:document.getElementById("cmp_status").value,
     entityTypeFilter:val("cmp_entityFilter")||null,
     tierFilter:val("cmp_tierFilter")||null,
@@ -3756,9 +3783,13 @@ async function saveCampaign(){
 
   // ADMIN provides merchantId; PARTNER doesn't (forced server-side)
   if(ME.role==="ADMIN"){
-    const mid=val("cmp_merchant");
+    const mid=val("campaignMerchantId");
     if(!mid && !draft.isEdit){ toast("Choisissez un commerçant","err"); return; }
     if(mid) body.merchantId=parseInt(mid,10);
+    else if(draft.isEdit){
+      const existingMerchantId=draft.source?.merchant?.id??draft.source?.merchantId;
+      if(existingMerchantId!=null) body.merchantId=Number(existingMerchantId);
+    }
   }
 
   // Trigger-specific fields
@@ -3780,6 +3811,9 @@ async function saveCampaign(){
   }
 
   if(!body.name){ toast("Nom de la campagne requis","err"); return; }
+  for(const [field,label] of [["dailyLimitPerClient","Plafond journalier"],["monthlyLimitPerClient","Plafond mensuel"],["totalBudget","Budget total"]]){
+    if(body[field]!=null&&(!Number.isFinite(body[field])||body[field]<=0)){toast(`${label} doit être positif.`,`err`);return;}
+  }
 
   try{
     const method=draft.id?"PUT":"POST";
@@ -3802,7 +3836,7 @@ function campaignView(id){
   openModal(cm.name||t("view"),
     `<div class="cred-box"><span class="k">${t("c_partner")}</span><span class="v" style="font-family:var(--font-sans);text-align:right">${mid?merchantChain(mid):(cm.merchant?esc(cm.merchant.name):"—")}</span></div>
      <div class="cred-box"><span class="k">${t("m_status")}</span><span class="v" style="font-family:var(--font-sans)">${badge(cm.status)}</span></div>
-     <div class="cred-box"><span class="k">${t("cmp_period")}</span><span class="v" style="font-family:var(--font-sans)">${cm.startDate?dt(cm.startDate):"—"} →' ${cm.endDate?dt(cm.endDate):"—"}</span></div>
+     <div class="cred-box"><span class="k">${t("cmp_period")}</span><span class="v" style="font-family:var(--font-sans)">${cm.startDate?dt(cm.startDate):"—"} → ${cm.endDate?dt(cm.endDate):"—"}</span></div>
      <div class="cred-box"><span class="k">${t("col_cashback")}</span><span class="v" style="font-family:var(--font-sans)">${cashbackLabel(cm.cashbackType,cm.cashbackValue)}</span></div>
      <div class="cred-box"><span class="k">${t("cmp_budget")}</span><span class="v" style="font-family:var(--font-sans)">${cm.totalBudget!=null?money(cm.totalBudget):"—"}</span></div>
      ${cm.description?`<div class="field full" style="margin-top:10px"><label>${t("cmp_desc")}</label><div style="color:var(--text-2);font-size:13px;line-height:1.5">${esc(cm.description)}</div></div>`:""}`,
@@ -4016,7 +4050,7 @@ async function ptsRenderRules(){
       <tr>
         <td class="strong">${esc(r.name)}</td>
         <td>${r.pointsPer1000Fcfa}</td>
-        <td>�-${r.multiplier||1}</td>
+        <td>×${r.multiplier||1}</td>
         <td>${r.merchant?esc(r.merchant.brandName||r.merchant.name):"—"}</td>
         <td>${r.mccCode?esc(r.mccCode.replace("MCC_","")):"—"}</td>
         <td>${r.productSku?esc(r.productSku):"—"}</td>
@@ -4296,7 +4330,7 @@ async function pcModal(){
   const binOptions = bins.map(b=>`<option value="${b.bin}">${esc(b.label)}</option>`).join("");
   const body = `
     <div style="margin-bottom:12px;padding:10px 14px;background:var(--surface-2);border-radius:8px;font-size:13px;color:var(--text-2)">
-      �"�️ Seuls les 6 premiers chiffres (BIN) et les 4 derniers sont enregistrés. Les 6 chiffres du milieu ne sont jamais stockés.
+       Informations carte : seuls les 6 premiers chiffres (BIN) et les 4 derniers sont enregistrés. Les 6 chiffres du milieu ne sont jamais stockés.
     </div>
     <div class="form-grid">
       <div class="field"><label>BIN (produit carte) *</label>
@@ -4461,9 +4495,9 @@ async function cloRenderOffers(){
         <td>${o.merchant?esc(o.merchant.brandName||o.merchant.name):"—"}</td>
         <td>${cloRewardLabel(o)}</td>
         <td style="font-size:11px"><code>${esc(o.targetBins||"Tous")}</code></td>
-        <td style="font-size:12px">${o.totalBudget?(o.totalBudget||0).toLocaleString("fr-FR"):"�^z"}<br><span style="color:var(--muted)">${(o.budgetUsed||0).toLocaleString("fr-FR")} utilisé</span></td>
+        <td style="font-size:12px">${o.totalBudget?(o.totalBudget||0).toLocaleString("fr-FR"):"—"}<br><span style="color:var(--muted)">${(o.budgetUsed||0).toLocaleString("fr-FR")} utilisé</span></td>
         <td>${o.redemptionCount||0}</td>
-        <td style="font-size:12px;white-space:nowrap">${o.validFrom?dt(o.validFrom):"—"}<br>→' ${o.validTo?dt(o.validTo):"—"}</td>
+        <td style="font-size:12px;white-space:nowrap">${o.validFrom?dt(o.validFrom):"—"}<br>→ ${o.validTo?dt(o.validTo):"—"}</td>
         <td>${cloStatusBadge(o.status)}</td>
         <td class="row-actions">${canManage?`
           ${o.status==="ACTIVE"?`<button class="mini-btn" onclick="cloPause(${o.id})">Pause</button>`:o.status!=="ARCHIVED"?`<button class="mini-btn" onclick="cloActivate(${o.id})">Activer</button>`:""}
@@ -4549,7 +4583,7 @@ async function cloOfferModal(id){
       <div class="field"><label>Canal</label>
         <select id="clo_channel">
           <option value="">Tous canaux</option>
-          <option value="ECOMM" ${o.channelFilter==="ECOMM"?"selected":""}>•O� E-commerce</option>
+          <option value="ECOMM" ${o.channelFilter==="ECOMM"?"selected":""}>E-commerce</option>
           <option value="F2F" ${o.channelFilter==="F2F"?"selected":""}>• En magasin</option>
           <option value="MOBILE_WALLET" ${o.channelFilter==="MOBILE_WALLET"?"selected":""}>• Mobile Wallet</option>
         </select>
@@ -4631,7 +4665,7 @@ async function cloOptInsView(){
           <tbody>${(rows||[]).map(o=>`<tr>
             <td><code style="font-size:11px">${esc(o.accountNumber)}</code></td>
             <td>${esc(o.ownerName||"—")}</td>
-            <td>${o.optedIn?'<span class="badge b-ok">�o" Actif</span>':'<span class="badge b-muted">Révoqué</span>'}</td>
+            <td>${o.optedIn?'<span class="badge b-ok">• Actif</span>':'<span class="badge b-muted">Révoqué</span>'}</td>
             <td style="font-size:11px">${esc(o.notificationChannels||"—")}</td>
             <td style="font-size:11px;color:var(--muted)">${o.optedInAt?dt(o.optedInAt):"—"}</td>
             <td style="text-align:right"><button class="mini-btn" onclick="cloOptInModal('${esc(o.accountNumber)}')">Modifier</button></td>
@@ -4656,8 +4690,8 @@ function cloOptInModal(acc){
       </div>
       <div class="field"><label>Consentement *</label>
         <select id="clo_optIn">
-          <option value="true">�o" Opt-in (activé)</option>
-          <option value="false">�o- Opt-out (révoqué)</option>
+          <option value="true">Opt-in (activé)</option>
+          <option value="false">Opt-out (révoqué)</option>
         </select>
       </div>
       <div class="field"><label>Canaux notification</label>
@@ -4726,9 +4760,9 @@ async function cloSimulateRun(){
   try{
     const r = await api("/api/clo/simulate-redemption",{method:"POST",body:JSON.stringify(body)});
     if(r.matched){
-      toast(`�o" Offre "${r.offer}" déclenchée : +${r.rewardValue} ${r.rewardType.replace("CASHBACK_","").replace("_"," ")}`,"ok");
+      toast(`Offre "${r.offer}" déclenchée : +${r.rewardValue} ${r.rewardType.replace("CASHBACK_","").replace("_"," ")}`,"ok");
     } else {
-      toast("�o- "+(r.message||"Aucune offre applicable"),"err");
+      toast(r.message||"Aucune offre applicable","err");
     }
     closeModal(); renderCloOffers();
   }catch(e){ toast(String(e.message||e).slice(0,200),"err"); }
@@ -4761,7 +4795,7 @@ async function renderLoyaltyTiers(){
         </div>
         <p style="margin:0 0 12px 0;font-size:13px;color:var(--text-2);line-height:1.5">${esc(tier.description||"—")}</p>
         <div style="padding:10px 12px;background:var(--surface-2);border-radius:8px;margin-bottom:10px">
-          <div style="font-size:11px;color:var(--muted);margin-bottom:6px">SEUILS D'ACC�^S</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px">SEUILS D'ACCÈS</div>
           <div style="font-size:13px">Dépense cumulée : <strong>${(tier.minCumulativeSpend||0).toLocaleString("fr-FR")} FCFA</strong></div>
           <div style="font-size:13px">Transactions : <strong>${tier.minTransactionCount||0}</strong> min · sur <strong>${tier.evaluationMonths||12} mois</strong></div>
         </div>
@@ -4904,7 +4938,7 @@ async function renderVouchers(){
         <td>${vouTypeBadge(v.type)}</td>
         <td>${vouValueLabel(v)}</td>
         <td style="font-size:12px;color:var(--text-2)">${v.ownerAccountNumber?esc(v.ownerAccountNumber):"—"}${v.ownerName?"<br>"+esc(v.ownerName):""}</td>
-        <td style="font-size:12px;white-space:nowrap">${v.validFrom?dt(v.validFrom):"—"}<br>→' ${v.validTo?dt(v.validTo):"—"}</td>
+        <td style="font-size:12px;white-space:nowrap">${v.validFrom?dt(v.validFrom):"—"}<br>→ ${v.validTo?dt(v.validTo):"—"}</td>
         <td>${vouStatusBadge(v.status)}</td>
         <td class="row-actions"><button class="mini-btn" onclick="vouView(${v.id})">Voir</button>${canManage&&v.status==="ISSUED"?`<button class="mini-btn" onclick="vouConsume(${v.id})">Consommer</button><button class="mini-btn danger" onclick="vouCancel(${v.id})">Annuler</button>`:""}</td>
       </tr>`).join("") : `<tr><td colspan="8">${emptyFull()}</td></tr>`;
@@ -4913,10 +4947,10 @@ async function renderVouchers(){
 
 function vouTypeBadge(t){
   const map = {
-    PROGRESSIVE_LOYALTY: {label:"Fidélité progressive", cls:"b-info", icon:"•Z�"},
+    PROGRESSIVE_LOYALTY: {label:"Fidélité progressive", cls:"b-info", icon:"•"},
     ONE_SHOT: {label:"One-shot", cls:"b-ok", icon:"⚠"},
     WELCOME: {label:"Bienvenue", cls:"b-info", icon:"•"},
-    BIRTHDAY: {label:"Anniversaire", cls:"b-warn", icon:"•Z,"},
+    BIRTHDAY: {label:"Anniversaire", cls:"b-warn", icon:"•"},
     PARTNER_CAMPAIGN: {label:"Partenaire", cls:"b-muted", icon:"•"}
   };
   const m = map[t] || {label:t, cls:"b-muted", icon:"?"};
@@ -4936,7 +4970,7 @@ function vouStatusBadge(s){
 
 function vouValueLabel(v){
   if(!v.valueType) return "—";
-  if(v.valueType==="FREE_PRODUCT") return "•Z� Gratuit";
+  if(v.valueType==="FREE_PRODUCT") return "Produit gratuit";
   if(v.valueType==="PERCENTAGE_DISCOUNT") return `${v.value||0} %`;
   return `${(v.value||0).toLocaleString("fr-FR")} FCFA`;
 }
@@ -4952,9 +4986,9 @@ function vouModal(){
       <div class="field"><label>Type de voucher *</label>
         <select id="vou_type">
           <option value="ONE_SHOT">⚠ One-shot (immédiat)</option>
-          <option value="PROGRESSIVE_LOYALTY">•Z� Fidélité progressive</option>
+          <option value="PROGRESSIVE_LOYALTY">Fidélité progressive</option>
           <option value="WELCOME">• Bienvenue (activation carte)</option>
-          <option value="BIRTHDAY">•Z, Anniversaire client</option>
+          <option value="BIRTHDAY">Anniversaire client</option>
           <option value="PARTNER_CAMPAIGN">• Campagne partenaire</option>
         </select>
       </div>
@@ -5117,7 +5151,7 @@ async function vouView(id){
     const v = await api("/api/vouchers/"+id);
     if(!v) return;
     const isAdmin = ME.role==="ADMIN";
-    // Generate QR code as data URI via a simple text encoding trick (use goqr.me placeholder →' but we can't hit external; use text-based)
+    // Generate QR code as data URI via a simple text encoding trick (use goqr.me placeholder → but we can't hit external; use text-based)
     const qrText = v.code;
     const body = `
       <div style="display:flex;gap:20px;margin-bottom:16px">
@@ -5133,8 +5167,8 @@ async function vouView(id){
             <div><span style="color:var(--muted);font-size:11px">Type</span><br>${vouTypeBadge(v.type)}</div>
             <div><span style="color:var(--muted);font-size:11px">Statut</span><br>${vouStatusBadge(v.status)}</div>
             <div><span style="color:var(--muted);font-size:11px">Valeur</span><br><strong>${vouValueLabel(v)}</strong></div>
-            <div><span style="color:var(--muted);font-size:11px">Mode</span><br>${v.usageMode||"—"}${v.currentUses>0?" ("+v.currentUses+"/"+(v.maxUses||"�^z")+")":""}</div>
-            <div><span style="color:var(--muted);font-size:11px">Validité</span><br>${v.validFrom?dt(v.validFrom):"—"} →' ${v.validTo?dt(v.validTo):"—"}</div>
+            <div><span style="color:var(--muted);font-size:11px">Mode</span><br>${v.usageMode||"—"}${v.currentUses>0?" ("+v.currentUses+"/"+(v.maxUses||"∞")+")":""}</div>
+            <div><span style="color:var(--muted);font-size:11px">Validité</span><br>${v.validFrom?dt(v.validFrom):"—"} → ${v.validTo?dt(v.validTo):"—"}</div>
             <div><span style="color:var(--muted);font-size:11px">Bénéficiaire</span><br>${v.ownerAccountNumber?esc(v.ownerAccountNumber):"—"}${v.ownerName?"<br>"+esc(v.ownerName):""}</div>
             ${v.merchant?`<div><span style="color:var(--muted);font-size:11px">Commerçant</span><br>${esc(v.merchant.name)}</div>`:""}
           </div>
@@ -5187,7 +5221,7 @@ async function renderPartnerRequests(){
         <td>${reqTypeBadge(r.type)}</td>
         <td>${reqStatusBadge(r.status)}</td>
         <td style="color:var(--text-2);font-size:12px;white-space:nowrap">${dt(r.createdAt)}</td>
-        <td style="color:var(--text-2);font-size:12px">${r.adminResponse?`�o" ${dt(r.respondedAt)}`:"—"}</td>
+        <td style="color:var(--text-2);font-size:12px">${r.adminResponse?dt(r.respondedAt):"—"}</td>
         <td class="row-actions"><button class="mini-btn" onclick="reqView(${r.id})">Voir</button></td>
       </tr>`).join("") : `<tr><td colspan="6">${emptyFull()}</td></tr>`;
   }catch(e){ document.getElementById("reqBody").innerHTML=`<tr><td colspan="6">${emptyMini(t("err_load"))}</td></tr>`; }

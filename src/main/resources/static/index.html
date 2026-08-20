@@ -1880,6 +1880,25 @@ function workflowPhase(status){
   if(s==="CREDITED")return "Terminé";
   return "En cours";
 }
+function workflowModalStatusLabel(status,paymentStatus,creditStatus){
+  const current=String(status||"").toUpperCase();
+  const payment=String(paymentStatus||"").toUpperCase();
+  const credit=String(creditStatus||"").toUpperCase();
+  if(current==="REJECTED") return "Rejetée";
+  if(current==="MANUAL_REVIEW") return "En révision manuelle";
+  if(current==="CREDITED"||credit==="CREDITED") return "Crédit client effectué";
+  if(current==="CREDIT_PENDING"||credit==="CREDIT_PENDING") return "Crédit en attente";
+  const labels={
+    RECEIVED:"À contrôler",DEDUPLICATED:"À contrôler",CARD_VALIDATED:"Carte validée",
+    MERCHANT_MATCHED:"Commerçant reconnu",CAMPAIGN_MATCHED:"Campagne appliquée",
+    CASHBACK_CALCULATED:"Cashback calculé",FRAUD_CHECKED:"Contrôle fraude effectué",
+    APPROVED_FOR_PAYMENT:"Prêt pour paiement",PAYMENT_GENERATED:"Paiement généré",
+    APPROVED_FOR_CREDIT:"Crédit autorisé"
+  };
+  if(labels[current]) return labels[current];
+  if(["SUCCESS","PAID"].includes(payment)) return "Paiement traité";
+  return "À contrôler";
+}
 async function openTransactionWorkflow(id){
   if(!id){toast("Identifiant transaction manquant.","err");return;}
   try{
@@ -1892,6 +1911,7 @@ async function openTransactionWorkflow(id){
     const money=(value)=>moneyWithCurrency(value,"FCFA");
     const current=String(w.currentStep||w.workflowStatus||"RECEIVED").toUpperCase();
     const guide=workflowGuidance(current),paymentStatus=payment?.status||tx.cashbackStatus,creditStatus=payment?.creditStatus;
+    const cleanModalState=workflowModalStatusLabel(current,paymentStatus,creditStatus);
     window.__workflowGlobal={state:workflowGlobalState(current,paymentStatus,creditStatus,tx.cashbackDecision),badge:workflowGlobalBadge(current,paymentStatus,creditStatus,tx.cashbackDecision),eligibility:cashbackEligibilityLabel(tx.cashbackDecision)};
     const canApprove=ME&&(ME.role==="ADMIN"||ME.role==="SUPERVISEUR"),canReview=ME&&(canApprove||ME.role==="OPERATEUR");
     const terminal=guide.terminal||current==="REJECTED"||current==="CREDITED";
@@ -1903,15 +1923,19 @@ async function openTransactionWorkflow(id){
     const rows=(w.timeline||[]).map(x=>`<div style="display:grid;grid-template-columns:12px 1fr auto;gap:10px;align-items:start;padding:10px 0;border-bottom:1px solid var(--border)"><div style="width:10px;height:10px;border-radius:50%;margin-top:5px;background:${x.status==="COMPLETED"?"var(--ok)":x.status==="CURRENT"?"var(--warn)":"var(--border)"}"></div><div><strong>${esc(workflowStatusLabel(x.step))}</strong><div style="font-size:11px;color:var(--muted)">${x.date?dt(x.date):"Non renseigné"}${x.validatedBy?" · "+esc(x.validatedBy):""}</div>${x.comment?`<div style="font-size:12px;white-space:pre-wrap;margin-top:3px">${esc(x.comment)}</div>`:""}</div>${workflowStatusBadge(x.status)}</div>`).join("");
     const summary=`<div class="panel" style="margin-bottom:14px"><div class="panel-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px"><div><span class="k">Référence transaction</span><div class="v mono">${esc(w.transactionRef||"Non renseigné")}</div></div><div><span class="k">Carte</span><div class="v mono">${esc(w.maskedCard||"Non renseigné")}</div></div><div><span class="k">Éligibilité cashback</span><div class="v"><span class="badge b-ok">${esc(cashbackEligibilityLabel(tx.cashbackDecision))}</span></div></div><div><span class="k">Parcours opérationnel</span><div class="v">${esc(workflowPhase(w.workflowStatus||current))}</div></div><div><span class="k">Étape actuelle</span><div class="v">${esc(workflowStatusLabel(current))}</div></div><div><span class="k">Paiement cashback</span><div class="v">${esc(paymentStatusLabel(paymentStatus))}</div></div><div><span class="k">Crédit client</span><div class="v">${esc(creditStatusLabel(creditStatus))}</div></div></div></div><div class="panel" style="margin-bottom:14px"><div class="panel-body"><strong>Prochaine action :</strong> ${esc(guide.message)}<div style="font-size:12px;color:var(--muted);margin-top:7px">Paiement cashback : ordre ou traitement interne du cashback. <br>Crédit client : mise à disposition du montant au client, simulée dans le prototype.</div></div></div>`;
     const compactSummary=`<div class="panel" style="margin-bottom:12px"><div class="panel-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px"><div><span class="k">Référence</span><div class="v mono">${esc(w.transactionRef||"Non renseigné")}</div></div><div><span class="k">Carte</span><div class="v mono">${esc(w.maskedCard||"Non renseigné")}</div></div><div><span class="k">Éligibilité cashback</span><div class="v">${esc(cashbackEligibilityLabel(tx.cashbackDecision))}</div></div><div><span class="k">Parcours opérationnel</span><div class="v">${esc(workflowPhase(w.workflowStatus||current))}</div></div><div><span class="k">Paiement cashback</span><div class="v">${esc(paymentStatusLabel(paymentStatus))}</div></div><div><span class="k">Crédit client</span><div class="v">${esc(creditStatusLabel(creditStatus))}</div></div><div><span class="k">Prochaine action</span><div class="v">${esc(guide.message||"Non disponible")}</div></div></div></div>`;
-    const paymentShortcut=["APPROVED_FOR_CREDIT","PAYMENT_GENERATED"].includes(current)||String(creditStatus||"").toUpperCase()==="CREDIT_PENDING"?`<div style="margin:-4px 0 12px;padding:0 4px;display:flex;justify-content:flex-end"><button class="btn btn-ghost" onclick="closeModal();go('payments')">Aller aux paiements cashback</button></div>`:"";
-    const professionalSummary=`<div class="workflow-summary"><div class="workflow-global-state"><span class="k">État du parcours</span><div class="workflow-global-value">${esc(workflowGlobalState(current,paymentStatus,creditStatus,tx.cashbackDecision))}</div></div><div class="workflow-identity"><div><span class="k">Transaction</span><div class="v mono">${esc(w.transactionRef||"Non renseigné")}</div><span class="k" style="display:block;margin-top:8px">Carte</span><div class="v mono">${esc(w.maskedCard||"Non renseigné")}</div></div><div class="workflow-badges"><span class="badge b-info">${esc(cashbackEligibilityLabel(tx.cashbackDecision))}</span></div></div><div class="workflow-next"><div><span class="k">Prochaine étape</span><strong>${esc(workflowNextActionLabel(guide.message))}</strong></div>${paymentShortcut}</div></div>`;
+    const paymentShortcut=current!=="MANUAL_REVIEW"&&["APPROVED_FOR_PAYMENT","PAYMENT_GENERATED","APPROVED_FOR_CREDIT"].includes(current)?`<div style="margin:-4px 0 12px;padding:0 4px;display:flex;justify-content:flex-end"><button class="btn btn-ghost" onclick="closeModal();go('payments')">Aller aux paiements cashback</button></div>`:"";
+    const professionalSummary=`<div class="workflow-summary"><div class="workflow-global-state"><span class="k">État du parcours :</span><div class="workflow-global-value">${esc(cleanModalState)}</div></div><div class="workflow-identity"><div><span class="k">Transaction</span><div class="v mono">${esc(w.transactionRef||"Non renseigné")}</div><span class="k" style="display:block;margin-top:8px">Carte</span><div class="v mono">${esc(w.maskedCard||"Non renseigné")}</div></div><div class="workflow-badges"><span class="badge b-info">${esc(cashbackEligibilityLabel(tx.cashbackDecision))}</span></div></div><div class="workflow-next"><div><span class="k">Prochaine étape</span><strong>${esc(workflowNextActionLabel(guide.message))}</strong></div>${paymentShortcut}</div></div>`;
     const detailValue=(value)=>value===null||value===undefined||value===""?"Non renseigné":String(value);
     const detailPanel=`<div class="panel" style="margin-bottom:14px"><div class="panel-body"><div style="font-size:12px;color:var(--muted);margin-bottom:8px">Informations transactionnelles</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:6px 16px"><div><span class="k">MCC</span><div class="v">${esc(detailValue(tx.mccCode))}</div></div><div><span class="k">Canal</span><div class="v">${esc(detailValue(tx.channel))}</div></div><div><span class="k">Terminal</span><div class="v">${esc(detailValue(tx.terminalId))}</div></div><div><span class="k">Statut transaction</span><div class="v">${esc(detailValue(tx.status))}</div></div><div><span class="k">Rapprochement</span><div class="v">${tx.matched?"Rapprochée":"Non rapprochée"}</div></div><div><span class="k">Date transaction</span><div class="v">${tx.transactionDate?dt(tx.transactionDate):"Non renseigné"}</div></div><div><span class="k">Date réception</span><div class="v">${tx.receivedAt?dt(tx.receivedAt):"Non renseigné"}</div></div><div><span class="k">Campagne</span><div class="v">${esc(detailValue(tx.campaignName||payment?.campaignName||payment?.campaignId))}</div></div><div><span class="k">Statut cashback</span><div class="v">${esc(paymentStatusLabel(paymentStatus))}</div></div><div><span class="k">Décision cashback</span><div class="v">${esc(cashbackEligibilityLabel(tx.cashbackDecision))}</div></div><div><span class="k">Motif rejet</span><div class="v">${esc(detailValue(tx.rejectionReason||w.rejectionReason))}</div></div><div><span class="k">Révision manuelle</span><div class="v">${tx.manualReviewRequired?"Oui":"Non"}</div></div><div><span class="k">Montant campagne</span><div class="v">${payment?.campaignCashbackAmount!==undefined&&payment?.campaignCashbackAmount!==null?money(payment.campaignCashbackAmount)+" "+esc(payment.currency||tx.currency||""):"Non renseigné"}</div></div><div><span class="k">Bonus fidélité</span><div class="v">${payment?.loyaltyBonusAmount!==undefined&&payment?.loyaltyBonusAmount!==null?money(payment.loyaltyBonusAmount)+" "+esc(payment.currency||tx.currency||""):"Non renseigné"}</div></div><div><span class="k">Cashback final</span><div class="v">${payment?.finalCashbackAmount!==undefined&&payment?.finalCashbackAmount!==null?money(payment.finalCashbackAmount)+" "+esc(payment.currency||tx.currency||""):"Non renseigné"}</div></div></div></div></div>`;
     const recommended=canApprove?`<div style="margin-bottom:10px"><div style="font-size:12px;color:var(--muted);margin-bottom:6px">Action recommandée</div>${action(guide.label,mainAction,mainEnabled,guide.terminal?guide.message:"Action disponible selon l’étape actuelle",true)}${guide.action==="control"?`<div style="font-size:12px;color:var(--muted);margin-top:6px">Cette action vérifie la carte, le commerçant, la campagne, le calcul cashback et le contrôle fraude avant l’autorisation de paiement.</div>`:""}</div>`:"";
     const processingDetails=`<div class="workflow-state-grid" style="margin-top:12px"><div class="workflow-state-card"><span class="k">Traitement paiement</span><div class="v">${esc(paymentTreatmentLabel(paymentStatus))}</div></div><div class="workflow-state-card"><span class="k">Crédit client</span><div class="v">${esc(creditStatusLabel(creditStatus))}</div></div></div>`;
     const finals="";
-    const controls=canReview?`<div><div style="font-size:12px;color:var(--muted);margin-bottom:6px">Actions de contrôle</div>${action("Mettre en révision",`workflowManualReview(${id})`,!terminal,"Transaction déjà terminée")}${canApprove?action("Rejeter",`workflowReject(${id})`,!terminal,"Transaction déjà terminée"):""}</div>`:"";
-    openModal("Parcours transactionnel",professionalSummary+`<div class="panel" style="margin-bottom:12px"><div class="panel-body"><div style="font-size:12px;color:var(--muted);margin-bottom:8px">Progression du parcours</div>${workflowProgress(current,paymentStatus,creditStatus)}</div></div><details style="margin-bottom:12px"><summary style="cursor:pointer;font-weight:600">Voir le détail des étapes</summary><div style="margin-top:10px">${rows||emptyMini("Aucune étape renseignée")}</div></details><details style="margin-bottom:12px"><summary style="cursor:pointer;font-weight:600">Informations transactionnelles</summary><div style="margin-top:10px">${detailPanel}${processingDetails}</div></details><div style="font-size:11px;color:var(--muted);margin-top:10px">Paiement = traitement interne du cashback. Crédit = mise à disposition du montant au client.</div>`,controls+`<div style="margin-top:12px;display:flex;gap:10px;justify-content:flex-end"><button class="btn btn-ghost" onclick="closeModal()">Fermer</button></div>`);
+    const controls=canReview?`<div><div style="font-size:12px;color:var(--muted);margin-bottom:6px">Actions de contrôle</div>${current!=="MANUAL_REVIEW"?action("Mettre en révision",`workflowManualReview(${id})`,!terminal,"Transaction déjà terminée"):""}${canApprove?action("Rejeter",`workflowReject(${id})`,!terminal,"Transaction déjà terminée"):""}</div>`:"";
+    const canValidateCashback=canApprove&&["RECEIVED","DEDUPLICATED","CARD_VALIDATED","MERCHANT_MATCHED","CAMPAIGN_MATCHED","CASHBACK_CALCULATED","FRAUD_CHECKED","MANUAL_REVIEW"].includes(current);
+    const validateLabel=current==="MANUAL_REVIEW"?"Reprendre et valider":"Valider le cashback";
+    const footer=`<div style="margin-top:12px;display:flex;gap:10px;justify-content:flex-end">${canValidateCashback?`<button class="btn btn-primary" onclick="validateTransactionCashback(${Number(id)})">${validateLabel}</button>`:""}<button class="btn btn-ghost" onclick="closeModal()">Fermer</button></div>`;
+    openModal("Parcours transactionnel",professionalSummary+`<div class="panel" style="margin-bottom:12px"><div class="panel-body"><div style="font-size:12px;color:var(--muted);margin-bottom:8px">Progression du parcours</div>${workflowProgress(current,paymentStatus,creditStatus)}</div></div><details style="margin-bottom:12px"><summary style="cursor:pointer;font-weight:600">Voir le détail des étapes</summary><div style="margin-top:10px">${rows||emptyMini("Aucune étape renseignée")}</div></details><details style="margin-bottom:12px"><summary style="cursor:pointer;font-weight:600">Informations transactionnelles</summary><div style="margin-top:10px">${detailPanel}${processingDetails}</div></details><div style="font-size:11px;color:var(--muted);margin-top:10px">Paiement = traitement interne du cashback. Crédit = mise à disposition du montant au client.</div>`,controls+footer);
+    setTimeout(()=>{const label=document.querySelector('.workflow-global-state .k'),value=document.querySelector('.workflow-global-state .workflow-global-value');if(label)label.textContent='État du parcours :';if(value)value.textContent=cleanModalState;},0);
   }catch(e){toast(String(e.message||e).slice(0,180),"err");}
 }
 async function workflowControlAndValidate(id,currentStep){
@@ -1929,6 +1953,23 @@ async function workflowControlAndValidate(id,currentStep){
     for(const step of steps) await api(`/api/transactions/${id}/workflow/validate-step`,{method:"POST",body:JSON.stringify({step,comment})});
     toast("Contrôle terminé : transaction prête pour paiement.","ok");closeModal();openTransactionWorkflow(id);
   }catch(e){toast(String(e.message||e).slice(0,180),"err");}
+}
+async function validateTransactionCashback(transactionId){
+  if(!transactionId){toast("Identifiant transaction manquant.","err");return;}
+  try{
+    await api(`/api/transactions/${Number(transactionId)}/workflow/approve-for-payment`,{
+      method:"POST",
+      body:JSON.stringify({comment:"Validation individuelle du cashback avant paiement"})
+    });
+    toast("Cashback validé pour paiement.","ok");
+    await refreshTransactionRows();
+    if(CURRENT==="payments") go("payments");
+    closeModal();
+    openTransactionWorkflow(Number(transactionId));
+  }catch(e){
+    console.error("Validation individuelle du cashback impossible",e);
+    toast(String(e.message||e).slice(0,220),"err");
+  }
 }
 function workflowValidate(id,nextStep){
   if(!nextStep){toast("Aucune étape suivante disponible.","err");return;}

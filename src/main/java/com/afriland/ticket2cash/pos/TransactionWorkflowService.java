@@ -176,7 +176,15 @@ public class TransactionWorkflowService {
         String actor = requireApprover(request);
         PosTransaction tx = find(id);
         TransactionWorkflowStatus current = workflowStatus(tx);
-        if (!(current == TransactionWorkflowStatus.FRAUD_CHECKED || current == TransactionWorkflowStatus.APPROVED_FOR_PAYMENT)
+        if (!(current == TransactionWorkflowStatus.RECEIVED
+                || current == TransactionWorkflowStatus.DEDUPLICATED
+                || current == TransactionWorkflowStatus.CARD_VALIDATED
+                || current == TransactionWorkflowStatus.MERCHANT_MATCHED
+                || current == TransactionWorkflowStatus.CAMPAIGN_MATCHED
+                || current == TransactionWorkflowStatus.CASHBACK_CALCULATED
+                || current == TransactionWorkflowStatus.FRAUD_CHECKED
+                || current == TransactionWorkflowStatus.MANUAL_REVIEW
+                || current == TransactionWorkflowStatus.APPROVED_FOR_PAYMENT)
                 || current == TransactionWorkflowStatus.APPROVED_FOR_CREDIT
                 || current == TransactionWorkflowStatus.CREDIT_PENDING
                 || current == TransactionWorkflowStatus.CREDITED

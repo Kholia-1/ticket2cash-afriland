@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -58,6 +59,63 @@ class LoyaltyBonusServiceTest {
         assertEquals(new BigDecimal("500"), decision.getLoyaltyBonusAmount());
         assertEquals(new BigDecimal("1750"), decision.getFinalCashback());
         verify(clientRepository, never()).findByAccountNumber(anyString());
+    }
+
+    @Test
+    void importedAccountReferenceInCardHashResolvesPremiumClient() {
+        LoyaltyClient client = new LoyaltyClient();
+        client.setAccountNumber("HASH-FID-001"); client.setTier("Premium");
+        when(clientRepository.findByCardHash("HASH-FID-001")).thenReturn(Optional.empty());
+        when(clientRepository.findByAccountNumber("HASH-FID-001")).thenReturn(Optional.of(client));
+        when(tierRepository.findByNameIgnoreCase("Premium")).thenReturn(Optional.of(tier("Premium", "0.5", true)));
+
+        CashbackTransactionRequest imported = request(null, "HASH-FID-001");
+        imported.setAmount(new BigDecimal("39000"));
+        CashbackDecision decision = calculation().calculateFromTransaction(campaign(true), imported);
+
+        assertEquals(new BigDecimal("195"), decision.getLoyaltyBonusAmount());
+        assertEquals(new BigDecimal("2145"), decision.getFinalCashback());
+        assertEquals("Premium", decision.getLoyaltyTierName());
+    }
+
+    @Test
+    void staleEssentielTierIsRecomputedFromConfiguredThresholds() {
+        LoyaltyClient client = new LoyaltyClient();
+        client.setAccountNumber("HASH-FID-002");
+        client.setTier("Essentiel");
+        client.setLifetimeVolume(new BigDecimal("600000"));
+        client.setTransactionCount(1);
+        LoyaltyTier essentiel = tier("Essentiel", "0", true);
+        essentiel.setMinCumulativeSpend(BigDecimal.ZERO); essentiel.setMinTransactionCount(0); essentiel.setSortOrder(0);
+        LoyaltyTier premium = tier("Premium", "0.5", true);
+        premium.setMinCumulativeSpend(new BigDecimal("500000")); premium.setMinTransactionCount(10); premium.setSortOrder(1);
+        when(clientRepository.findByAccountNumber("HASH-FID-002")).thenReturn(Optional.of(client));
+        when(clientRepository.findByCardHash("HASH-FID-002")).thenReturn(Optional.empty());
+        when(tierRepository.findByActiveTrueOrderBySortOrderAsc()).thenReturn(List.of(essentiel, premium));
+        when(tierRepository.findByNameIgnoreCase("Premium")).thenReturn(Optional.of(premium));
+
+        CashbackTransactionRequest imported = request(null, "HASH-FID-002");
+        imported.setAmount(new BigDecimal("39000"));
+        CashbackDecision decision = calculation().calculateFromTransaction(campaign(true), imported);
+
+        assertEquals("Premium", decision.getLoyaltyTierName());
+        assertEquals(new BigDecimal("195"), decision.getLoyaltyBonusAmount());
+        assertEquals(new BigDecimal("2145"), decision.getFinalCashback());
+    }
+
+    @Test
+    void enabledCampaignWithZeroBonusKeepsCampaignCashbackAsFinalAmount() {
+        LoyaltyClient client = new LoyaltyClient();
+        client.setAccountNumber("CLIENT-ESS"); client.setTier("Essentiel");
+        when(clientRepository.findByAccountNumber("CLIENT-ESS")).thenReturn(Optional.of(client));
+        when(tierRepository.findByActiveTrueOrderBySortOrderAsc()).thenReturn(List.of());
+        when(tierRepository.findByNameIgnoreCase("Essentiel")).thenReturn(Optional.of(tier("Essentiel", "0", true)));
+
+        CashbackDecision decision = calculation().calculateFromTransaction(campaign(true), request("CLIENT-ESS", null));
+
+        assertEquals(new BigDecimal("1250"), decision.getCampaignCashbackAmount());
+        assertEquals(BigDecimal.ZERO, decision.getLoyaltyBonusAmount());
+        assertEquals(new BigDecimal("1250"), decision.getFinalCashback());
     }
 
     @Test

@@ -434,8 +434,10 @@ public class LoyaltyCalculatorService {
         String selected = "ESSENTIEL";
         for (LoyaltyTier tier : tierRepository.findByActiveTrueOrderBySortOrderAsc()) {
             BigDecimal minVolume = tier.getMinCumulativeSpend() == null ? BigDecimal.ZERO : tier.getMinCumulativeSpend();
-            int minTx = tier.getMinTransactionCount() == null ? 0 : tier.getMinTransactionCount();
-            if (volume.compareTo(minVolume) >= 0 && transactionCount >= minTx) selected = tier.getName();
+            // Tier attribution is based on cumulative loyalty volume. Minimum
+            // transaction and amount criteria belong to advantage-rule
+            // eligibility and must not keep a high-volume client on Essentiel.
+            if (volume.compareTo(minVolume) >= 0) selected = tier.getName();
         }
         return selected;
     }

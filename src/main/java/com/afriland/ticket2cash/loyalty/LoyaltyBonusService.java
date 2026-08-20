@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
 
 /** Resolves an optional loyalty-tier bonus without ever requiring a PAN. */
 @Service
@@ -35,18 +36,25 @@ public class LoyaltyBonusService {
         }
         if (client == null && cardHash != null && !cardHash.isBlank()) {
             client = clientRepository.findByCardHash(cardHash.trim()).orElse(null);
+            // Loyalty imports identify the account with the same stable
+            // reference that card transactions carry as cardHash.  Support
+            // that legacy/import representation without requiring a PAN.
+            if (client == null) {
+                client = clientRepository.findByAccountNumber(cardHash.trim()).orElse(null);
+            }
         }
         if (client == null) {
             return result(campaign, transactionRef, customerRef, maskedCard, null, null,
                     LoyaltyBonusDecisionCode.CLIENT_NOT_FOUND, "Client fidélité introuvable");
         }
-        if (client.getTier() == null || client.getTier().isBlank()) {
+        String effectiveTierName = resolveEffectiveTier(client);
+        if (effectiveTierName == null || effectiveTierName.isBlank()) {
             return result(campaign, transactionRef, customerRef, maskedCard, null, null,
                     LoyaltyBonusDecisionCode.CLIENT_WITHOUT_TIER, "Client sans niveau fidélité");
         }
-        LoyaltyTier tier = tierRepository.findByNameIgnoreCase(client.getTier().trim()).orElse(null);
+        LoyaltyTier tier = tierRepository.findByNameIgnoreCase(effectiveTierName.trim()).orElse(null);
         if (tier == null) {
-            return result(campaign, transactionRef, customerRef, maskedCard, client.getTier(), null,
+            return result(campaign, transactionRef, customerRef, maskedCard, effectiveTierName, null,
                     LoyaltyBonusDecisionCode.TIER_NOT_FOUND, "Niveau fidélité introuvable");
         }
         if (!Boolean.TRUE.equals(tier.getActive())) {
@@ -62,6 +70,31 @@ public class LoyaltyBonusService {
                 .divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP);
         return result(campaign, transactionRef, customerRef, maskedCard, tier.getName(), amount,
                 LoyaltyBonusDecisionCode.APPLIED, "Bonus fidélité appliqué").withPercent(percent);
+    }
+
+    /**
+     * Resolve the current tier from the configured cumulative-volume bands.
+     * Transaction-count and minimum-transaction rules are evaluated by the
+     * advantage calculator; they must not leave an imported high-volume client
+     * stuck on the legacy Essentiel tier.
+     */
+    private String resolveEffectiveTier(LoyaltyClient client) {
+        List<LoyaltyTier> tiers = tierRepository.findByActiveTrueOrderBySortOrderAsc();
+        if (tiers != null && !tiers.isEmpty()) {
+            BigDecimal volume = client.getLifetimeVolume() == null ? BigDecimal.ZERO : client.getLifetimeVolume();
+            String selected = null;
+            for (LoyaltyTier candidate : tiers) {
+                BigDecimal minimumVolume = candidate.getMinCumulativeSpend() == null
+                        ? BigDecimal.ZERO : candidate.getMinCumulativeSpend();
+                if (volume.compareTo(minimumVolume) >= 0) {
+                    selected = candidate.getName();
+                }
+            }
+            if (selected != null && !selected.isBlank()) return selected;
+        }
+        if (client.getTier() == null || client.getTier().isBlank()
+                || "CLASSIC".equalsIgnoreCase(client.getTier())) return "Essentiel";
+        return client.getTier().trim();
     }
 
     private LoyaltyBonusResult result(Campaign campaign, String transactionRef, String customerRef,
